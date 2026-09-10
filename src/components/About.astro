@@ -1,4 +1,11 @@
 ---
+export interface Props {
+  repoCount: number;
+  lastUpdated?: string | null;
+}
+
+const { repoCount, lastUpdated = null } = Astro.props;
+
 const backgrounds = [
   '开源实践主线：独立完成 opencode 自进化 Agent 体系改造',
   '业务×技术复合：数据科学 × 电商管理',
@@ -7,6 +14,12 @@ const backgrounds = [
 const directions = ['AI Agent 工程', '机器学习建模', '运筹优化'];
 
 const interests = ['技术自驱', '工具链折腾', '体系化复盘', '可视化叙事', '开源分享'];
+
+const overview = [
+  { key: '技术方向', value: directions.join(' / ') },
+  { key: '活跃仓库', value: `${repoCount} 个` },
+  { key: '最近更新', value: lastUpdated ?? '—' },
+];
 ---
 
 <section id="about" class="section">
@@ -16,31 +29,49 @@ const interests = ['技术自驱', '工具链折腾', '体系化复盘', '可视
       <p class="section__subtitle">匿名技术画像 · 只呈现方向与作品</p>
     </header>
 
-    <p class="about__lead prose">
-      以「开源实践」为主线，把业务问题翻译成数据与算法问题，再用可复现的工程体系交付结论。
-    </p>
+    <div class="about__grid">
+      <div class="about__main">
+        <p class="about__lead prose">
+          以「开源实践」为主线，把业务问题翻译成数据与算法问题，再用可复现的工程体系交付结论。
+        </p>
 
-    <div class="about__blocks">
-      <div class="about__block">
-        <h3 class="about__label">背景</h3>
-        <ul class="taglist">
-          {backgrounds.map((item) => <li class="chip">{item}</li>)}
-        </ul>
+        <div class="about__blocks">
+          <div class="about__block">
+            <h3 class="about__label">背景</h3>
+            <ul class="taglist">
+              {backgrounds.map((item) => <li class="chip">{item}</li>)}
+            </ul>
+          </div>
+
+          <div class="about__block">
+            <h3 class="about__label">技术方向</h3>
+            <ul class="taglist">
+              {directions.map((item) => <li class="chip">{item}</li>)}
+            </ul>
+          </div>
+
+          <div class="about__block">
+            <h3 class="about__label">兴趣</h3>
+            <ul class="taglist">
+              {interests.map((item) => <li class="chip">{item}</li>)}
+            </ul>
+          </div>
+        </div>
       </div>
 
-      <div class="about__block">
-        <h3 class="about__label">技术方向</h3>
-        <ul class="taglist">
-          {directions.map((item) => <li class="chip">{item}</li>)}
-        </ul>
-      </div>
-
-      <div class="about__block">
-        <h3 class="about__label">兴趣</h3>
-        <ul class="taglist">
-          {interests.map((item) => <li class="chip">{item}</li>)}
-        </ul>
-      </div>
+      <aside class="about__overview" aria-label="速览">
+        <h3 class="about__overview-title">速览</h3>
+        <dl class="overview">
+          {
+            overview.map((row) => (
+              <div class="overview__row">
+                <dt class="overview__key">{row.key}</dt>
+                <dd class="overview__val">{row.value}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </aside>
     </div>
   </div>
 </section>
@@ -49,6 +80,19 @@ const interests = ['技术自驱', '工具链折腾', '体系化复盘', '可视
   .about__lead {
     margin-top: var(--space-3);
     color: var(--text-secondary);
+  }
+
+  .about__grid {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 768px) {
+    .about__grid {
+      grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+      align-items: start;
+    }
   }
 
   .about__blocks {
@@ -65,4 +109,45 @@ const interests = ['技术自驱', '工具链折腾', '体系化复盘', '可视
     color: var(--text-secondary);
     text-transform: uppercase;
   }
+
+  .about__overview {
+    padding: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+  }
+
+  .about__overview-title {
+    margin-bottom: var(--space-3);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+
+  .overview {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .overview__row {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .overview__key {
+    font-size: var(--fs-label);
+    color: var(--text-secondary);
+  }
+
+  .overview__val {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--fs-nav);
+    color: var(--text);
+  }
 </style>
+

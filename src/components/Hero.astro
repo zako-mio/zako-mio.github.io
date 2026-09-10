@@ -27,6 +27,13 @@ const { displayName, tagline, github, email } = Astro.props;
         <a class="button" href={`mailto:${email}`}>邮箱</a>
       </li>
     </ul>
+
+    <nav class="hero__quick" aria-label="快速入口">
+      <span class="hero__quick-label">快速入口</span>
+      <a href="#projects">跳到项目</a>
+      <a href={github} rel="noopener noreferrer" target="_blank">GitHub</a>
+      <a href={`mailto:${email}`}>邮箱</a>
+    </nav>
   </div>
 </section>
 
@@ -34,8 +41,8 @@ const { displayName, tagline, github, email } = Astro.props;
   .hero {
     display: flex;
     align-items: center;
-    min-height: clamp(360px, 55vh, 560px);
-    padding-block: var(--space-7);
+    min-height: clamp(320px, 46vh, 460px);
+    padding-block: var(--space-6) var(--space-4);
     background:
       radial-gradient(1200px 400px at 15% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
       var(--bg);
@@ -75,6 +82,32 @@ const { displayName, tagline, github, email } = Astro.props;
     flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-2);
+  }
+
+  .hero__quick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+
+  .hero__quick-label {
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+
+  .hero__quick a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    font-size: var(--fs-label);
+    font-weight: 500;
   }
 
   .button {

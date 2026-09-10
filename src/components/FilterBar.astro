@@ -2,6 +2,7 @@
 export interface Facet {
   value: string;
   label: string;
+  count: number;
 }
 
 export interface Props {
@@ -41,6 +42,7 @@ const { types, domains } = Astro.props;
               aria-pressed="false"
             >
               {facet.label}
+              <span class="chip__count" data-count>{facet.count}</span>
             </button>
           ))}
         </div>
@@ -64,6 +66,7 @@ const { types, domains } = Astro.props;
               aria-pressed="false"
             >
               {facet.label}
+              <span class="chip__count" data-count>{facet.count}</span>
             </button>
           ))}
         </div>
@@ -125,6 +128,13 @@ const { types, domains } = Astro.props;
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+  }
+
+  .chip__count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1;
+    color: inherit;
   }
 
   .filterbar__status {

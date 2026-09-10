@@ -10,19 +10,25 @@ const items = [
 <header class="nav">
   <div class="container nav__inner">
     <a class="nav__brand" href="#top">zako-mio</a>
-    <nav aria-label="主导航">
-      <ul class="nav__list">
-        {
-          items.map((item) => (
-            <li>
-              <a class="nav__link" href={item.href}>
-                {item.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </nav>
+    <div class="nav__right">
+      <nav aria-label="主导航">
+        <ul class="nav__list">
+          {
+            items.map((item) => (
+              <li>
+                <a class="nav__link" href={item.href}>
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <button class="nav__search" type="button" id="nav-search" aria-label="搜索项目">
+        搜索
+        <kbd class="nav__kbd" aria-hidden="true">Ctrl K</kbd>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -53,6 +59,13 @@ const items = [
     text-decoration: none;
   }
 
+  .nav__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
   .nav__list {
     display: flex;
     align-items: center;
@@ -81,9 +94,49 @@ const items = [
     box-shadow: inset 0 -2px 0 var(--accent);
   }
 
+  .nav__search {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 36px;
+    padding: 0 var(--space-3);
+    font-size: var(--fs-nav);
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--surface);
+    border: 1px solid var(--control-border);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+
+  .nav__search:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .nav__kbd {
+    padding: 1px var(--space-1);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  @media (max-width: 720px) {
+    .nav__kbd {
+      display: none;
+    }
+  }
+
   @media (max-width: 480px) {
     .nav__link {
       padding: 0 var(--space-1);
+    }
+
+    .nav__search {
+      padding: 0 var(--space-2);
     }
   }
 </style>
@@ -115,4 +168,26 @@ const items = [
     );
     sections.forEach((section) => observer.observe(section));
   }
+
+  const searchButton = document.getElementById('nav-search');
+  const searchInput = document.getElementById('project-search') as HTMLInputElement | null;
+
+  const focusSearch = () => {
+    const projects = document.getElementById('projects');
+    projects?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    searchInput?.focus();
+  };
+
+  searchButton?.addEventListener('click', focusSearch);
+
+  document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      focusSearch();
+      return;
+    }
+    if (event.key === 'Escape' && document.activeElement === searchInput) {
+      searchInput?.blur();
+    }
+  });
 </script>

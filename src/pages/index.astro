@@ -21,14 +21,28 @@ const tagline =
 
 const typeFacets = PROJECT_TYPES.filter((type) =>
   projects.some((project) => project.type === type),
-).map((value) => ({ value, label: TYPE_LABELS[value] }));
+).map((value) => ({
+  value,
+  label: TYPE_LABELS[value],
+  count: projects.filter((project) => project.type === value).length,
+}));
 
 const domainFacets = PROJECT_DOMAINS.filter((domain) =>
   projects.some((project) => project.domains.includes(domain)),
-).map((value) => ({ value, label: DOMAIN_LABELS[value] }));
+).map((value) => ({
+  value,
+  label: DOMAIN_LABELS[value],
+  count: projects.filter((project) => project.domains.includes(value)).length,
+}));
 
 const runId = import.meta.env.PUBLIC_RUN_ID ?? null;
 const hasProjects = ok && projects.length > 0;
+
+const latestPush = projects.reduce<string>((latest, project) => {
+  const pushed = project.pushed_at ?? '';
+  return pushed > latest ? pushed : latest;
+}, '');
+const lastUpdated = latestPush ? latestPush.slice(0, 10) : null;
 ---
 
 <Base title={`${siteConfig.site_title} · 技术知识中枢`} description={tagline}>
@@ -41,7 +55,7 @@ const hasProjects = ok && projects.length > 0;
       email={siteConfig.contact_email}
     />
 
-    <About />
+    <About repoCount={projects.length} lastUpdated={lastUpdated} />
 
     <section id="projects" class="section">
       <div class="container">
@@ -82,6 +96,36 @@ const hasProjects = ok && projects.length > 0;
 
     const active: Record<string, Set<string>> = { type: new Set(), domain: new Set() };
 
+    const matchesQuery = (card: HTMLElement, query: string) =>
+      query === '' || (card.dataset.search ?? '').toLowerCase().includes(query);
+
+    const updateCounts = (query: string) => {
+      for (const button of buttons) {
+        const group = button.dataset.filter ?? '';
+        const value = button.dataset.value ?? '';
+        const other = group === 'type' ? 'domain' : 'type';
+        let count = 0;
+
+        for (const card of cards) {
+          if (!matchesQuery(card, query)) continue;
+
+          const type = card.dataset.type ?? '';
+          const domains = (card.dataset.domains ?? '').split(/\s+/).filter(Boolean);
+          const groupOk = group === 'type' ? type === value : domains.includes(value);
+          const otherOk =
+            active[other].size === 0 ||
+            (other === 'type'
+              ? active.type.has(type)
+              : domains.some((domain) => active.domain.has(domain)));
+
+          if (groupOk && otherOk) count += 1;
+        }
+
+        const badge = button.querySelector<HTMLElement>('[data-count]');
+        if (badge) badge.textContent = String(count);
+      }
+    };
+
     const apply = () => {
       const query = (search?.value ?? '').trim().toLowerCase();
       let visible = 0;
@@ -102,6 +146,7 @@ const hasProjects = ok && projects.length > 0;
 
       if (counter) counter.textContent = `显示 ${visible} / ${cards.length} 个项目`;
       if (empty) empty.hidden = visible !== 0;
+      updateCounts(query);
     };
 
     for (const button of buttons) {
