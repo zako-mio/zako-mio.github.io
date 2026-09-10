@@ -1,0 +1,52 @@
+---
+export interface Props {
+  displayName: string;
+  generatedAt?: string | null;
+  runId?: string | null;
+}
+
+const { displayName, generatedAt = null, runId = null } = Astro.props;
+const year = new Date().getFullYear();
+const github = 'https://github.com/zako-mio';
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <p class="footer__copy">
+      © {year} {displayName} · 内容以各项目仓库为准 ·
+      <a href={github} rel="noopener noreferrer" target="_blank">GitHub</a>
+    </p>
+    <p class="footer__meta">
+      {generatedAt && <span data-generated-at>数据更新：{generatedAt}</span>}
+      {runId && <span data-run-id> · build {runId}</span>}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: var(--space-7);
+    border-top: 1px solid var(--border);
+    padding-block: var(--space-5);
+    background: var(--surface);
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: var(--fs-label);
+    color: var(--text-secondary);
+  }
+
+  .footer__copy,
+  .footer__meta {
+    line-height: 1.6;
+  }
+
+  .footer a {
+    color: var(--accent);
+  }
+</style>

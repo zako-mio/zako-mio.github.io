@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "projects.schema.json",
+  "title": "Tech Hub Project Catalog",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "projects"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "enum": ["1.0"] },
+    "generated_at": { "type": "string", "minLength": 10 },
+    "projects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "title", "summary", "type", "domains", "entry_url", "repo_url", "has_pages"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "type": {
+            "type": "string",
+            "enum": ["knowledge-graph", "knowledge-base", "analysis", "tutorial", "methodology"]
+          },
+          "domains": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": ["agent-engineering", "control-theory", "llm", "algorithms", "software-engineering", "github"]
+            }
+          },
+          "language": { "type": ["string", "null"] },
+          "stars": { "type": "integer", "minimum": 0 },
+          "pushed_at": { "type": "string" },
+          "entry_url": { "type": "string", "pattern": "^https?://" },
+          "repo_url": { "type": "string", "pattern": "^https?://" },
+          "has_pages": { "type": "boolean" },
+          "featured": { "type": "boolean" },
+          "order": { "type": "integer" },
+          "section": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

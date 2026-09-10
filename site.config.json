@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "owner": "zako-mio",
+  "display_name": "zako-mio",
+  "host": "zako-mio.github.io",
+  "site_title": "zako-mio · Tech Hub",
+  "contact_email": "1505788754@qq.com",
+  "gh_api_base": "https://api.github.com",
+  "exclude_repos": ["zako-mio.github.io"],
+  "require_pages": true,
+  "summary_source": "description_first",
+  "max_summary_len": 140
+}

@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0",
+  "_note": "展示层覆盖：仅允许 featured / order / section / alias；禁止写入语义标签（type/domains），否则视为第二真相源。",
+  "overrides": {}
+}

@@ -1,0 +1,16 @@
+{
+  "name": "zako-mio.github.io",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "fetch": "python3 scripts/cli.py --config site.config.json --out src/data/projects.json"
+  },
+  "dependencies": {
+    "astro": "^5.0.0",
+    "zod": "^3.23.8"
+  }
+}

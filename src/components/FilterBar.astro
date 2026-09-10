@@ -1,0 +1,144 @@
+---
+export interface Facet {
+  value: string;
+  label: string;
+}
+
+export interface Props {
+  types: Facet[];
+  domains: Facet[];
+}
+
+const { types, domains } = Astro.props;
+---
+
+<div class="filterbar" role="group" aria-label="项目筛选与搜索">
+  <div class="filterbar__search">
+    <label class="visually-hidden" for="project-search">关键词搜索项目</label>
+    <input
+      id="project-search"
+      class="filterbar__input"
+      type="search"
+      placeholder="搜索项目标题、摘要或标签…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+  </div>
+
+  {
+    types.length > 0 && (
+      <div class="filterbar__row">
+        <span class="filterbar__legend" id="filter-type-label">
+          类型
+        </span>
+        <div class="filterbar__chips" role="group" aria-labelledby="filter-type-label">
+          {types.map((facet) => (
+            <button
+              class="chip"
+              type="button"
+              data-filter="type"
+              data-value={facet.value}
+              aria-pressed="false"
+            >
+              {facet.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  {
+    domains.length > 0 && (
+      <div class="filterbar__row">
+        <span class="filterbar__legend" id="filter-domain-label">
+          领域
+        </span>
+        <div class="filterbar__chips" role="group" aria-labelledby="filter-domain-label">
+          {domains.map((facet) => (
+            <button
+              class="chip"
+              type="button"
+              data-filter="domain"
+              data-value={facet.value}
+              aria-pressed="false"
+            >
+              {facet.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  <div class="filterbar__status">
+    <span id="project-count" class="filterbar__count" aria-live="polite" role="status"></span>
+    <button class="chip" type="button" id="project-reset">重置筛选</button>
+  </div>
+</div>
+
+<style>
+  .filterbar {
+    display: grid;
+    gap: var(--space-3);
+    margin-block: var(--space-4) var(--space-5);
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .filterbar__search {
+    width: 100%;
+  }
+
+  .filterbar__input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    font: inherit;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+  }
+
+  .filterbar__input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .filterbar__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .filterbar__legend {
+    min-width: 2.5rem;
+    font-size: var(--fs-label);
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .filterbar__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .filterbar__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    border-top: 1px solid var(--border);
+    padding-top: var(--space-3);
+  }
+
+  .filterbar__count {
+    font-size: var(--fs-label);
+    color: var(--text-secondary);
+  }
+</style>

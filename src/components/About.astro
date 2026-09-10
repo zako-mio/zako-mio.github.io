@@ -1,0 +1,68 @@
+---
+const backgrounds = [
+  '开源实践主线：独立完成 opencode 自进化 Agent 体系改造',
+  '业务×技术复合：数据科学 × 电商管理',
+];
+
+const directions = ['AI Agent 工程', '机器学习建模', '运筹优化'];
+
+const interests = ['技术自驱', '工具链折腾', '体系化复盘', '可视化叙事', '开源分享'];
+---
+
+<section id="about" class="section">
+  <div class="container">
+    <header class="section__head">
+      <h2 class="section__title">关于</h2>
+      <p class="section__subtitle">匿名技术画像 · 只呈现方向与作品</p>
+    </header>
+
+    <p class="about__lead prose">
+      以「开源实践」为主线，把业务问题翻译成数据与算法问题，再用可复现的工程体系交付结论。
+    </p>
+
+    <div class="about__blocks">
+      <div class="about__block">
+        <h3 class="about__label">背景</h3>
+        <ul class="taglist">
+          {backgrounds.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </div>
+
+      <div class="about__block">
+        <h3 class="about__label">技术方向</h3>
+        <ul class="taglist">
+          {directions.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </div>
+
+      <div class="about__block">
+        <h3 class="about__label">兴趣</h3>
+        <ul class="taglist">
+          {interests.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about__lead {
+    margin-top: var(--space-3);
+    color: var(--text-secondary);
+  }
+
+  .about__blocks {
+    display: grid;
+    gap: var(--space-5);
+    margin-top: var(--space-5);
+  }
+
+  .about__label {
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+</style>

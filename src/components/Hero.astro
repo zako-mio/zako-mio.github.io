@@ -1,0 +1,109 @@
+---
+export interface Props {
+  displayName: string;
+  tagline: string;
+  github: string;
+  email: string;
+}
+
+const { displayName, tagline, github, email } = Astro.props;
+---
+
+<section id="top" class="hero">
+  <div class="container hero__inner">
+    <p class="hero__eyebrow">数据科学 × AI Agent 工程</p>
+    <h1 class="hero__title">{displayName}</h1>
+    <p class="hero__tagline prose">{tagline}</p>
+    <ul class="hero__actions">
+      <li>
+        <a class="button button--primary" href="#projects">查看项目 ↓</a>
+      </li>
+      <li>
+        <a class="button" href={github} rel="noopener noreferrer" target="_blank">
+          GitHub
+        </a>
+      </li>
+      <li>
+        <a class="button" href={`mailto:${email}`}>邮箱</a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    align-items: center;
+    min-height: clamp(360px, 55vh, 560px);
+    padding-block: var(--space-7);
+    background:
+      radial-gradient(1200px 400px at 15% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+      var(--bg);
+  }
+
+  .hero__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .hero__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .hero__title {
+    font-size: var(--fs-hero);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .hero__tagline {
+    font-size: var(--fs-body);
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 12px 20px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--radius);
+    font-size: var(--fs-nav);
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--surface);
+  }
+
+  .button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .button--primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .button--primary:hover {
+    color: var(--on-accent);
+    filter: brightness(1.08);
+  }
+</style>

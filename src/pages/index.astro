@@ -1,0 +1,133 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import FilterBar from '../components/FilterBar.astro';
+import ProjectGrid from '../components/ProjectGrid.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+
+import { loadCatalog } from '../lib/catalog';
+import { loadSiteConfig } from '../lib/site';
+import { DOMAIN_LABELS, PROJECT_DOMAINS, PROJECT_TYPES, TYPE_LABELS } from '../lib/schema';
+
+const siteConfig = loadSiteConfig();
+const { projects, generatedAt, ok, hint } = loadCatalog();
+
+const github = `https://github.com/${siteConfig.owner}`;
+const tagline =
+  '电商管理 × 数据科学复合背景，聚焦 AI Agent 工程、机器学习建模与运筹优化；长于在不确定环境中做端到端决策落地。';
+
+const typeFacets = PROJECT_TYPES.filter((type) =>
+  projects.some((project) => project.type === type),
+).map((value) => ({ value, label: TYPE_LABELS[value] }));
+
+const domainFacets = PROJECT_DOMAINS.filter((domain) =>
+  projects.some((project) => project.domains.includes(domain)),
+).map((value) => ({ value, label: DOMAIN_LABELS[value] }));
+
+const runId = import.meta.env.PUBLIC_RUN_ID ?? null;
+const hasProjects = ok && projects.length > 0;
+---
+
+<Base title={`${siteConfig.site_title} · 技术知识中枢`} description={tagline}>
+  <Nav />
+  <main id="main">
+    <Hero
+      displayName={siteConfig.display_name}
+      tagline={tagline}
+      github={github}
+      email={siteConfig.contact_email}
+    />
+
+    <About />
+
+    <section id="projects" class="section">
+      <div class="container">
+        <header class="section__head">
+          <h2 class="section__title">项目</h2>
+          <p class="section__subtitle">按类型与领域筛选，或直接搜索关键词</p>
+        </header>
+
+        {
+          hasProjects ? (
+            <>
+              <FilterBar types={typeFacets} domains={domainFacets} />
+              <ProjectGrid projects={projects} />
+            </>
+          ) : (
+            <p class="empty-state">{hint ?? '暂无项目数据。'}</p>
+          )
+        }
+      </div>
+    </section>
+
+    <Contact email={siteConfig.contact_email} github={github} />
+  </main>
+
+  <Footer displayName={siteConfig.display_name} generatedAt={generatedAt} runId={runId} />
+</Base>
+
+<script>
+  const grid = document.getElementById('projects-grid');
+
+  if (grid) {
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('[data-project]'));
+    const empty = document.getElementById('projects-empty');
+    const counter = document.getElementById('project-count');
+    const search = document.getElementById('project-search') as HTMLInputElement | null;
+    const reset = document.getElementById('project-reset');
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+
+    const active: Record<string, Set<string>> = { type: new Set(), domain: new Set() };
+
+    const apply = () => {
+      const query = (search?.value ?? '').trim().toLowerCase();
+      let visible = 0;
+
+      for (const card of cards) {
+        const type = card.dataset.type ?? '';
+        const domains = (card.dataset.domains ?? '').split(/\s+/).filter(Boolean);
+        const haystack = (card.dataset.search ?? '').toLowerCase();
+
+        const typeOk = active.type.size === 0 || active.type.has(type);
+        const domainOk = active.domain.size === 0 || domains.some((d) => active.domain.has(d));
+        const queryOk = query === '' || haystack.includes(query);
+
+        const show = typeOk && domainOk && queryOk;
+        card.hidden = !show;
+        if (show) visible += 1;
+      }
+
+      if (counter) counter.textContent = `显示 ${visible} / ${cards.length} 个项目`;
+      if (empty) empty.hidden = visible !== 0;
+    };
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => {
+        const group = button.dataset.filter ?? '';
+        const value = button.dataset.value ?? '';
+        const set = active[group];
+        if (!set) return;
+
+        if (set.has(value)) set.delete(value);
+        else set.add(value);
+
+        button.setAttribute('aria-pressed', String(set.has(value)));
+        apply();
+      });
+    }
+
+    reset?.addEventListener('click', () => {
+      active.type.clear();
+      active.domain.clear();
+      buttons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
+      if (search) search.value = '';
+      apply();
+    });
+
+    search?.addEventListener('input', apply);
+    apply();
+  }
+</script>

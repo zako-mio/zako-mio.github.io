@@ -1,0 +1,118 @@
+---
+const items = [
+  { href: '#top', label: '首页' },
+  { href: '#about', label: '关于' },
+  { href: '#projects', label: '项目' },
+  { href: '#contact', label: '联系' },
+];
+---
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="nav__brand" href="#top">zako-mio</a>
+    <nav aria-label="主导航">
+      <ul class="nav__list">
+        {
+          items.map((item) => (
+            <li>
+              <a class="nav__link" href={item.href}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--nav-h);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    height: 100%;
+  }
+
+  .nav__brand {
+    font-family: var(--font-mono);
+    font-size: var(--fs-nav);
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav__list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-2);
+    font-size: var(--fs-nav);
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 8px;
+  }
+
+  .nav__link:hover {
+    color: var(--accent);
+    background: var(--surface-2);
+  }
+
+  .nav__link.is-active {
+    color: var(--accent);
+    box-shadow: inset 0 -2px 0 var(--accent);
+  }
+
+  @media (max-width: 480px) {
+    .nav__link {
+      padding: 0 var(--space-1);
+    }
+  }
+</style>
+
+<script>
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('.nav__link'));
+  const sections = links
+    .map((link) => {
+      const id = link.getAttribute('href')?.slice(1) ?? '';
+      return document.getElementById(id);
+    })
+    .filter((section): section is HTMLElement => section !== null);
+
+  const setActive = (id: string) => {
+    links.forEach((link) => {
+      link.classList.toggle('is-active', link.getAttribute('href') === `#${id}`);
+    });
+  };
+
+  if (sections.length > 0 && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-45% 0px -50% 0px', threshold: [0, 0.25, 0.5, 1] },
+    );
+    sections.forEach((section) => observer.observe(section));
+  }
+</script>
