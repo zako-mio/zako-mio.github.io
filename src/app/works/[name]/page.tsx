@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { Disclosure } from '@/components/Disclosure';
 import { ProjectCard } from '@/components/ProjectCard';
+import { ProjectFigure } from '@/components/ProjectFigure';
 import { TocSidebar, type TocItem } from '@/components/TocSidebar';
 import { loadCatalog } from '@/lib/catalog';
 import { DOMAIN_LABELS, TYPE_LABELS } from '@/lib/schema';
@@ -145,9 +146,9 @@ export default async function ProjectPage({ params }: PageProps) {
           {project.has_pages ? (
             <section id="figure" className="detail__section">
               <h2 className="detail__section-title">该项目图谱</h2>
-              <p className="detail__lead prose">
-                该项目本身即以交互式 DAG / 知识图谱交付，图的真身在项目站内。站内嵌图
-                （cytoscape，含无 JS 文字降级）列入第二批。
+              <ProjectFigure name={project.name} />
+              <p className="detail__note">
+                图的可交互真身在项目站内（本站只呈现可机读的规模与结构数据，故无 JS 亦可读）。
               </p>
               <p>
                 <a

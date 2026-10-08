@@ -1380,3 +1380,236 @@ button.chip[disabled] {
     scroll-behavior: auto;
   }
 }
+
+/* ── E 枢纽聚合仪表盘（2b-4）──────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mdash__asof {
+  margin: 0 0 var(--space-3);
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+}
+
+.chart {
+  margin: 0 0 var(--space-5);
+}
+
+.chart__caption {
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--fs-label);
+  font-weight: 600;
+}
+
+.chart__frame {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: var(--space-3);
+  overflow-x: auto;
+}
+
+.chart__frame svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* 双模 SVG 切换：与站点主题三态一致（无属性=跟随系统） */
+.chart__frame--dark {
+  display: none;
+}
+
+[data-theme='dark'] .chart__frame--dark {
+  display: block;
+}
+
+[data-theme='dark'] .chart__frame:not(.chart__frame--dark) {
+  display: none;
+}
+
+[data-theme='light'] .chart__frame--dark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .chart__frame:not(.chart__frame--dark) {
+    display: none;
+  }
+
+  :root:not([data-theme='light']) .chart__frame--dark {
+    display: block;
+  }
+}
+
+.chart__note {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+.mtable__block + .mtable__block {
+  margin-top: var(--space-5);
+}
+
+.mtable__title {
+  margin: 0 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.mtable__note {
+  margin: 0 0 var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: 1.7;
+}
+
+.mtable__scroll {
+  overflow-x: auto;
+}
+
+.mtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-label);
+}
+
+.mtable th,
+.mtable td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.mtable thead th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mtable__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mtable__project {
+  min-width: 11rem;
+  font-weight: 600;
+}
+
+.mtable__meta {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.mtable__version {
+  margin-left: 0.35rem;
+}
+
+.mtable__scope {
+  color: var(--text-secondary);
+}
+
+.mtable__src {
+  white-space: nowrap;
+}
+
+.mtable__prov {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+.mtable__na {
+  color: var(--text-tertiary);
+}
+
+.badge--level {
+  display: inline-block;
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 详情页：结构实测与数据出处（2b-5 / 2b-6） */
+.topo__title {
+  margin: var(--space-5) 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.topo__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topo__item {
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.topo__scope {
+  margin: 0 0 var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.topo__asset {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+.topo__facts {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+  font-size: var(--fs-label);
+  line-height: 1.8;
+}
+
+.topo__note {
+  color: var(--text-tertiary);
+}
+
+.topo__claim {
+  color: var(--text-secondary);
+}
+
+.topo__claim--mismatch {
+  color: var(--text-primary);
+}
+
+.topo__source {
+  margin-top: var(--space-4);
+  font-size: var(--fs-label);
+}
+
+.topo__source > summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}

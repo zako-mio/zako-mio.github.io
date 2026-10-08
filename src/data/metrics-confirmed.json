@@ -1,0 +1,170 @@
+{
+  "_note": "E4 确认登记（冻结锚点）。由 scripts/metrics_confirm_table.py --emit-ledger 派生，⛔ 手工修改无效：门控会以 src/data/metrics.json 重算比对。",
+  "ledger_version": "1.0",
+  "task": "1008-个人主页深化改革",
+  "spec": "specs/e-metrics-spec.md v1.0",
+  "decision_ref": "decisions-e-metrics.json#E4",
+  "confirmed_at": "2026-10-08",
+  "confirmed_by": "user",
+  "as_of": "2026-10-08T12:26:53Z",
+  "site": "https://zako-mio.github.io",
+  "declared_total": 9,
+  "project_total": 9,
+  "projects": {
+    "control-theory-agent-kb": {
+      "page_url": "https://zako-mio.github.io/control-theory-agent-kb/",
+      "page_text_sha256": "3895357a53d58bce03fbee4782f28800575ea0a89ed8889c75f4bc041cc4e315",
+      "fetched_at": "2026-10-08T12:26:32Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "项目页（散文数字）",
+          "entity_count": 31,
+          "group_count": 5,
+          "relation_count": null,
+          "layer_count": null,
+          "stage_count": null
+        }
+      ]
+    },
+    "opencode-dag-analysis": {
+      "page_url": "https://zako-mio.github.io/opencode-dag-analysis/",
+      "page_text_sha256": "a6cc41c34cf7b5006677889a7a4139263fd16547abe115efaf12a8750ecd10cf",
+      "fetched_at": "2026-10-08T12:26:32Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "图1 官方 DAG",
+          "entity_count": 36,
+          "relation_count": 68,
+          "group_count": 19
+        },
+        {
+          "scope": "图2 对比 DAG",
+          "entity_count": 46,
+          "relation_count": 68,
+          "group_count": 20
+        },
+        {
+          "scope": "图3 改造双层 DAG",
+          "entity_count": 129,
+          "relation_count": 190,
+          "group_count": 43,
+          "layer_count": null
+        }
+      ]
+    },
+    "llm-papers-knowledge-base": {
+      "page_url": "https://zako-mio.github.io/llm-papers-knowledge-base/",
+      "page_text_sha256": "985a708606f28c353b24d527ec1bf24eeafd9e9c09bf2c140bb01e3e4a1c62e7",
+      "fetched_at": "2026-10-08T12:26:35Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "项目页（散文数字）",
+          "entity_count": 133,
+          "group_count": null,
+          "relation_count": null,
+          "layer_count": null,
+          "stage_count": null
+        }
+      ]
+    },
+    "open-code-review-kg": {
+      "page_url": "https://zako-mio.github.io/open-code-review-kg/",
+      "page_text_sha256": "9ebbedde4b5d439a81b6da574bb2321cd03d4b07b5741bd919b4c2fdf1640cd1",
+      "fetched_at": "2026-10-08T12:26:35Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "节点索引（v2.0.0）",
+          "entity_count": 51,
+          "group_count": 7,
+          "relation_count": 68,
+          "layer_count": null,
+          "stage_count": null
+        }
+      ]
+    },
+    "12-factor-methodology-kg": {
+      "page_url": "https://zako-mio.github.io/12-factor-methodology-kg/",
+      "page_text_sha256": "1d98bca9f9485a931685dd0dfe0520978e82bec07b2b0a9493efc2257f3e46cf",
+      "fetched_at": "2026-10-08T12:26:36Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "项目页（散文数字）",
+          "entity_count": 38,
+          "group_count": 16,
+          "relation_count": 61,
+          "layer_count": null,
+          "stage_count": 3
+        }
+      ]
+    },
+    "dsh-manager-analysis": {
+      "page_url": "https://zako-mio.github.io/dsh-manager-analysis/",
+      "page_text_sha256": "9dd75a74a242351618d182864c317f4173e008cccdc90489efb5e5186ddf7be6",
+      "fetched_at": "2026-10-08T12:26:37Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "插件级（术语自成一格）",
+          "entity_count": 23,
+          "relation_count": 23,
+          "group_count": null,
+          "layer_count": null,
+          "stage_count": null
+        }
+      ]
+    },
+    "deepseek-harness-plugin-dag": {
+      "page_url": "https://zako-mio.github.io/deepseek-harness-plugin-dag/",
+      "page_text_sha256": "3aa7c542435d82362d59fecd4704cc726c14cc7fde4314b97698c05b79a376f2",
+      "fetched_at": "2026-10-08T12:26:38Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "插件级（全量重建 v0.1.7-rc.2）",
+          "entity_count": 239,
+          "relation_count": 1077,
+          "group_count": 50,
+          "layer_count": 19,
+          "stage_count": null
+        }
+      ]
+    },
+    "algorithm-knowledge-graph": {
+      "page_url": "https://zako-mio.github.io/algorithm-knowledge-graph/",
+      "page_text_sha256": "0de459c1aabd39bb96663935b61fd5102eabb938aedff937fd6f5d898122bac2",
+      "fetched_at": "2026-10-08T12:26:52Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "项目页（散文数字）",
+          "entity_count": 372,
+          "group_count": 60,
+          "relation_count": 318,
+          "layer_count": null,
+          "stage_count": 4
+        }
+      ]
+    },
+    "github-dag-tutorial": {
+      "page_url": "https://zako-mio.github.io/github-dag-tutorial/",
+      "page_text_sha256": "b7374483fb151130141790e421198d2832ae62b3169f2c0bdd23b1dd5ed3bd5b",
+      "fetched_at": "2026-10-08T12:26:53Z",
+      "status": "ok",
+      "figures": [
+        {
+          "scope": "项目页（散文数字）",
+          "entity_count": 35,
+          "group_count": 7,
+          "relation_count": 41,
+          "layer_count": 9,
+          "stage_count": null
+        }
+      ]
+    }
+  }
+}

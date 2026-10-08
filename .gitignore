@@ -4,6 +4,9 @@ out/
 dist/
 .astro/
 src/data/projects.json
+src/data/metrics.json
+src/data/charts.json
+src/data/topology.json
 *.log
 .env
 __pycache__/

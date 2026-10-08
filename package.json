@@ -19,9 +19,13 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/d3-scale-chromatic": "^3.1.0",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "cytoscape": "3.34.3",
+    "d3-scale-chromatic": "3.1.0",
+    "echarts": "6.1.0",
     "typescript": "^5.8.2"
   }
 }

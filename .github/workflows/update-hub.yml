@@ -43,7 +43,25 @@ jobs:
       - name: Validate catalog (contract gate)
         run: python3 scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
 
+      # E 枢纽聚合指标：采集（产物 src/data/metrics.json 为 .gitignore，CI 每次重采）
+      - name: Collect E metrics
+        run: python3 scripts/collect_metrics.py --write --out src/data/metrics.json
+
+      # 门控：口径（E1–E6）＋ E4 冻结锚点比对；FAIL 即阻断部署，WARN 只留痕
+      - name: Metrics gate
+        run: python3 scripts/gate_metrics.py
+
       - run: pnpm install --frozen-lockfile
+
+      # 图表：能力层 echarts-declarative-chart-svg 的 Node SSR 路径，构建期出双模 SVG
+      # （须在 install 之后：依赖 echarts / d3-scale-chromatic 由 lockfile 提供）
+      - name: Build charts (SSR -> SVG)
+        run: node scripts/build_charts.mjs
+
+      # 拓扑：能力层 cytoscape-js-graph-topology 的 headless 计算路径（⛔ 非画布渲染）
+      # 同时做「自称 vs 实测」并陈与两份定义交叉校验（不符即 fail-closed）
+      - name: Build topology (headless)
+        run: node scripts/build_topology.mjs
 
       - name: Build (Next static export -> out/)
         env:

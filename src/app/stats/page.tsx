@@ -2,17 +2,20 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { TocSidebar, type TocItem } from '@/components/TocSidebar';
+import { MetricsDashboard } from '@/components/MetricsDashboard';
 import { deriveStats, loadCatalog } from '@/lib/catalog';
+import { loadCharts, loadMetrics } from '@/lib/metrics';
 import { DOMAIN_LABELS, TYPE_LABELS, type ProjectDomain, type ProjectType } from '@/lib/schema';
 
 export const metadata: Metadata = {
   title: '聚合',
-  description: '项目索引的聚合视图：类型、领域、语言分布与更新时间线。',
+  description: '项目索引的聚合视图：规模指标（E）、类型、领域、语言分布与更新时间线。',
   alternates: { canonical: '/stats' },
 };
 
 const TOC: TocItem[] = [
   { id: 'overview', label: '总览' },
+  { id: 'scale', label: '规模指标' },
   { id: 'types', label: '类型分布' },
   { id: 'domains', label: '领域分布' },
   { id: 'languages', label: '语言分布' },
@@ -46,6 +49,8 @@ function BarList({
 export default function StatsPage() {
   const { projects, generatedAt, ok, hint } = loadCatalog();
   const stats = deriveStats(projects);
+  const { metrics, ok: metricsOk, hint: metricsHint } = loadMetrics();
+  const charts = loadCharts();
 
   if (!ok || projects.length === 0) {
     return (
@@ -104,6 +109,15 @@ export default function StatsPage() {
             </dl>
           </section>
 
+          <section id="scale" className="detail__section">
+            <h2 className="detail__section-title">规模指标</h2>
+            {metricsOk && metrics ? (
+              <MetricsDashboard charts={charts} metrics={metrics} />
+            ) : (
+              <p className="empty-state">{metricsHint ?? '暂无规模指标。'}</p>
+            )}
+          </section>
+
           <section id="types" className="detail__section">
             <h2 className="detail__section-title">类型分布</h2>
             <BarList rows={stats.typeCounts} labelOf={(value) => TYPE_LABELS[value as ProjectType] ?? value} />
@@ -146,9 +160,9 @@ export default function StatsPage() {
                 <code> as_of </code>，⛔ 不得当作现态。
               </li>
               <li>
-                <strong>规模类指标（节点数 / 边数 / 分组数 / 版本）尚未纳入</strong>：各项目对这些
-                术语的定义不一致，直接并排会产出「看似精确、实际不可比」的数字。需先落一份口径
-                规范，再采集。
+                <strong>规模类指标（节点数 / 边数 / 分组数 / 版本）已纳入上表</strong>：口径由
+                <code> specs/e-metrics-spec.md </code>v1.0 裁定（E1–E6），采集后经用户逐条人工确认并登记
+                页面文本哈希；⛔ 不与「项目总数」这类计数混算，也不跨形态并比。
               </li>
               <li>
                 「最近推送」是仓库同步时间，<strong>不等于</strong>项目在建时间；通道每日运行，
