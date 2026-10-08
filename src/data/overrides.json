@@ -1,5 +1,18 @@
 {
   "schema_version": "1.0",
   "_note": "展示层覆盖：仅允许 featured / order / section / alias；禁止写入语义标签（type/domains），否则视为第二真相源。",
-  "overrides": {}
+  "overrides": {
+    "12-factor-methodology-kg": {
+      "featured": true,
+      "order": 1
+    },
+    "deepseek-harness-plugin-dag": {
+      "featured": true,
+      "order": 2
+    },
+    "algorithm-knowledge-graph": {
+      "featured": true,
+      "order": 3
+    }
+  }
 }

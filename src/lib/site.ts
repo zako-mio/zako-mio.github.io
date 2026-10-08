@@ -27,14 +27,22 @@ const DEFAULTS: SiteConfig = {
   max_summary_len: 140,
 };
 
-export function loadSiteConfig(
-  path: string = resolve(process.cwd(), 'site.config.json'),
-): SiteConfig {
+export function loadSiteConfig(): SiteConfig {
   try {
-    const raw = readFileSync(path, 'utf8');
+    const raw = readFileSync(resolve(process.cwd(), 'site.config.json'), 'utf8');
     const parsed = JSON.parse(raw) as Partial<SiteConfig>;
     return { ...DEFAULTS, ...parsed };
   } catch {
     return DEFAULTS;
   }
 }
+
+/**
+ * 站点定位语。
+ * ★ 与「关于」区块的分工：定位语是**一句话**，逐条画像在 src/lib/profile.ts。
+ * ⛔ 完全匿名约束：此处不得出现可实名定位的字段。
+ */
+export const SITE_TAGLINE =
+  '电商管理 × 数据科学复合背景，聚焦 AI Agent 工程、机器学习建模与运筹优化；长于在不确定环境中做端到端决策落地。';
+
+export const SITE_ORIGIN = 'https://zako-mio.github.io';

@@ -2,7 +2,7 @@ name: Update hub data and deploy to Pages
 
 on:
   schedule:
-    # 03:17 UTC daily (offsets the top-of-hour load, per REV1 §2.4)
+    # 03:17 UTC daily (offsets the top-of-hour load)
     - cron: '17 3 * * *'
   workflow_dispatch:
   repository_dispatch:
@@ -22,25 +22,47 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+
+      # pnpm 须先于 setup-node，cache: 'pnpm' 才能直接命中
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+          cache: 'pnpm'
+
       - uses: actions/setup-python@v5
         with:
           python-version-file: '.python-version'
+
       - name: Fetch catalog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/cli.py --config site.config.json --out src/data/projects.json
+        run: python3 scripts/cli.py --config site.config.json --out src/data/projects.json
+
       - name: Validate catalog (contract gate)
-        run: python scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
-      - run: npm ci
-      - run: npm run build
+        run: python3 scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build (Next static export -> out/)
+        env:
+          # 页脚 release 标识；缺省时页脚不显示 build 号
+          NEXT_PUBLIC_RUN_ID: ${{ github.run_id }}
+        run: pnpm build
+
+      # 门控：读真实产物，不读源码自述
+      - name: Contrast gate
+        run: python3 scripts/gate_contrast.py
+
+      - name: Static smoke gate
+        run: python3 scripts/smoke_static.py
+
       - uses: actions/configure-pages@v5
+
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: './dist'
+          path: './out'
 
   deploy:
     needs: build

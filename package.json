@@ -1,16 +1,27 @@
 {
   "name": "zako-mio.github.io",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
+    "dev": "next dev --port 4321",
+    "build": "next build",
+    "start": "next start",
+    "preview": "npx --yes serve@14 out -l 4322",
+    "typecheck": "tsc --noEmit",
     "fetch": "python3 scripts/cli.py --config site.config.json --out src/data/projects.json"
   },
   "dependencies": {
-    "astro": "^5.0.0",
-    "zod": "^3.23.8"
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.2"
   }
 }
