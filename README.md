@@ -30,14 +30,56 @@ pnpm preview        # 起静态服务器预览 out/
 python3 scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
 python3 scripts/gate_contrast.py          # 对比度：读 src/app/globals.css 的真实令牌
 python3 scripts/smoke_static.py           # 静态导出冒烟：读 out/ 的实产物
+python3 scripts/gate_ia_division.py       # 页面分工：读 out/，判「每类内容唯一落点」
+python3 scripts/gate_theme_states.py      # 主题三态 × 双模图表同步（防新增主题档时静默失效）
 ```
 
-两道脚本都带 `--selftest`（内置**负向夹具**，用来证明判据不是恒真）：
+四道脚本都带 `--selftest`（内置**负向夹具**，用来证明判据不是恒真）：
 
 ```bash
 python3 scripts/gate_contrast.py --selftest
 python3 scripts/smoke_static.py --selftest
+python3 scripts/gate_ia_division.py --selftest
+python3 scripts/gate_theme_states.py --selftest
 ```
+
+### `scripts/gate_theme_states.py`（`T1`–`T5`）
+
+`/stats` 的图表是**两份**构建期 SVG（浅色帧 `.chart__frame` 默认显示 ／ 深色帧
+`.chart__frame--dark` 默认 `display:none`），**换哪一份由 CSS 决定、不由 JS 决定**。
+⇒ 新增主题档（改 `THEME_MODES`）或改选择器而**未同步这些规则**时，图表会**静默**停在错误的一份上。
+本门控把该同步关系固化为判据：强制档各有对应 `[data-theme='<档>']` 规则（`T1`）、
+跟随系统分支存在且以「非强制浅色」限定（`T2`）、默认态基线存在（`T3`）、
+`charts.json` 每图 `svg.light`/`svg.dark` 成对非空（`T4`）、产物中双模帧实例成对（`T5`）。
+
+## 信息架构与页面分工
+
+IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落点：
+
+| 路由 | 回答的问题 | 专属内容（唯一落点） |
+|---|---|---|
+| `/` | 这个人**是谁、做什么、强在哪** | 定位陈述、精选代表作（`overrides.json` 的 `featured`）、**本站做法**（由 `scripts/gate-manifest.json` 派生）、站点分区导航 |
+| `/works` | **都有哪些作品** | 全量索引 ＋ 筛选/排序/搜索（筛选态写入地址栏） |
+| `/stats` | **数据的规模与口径边界** | 一切聚合数字：计数、规模指标（E）、分布、时间线 |
+| `/about` | 这个人**是谁、怎么工作、怎么联系** | 技术画像、工作方式、匿名约定、联系方式 |
+| `/works/<name>` | 单个项目的**证据** | 概览、摘要、关联、该项目图谱、入口 |
+
+- 上述分工由 `scripts/gate_ia_division.py` 机检（`A1`–`A9`）：首页**不得**枚举全量作品
+  （≤5 项）、**不得**含索引控件 `filterbar`、**不得**出现 `stats__grid` / `about__grid` /
+  `contact__list` 三类专属于他页的区块；`A4` 是对照臂（首页 Hero 必须承载定位）；
+  `A6`/`A9` 是**防回退棘轮**（首页可见字符；`A9` 额外剥除 `<details>` 折叠内容，
+  堵住「把内容全折起来而 `A6` 仍绿」的盲区）——⛔ 二者都**不判"内容够不够"**，观感归人；
+  `A7`/`A8` 校验 `scripts/gate-manifest.json` 与 `scripts/` 实际集合一致（**新增门控漏登记即 FAIL**）。
+
+### `scripts/gate-manifest.json`（门控与能力层取用的声明式清单）
+
+首页「本站是怎么做的」区块**由此文件派生渲染**，⛔ 页面不写任何计数（避免会腐化的字面常量）。
+新增/移除门控时只改该清单；`A7`/`A8` 会校验「声明的脚本存在」「声明 `selftest: true` 者真的支持
+`--selftest`」「`scripts/` 下符合 `gate_*.py` / `smoke_*.py` 命名约定的门控都已登记」。
+⇒ ⚠ **命名约定即登记义务**：新门控若不用这两个前缀，`A8` 不会发现它漏登记。
+- ⚠ 首页与 `/works` 仍有约 56% 的字面文本块重合，但经逐条核对，其来源**只有两类**：
+  精选 3 卡（**包含关系**，有意为之）与全站公共件（导航/页脚）⇒ **零枚举重复**。
+  因此字面重合度**只作报告项、不判 PASS/FAIL**（启发式，同义改写不计入）。
 
 ## 设计系统约定
 

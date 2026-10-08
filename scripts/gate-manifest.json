@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "note": "本站门控与能力层取用的声明式清单（单一真相源）。首页「本站是怎么做的」区块由此派生渲染；scripts/gate_ia_division.py 的 A7/A8 校验它与 scripts/ 的实际集合一致（漏登记即 fail-closed）。⛔ 页面不复述计数（避免会腐化的字面常量）。",
+  "gates": [
+    {
+      "script": "scripts/gate_contrast.py",
+      "reads": "src/app/globals.css 的真实令牌",
+      "selftest": true
+    },
+    {
+      "script": "scripts/smoke_static.py",
+      "reads": "out/ 的静态导出产物",
+      "selftest": true
+    },
+    {
+      "script": "scripts/gate_metrics.py",
+      "reads": "src/data/metrics.json ＋ E4 确认登记",
+      "selftest": true
+    },
+    {
+      "script": "scripts/gate_ia_division.py",
+      "reads": "out/ 的页面分工结构",
+      "selftest": true
+    },
+    {
+      "script": "scripts/gate_theme_states.py",
+      "reads": "src/lib/theme.ts ＋ globals.css ＋ charts.json ＋ out/ 的双模帧",
+      "selftest": true
+    }
+  ],
+  "capability_uses": [
+    {
+      "key": "echarts-declarative-chart-svg",
+      "artifact": "src/data/charts.json",
+      "note": "构建期 SSR 出双模 SVG（明/暗各一份），逐字节跨进程确定"
+    },
+    {
+      "key": "d3-scale-chromatic-schemes",
+      "artifact": "scripts/build_charts.mjs",
+      "note": "配色从 globals.css 解析令牌，解析失败即 fail-closed（⛔ 无硬编码兜底）"
+    },
+    {
+      "key": "cytoscape-js-graph-topology",
+      "artifact": "src/data/topology.json",
+      "note": "headless 拓扑计算（⛔ 非画布渲染，画布交互留给项目自身）"
+    }
+  ]
+}

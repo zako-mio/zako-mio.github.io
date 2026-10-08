@@ -3,17 +3,16 @@ import Link from 'next/link';
 export interface HeroProps {
   displayName: string;
   tagline: string;
-  github: string;
 }
 
 /**
  * Hero。
  *
- * ★ 本轮去重：原 Astro 版同时有 `hero__actions`（3 个按钮）与 `hero__quick`（同一组
- *   3 个链接的第二份），首屏出现两组指向相同目标的入口。现只保留一组主 CTA，
- *   跨页跳转交给顶部导航。
+ * ★ 本轮（第三批）收敛入口：原先 Hero 的按钮组与「站点分区」区块指向同样的目标
+ *   （`/works`、`/stats`、GitHub），同一批入口在首屏出现了两遍。现 Hero 只留
+ *   **一个主 CTA**，其余入口交给下方「站点分区」（每页写明它回答什么问题）。
  */
-export function Hero({ displayName, tagline, github }: HeroProps) {
+export function Hero({ displayName, tagline }: HeroProps) {
   return (
     <section id="top" className="hero">
       <div className="container hero__inner">
@@ -25,16 +24,6 @@ export function Hero({ displayName, tagline, github }: HeroProps) {
             <Link className="button button--primary" href="/works">
               浏览作品
             </Link>
-          </li>
-          <li>
-            <Link className="button" href="/stats">
-              聚合视图
-            </Link>
-          </li>
-          <li>
-            <a className="button" href={github} rel="noopener noreferrer" target="_blank">
-              GitHub
-            </a>
           </li>
         </ul>
       </div>

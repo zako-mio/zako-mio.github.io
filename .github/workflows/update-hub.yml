@@ -76,6 +76,16 @@ jobs:
       - name: Static smoke gate
         run: python3 scripts/smoke_static.py
 
+      # 页面分工门控：判「每类内容唯一落点」（首页不枚举全量作品、不嵌索引控件、
+      # 不复制 /stats 与 /about 的专属区块）。读 out/ 实产物，带 --selftest 负向夹具。
+      - name: IA division gate
+        run: python3 scripts/gate_ia_division.py
+
+      # 主题三态 × 双模图表同步：THEME_MODES 与 CSS 显隐规则必须同步，
+      # 否则新增主题档时图表会静默停在错误的一份上。
+      - name: Theme states gate
+        run: python3 scripts/gate_theme_states.py
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

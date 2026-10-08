@@ -3,7 +3,6 @@ import Link from 'next/link';
 
 import { Disclosure } from '@/components/Disclosure';
 import { TocSidebar, type TocItem } from '@/components/TocSidebar';
-import { deriveStats, loadCatalog } from '@/lib/catalog';
 import { PROFILE_GROUPS, PROFILE_LEAD } from '@/lib/profile';
 import { loadSiteConfig, SITE_TAGLINE } from '@/lib/site';
 
@@ -30,8 +29,6 @@ const PRACTICE = [
 
 export default function AboutPage() {
   const siteConfig = loadSiteConfig();
-  const { projects } = loadCatalog();
-  const stats = deriveStats(projects);
   const github = `https://github.com/${siteConfig.owner}`;
 
   return (
@@ -46,20 +43,10 @@ export default function AboutPage() {
           <section id="portrait" className="detail__section">
             <h2 className="detail__section-title">技术画像</h2>
             <p className="detail__lead prose">{PROFILE_LEAD}</p>
-            <dl className="metrics">
-              <div className="metrics__item">
-                <dt className="metrics__key">公开作品</dt>
-                <dd className="metrics__value">{stats.projectCount}</dd>
-              </div>
-              <div className="metrics__item">
-                <dt className="metrics__key">领域覆盖</dt>
-                <dd className="metrics__value">{stats.domainCounts.length}</dd>
-              </div>
-              <div className="metrics__item">
-                <dt className="metrics__key">最近更新</dt>
-                <dd className="metrics__value">{stats.latestPush?.slice(0, 10) ?? '—'}</dd>
-              </div>
-            </dl>
+            <p className="detail__note">
+              与数字有关的取值、口径与边界情况集中在 <Link href="/stats">聚合页</Link>，
+              本页不复述，避免同一组数字出现第二处真相源。
+            </p>
           </section>
 
           <section id="directions" className="detail__section">
