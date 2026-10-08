@@ -108,8 +108,11 @@ async function loadGraphDocument(source, args) {
   return response.json();
 }
 
-/** 最长路径分层（Kahn）：层号 = 该节点最长前置链长度；有环时返回 null。 */
-function longestPathLayers(nodes, edges) {
+/**
+ * 最长路径分层（Kahn）：返回 `id -> 层号` Map；有环时返回 null。
+ * 层号 = 在该边方向上的最长前置链长度；layer 0 = 该方向上无前置的节点。
+ */
+function assignLayers(nodes, edges) {
   const indegree = new Map(nodes.map((id) => [id, 0]));
   const outgoing = new Map(nodes.map((id) => [id, []]));
   for (const edge of edges) {
@@ -130,7 +133,7 @@ function longestPathLayers(nodes, edges) {
     }
   }
   if (visited !== nodes.length) return null; // 有环
-  return Math.max(...layer.values()) + 1;
+  return layer;
 }
 
 /** 找到一条具体的有向环（DFS back-edge），用于在「自称无环」与实测不符时给出可复核证据。 */
@@ -190,12 +193,55 @@ function analyse(document, source) {
   const cy = cytoscape({ headless: true, elements });
 
   const pairs = edgeRecords.map((edge) => ({ from: edge.from, to: edge.to }));
-  // 口径对齐：上游明文声明「type-only 类型导入边标注但**不参与分层**（TS 类型环合法）」
-  // ⇒ 分层只吃非 type_only 边；⛔ 若把 type-only 边算进去，会把合法类型环误报成「图有环」。
+  // 口径对齐（2026-10-08 勘误修正）：上游声明**两类边不参与分层** ——
+  //   (a) `type_only === true`：类型导入边（TS 类型环合法）；
+  //   (b) `soft === true`：**运行时反馈边**（页面原文「1 条运行时反馈边标 soft」）。
+  // ⛔ 只排除 (a) 会把 (b) 这一条反馈边留下 ⇒ 产生残环（deepseek 插件级实测：
+  //    `dsh-api-remotes ⇄ dsh-client-ui-plugin-manager`）⇒ 把上游「19 层」误判为不可复算。
+  // 实测口径复核：排除 (a)+(b) 后按上游「被依赖方在前」分层，239/239 节点分层与上游
+  //    `layers` 字段**逐节点一致**、层数 = 19 = `meta.layer_count`（G3 审计，2026-10-08）。
+  const isTyped = (edge) => edge.type_only === true;
+  const isSoft = (edge) => edge.soft === true;
+  // 方向：上游口径 Layer 0 = 基础（被依赖方）、Layer N = 最外层 ⇒ 用「`to -> from`」反转方向做分层，
+  // 使 layer 0 = 不依赖任何插件的基础件。实测该方向下 deepseek 插件级 239/239 节点与上游
+  // 自带 `layers` 字段逐节点一致（2026-10-08 G3 审计）。
   const layerPairs = edgeRecords
-    .filter((edge) => edge.type_only !== true)
-    .map((edge) => ({ from: edge.from, to: edge.to }));
-  const layers = longestPathLayers(ids, layerPairs);
+    .filter((edge) => !isTyped(edge) && !isSoft(edge))
+    .map((edge) => ({ from: edge.to, to: edge.from }));
+  const layerMap = assignLayers(ids, layerPairs);
+  const layers = layerMap === null ? null : Math.max(...layerMap.values()) + 1;
+
+  // 口径共指纹（2026-10-08 新增）：若上游自带 `layers`（id->层号）分配，则与我方复算**逐节点对账**。
+  // ⛔ 这是**我方口径自检**（不是对上游的判定）：mismatch > 0 ⇒ 我方分层口径可疑。
+  // 结果记录进产物；由 `scripts/reverify.py` 的常规复验判 FAIL（⛔ 不在构建期硬失败，避免过阻）。
+  const upstreamLayersRaw = pick(document, ['layers']);
+  let layerParity = null;
+  if (
+    layerMap !== null &&
+    upstreamLayersRaw &&
+    typeof upstreamLayersRaw === 'object' &&
+    !Array.isArray(upstreamLayersRaw)
+  ) {
+    const expected = new Map();
+    for (const [key, value] of Object.entries(upstreamLayersRaw)) {
+      const list = Array.isArray(value)
+        ? value
+        : Array.isArray(value?.nodes)
+          ? value.nodes
+          : [];
+      for (const id of list) expected.set(id, Number(key));
+    }
+    const shared = [...expected.keys()].filter((id) => layerMap.has(id));
+    const mismatches = shared.filter((id) => layerMap.get(id) !== expected.get(id));
+    layerParity = {
+      declared: expected.size,
+      compared: shared.length,
+      mismatches: mismatches.length,
+      sample: mismatches
+        .slice(0, 5)
+        .map((id) => `${id}: 上游=${expected.get(id)} 实测=${layerMap.get(id)}`),
+    };
+  }
 
   const degrees = ids
     .map((id) => ({ id, degree: cy.getElementById(id).degree() }))
@@ -220,10 +266,18 @@ function analyse(document, source) {
     layer_note:
       edgeRecords.length === layerPairs.length
         ? '全部边参与分层'
-        : `分层排除 ${edgeRecords.length - layerPairs.length} 条 type-only 边（上游声明其不参与分层）`,
+        : (() => {
+            const nType = edgeRecords.filter(isTyped).length;
+            const nSoft = edgeRecords.filter(isSoft).length;
+            const parts = [];
+            if (nType > 0) parts.push(`${nType} 条 type-only 边`);
+            if (nSoft > 0) parts.push(`${nSoft} 条 soft 运行时反馈边`);
+            return `分层排除 ${parts.join(' ＋ ')}（上游口径：两者均不参与分层）`;
+          })(),
     component_count: cy.elements().components().length,
     acyclic: layers !== null,
     longest_path_layers: layers,
+    upstream_layer_parity: layerParity,
     cycle_sample: layers === null ? (findCycle(ids, layerPairs) ?? []).slice(0, 8) : null,
     top_degree: degrees.slice(0, 5),
     top_betweenness: topBetweenness,

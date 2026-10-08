@@ -30,15 +30,20 @@ pnpm preview        # 起静态服务器预览 out/
 python3 scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
 python3 scripts/gate_contrast.py          # 对比度：读 src/app/globals.css 的真实令牌
 python3 scripts/smoke_static.py           # 静态导出冒烟：读 out/ 的实产物
+python3 scripts/gate_metrics.py           # E 指标口径（G1–G10）：读 src/data/metrics.json ＋ E4 确认登记
 python3 scripts/gate_ia_division.py       # 页面分工：读 out/，判「每类内容唯一落点」
 python3 scripts/gate_theme_states.py      # 主题三态 × 双模图表同步（防新增主题档时静默失效）
 ```
 
-四道脚本都带 `--selftest`（内置**负向夹具**，用来证明判据不是恒真）：
+> 门控**集合与口径的单一真相源**是 `scripts/gate-manifest.json`（`A8` 硬门保证漏登记即 FAIL）——
+> 本节的清单只作导航，⛔ 不写死门控数量（会腐化的字面常量）。
+
+`gate-manifest.json` 在案的每道门控都带 `--selftest`（内置**负向夹具**，用来证明判据不是恒真）：
 
 ```bash
 python3 scripts/gate_contrast.py --selftest
 python3 scripts/smoke_static.py --selftest
+python3 scripts/gate_metrics.py --selftest
 python3 scripts/gate_ia_division.py --selftest
 python3 scripts/gate_theme_states.py --selftest
 ```
@@ -51,6 +56,40 @@ python3 scripts/gate_theme_states.py --selftest
 本门控把该同步关系固化为判据：强制档各有对应 `[data-theme='<档>']` 规则（`T1`）、
 跟随系统分支存在且以「非强制浅色」限定（`T2`）、默认态基线存在（`T3`）、
 `charts.json` 每图 `svg.light`/`svg.dark` 成对非空（`T4`）、产物中双模帧实例成对（`T5`）。
+
+### 图谱分层口径（`scripts/build_topology.mjs`）
+
+对项目公开的 `*-dag.json` 做**构建期 headless 拓扑复算**（cytoscape 只当内核，不做画布），
+与项目自称**并陈**。分层口径须与上游一致，否则会把合法图误报成「有环」：
+
+- **不参与分层的边（两类）**：`type_only === true`（TS 类型导入边，类型环合法）；
+  `soft === true`（**运行时反馈边**）。⛔ 只排除前者会留下反馈边 ⇒ 残环 ⇒ 误报「19 层不可复算」。
+- **方向**：Layer 0 = 基础（被依赖方）⇒ 用「`to -> from`」反转方向做最长路径分层。
+- **口径共指纹**：`build_topology.mjs` 把「我方复算 vs 上游自带 `layers` 字段」的逐节点比对
+  记入 `analysis.upstream_layer_parity`；`pnpm reverify`（S3）见 `mismatches > 0` 即 FAIL。
+  ⇒ 详见 Mission 目录 `ERRATA-batch3-deepseek-acyclic.md`（2026-10-08 勘误）。
+
+## 日常复验（`scripts/reverify.py`）
+
+门控全绿**不等于**交付可信（门控可能本身哑火）。日常复验把「门控之外的复验手法」固化成一个
+**可执行、fail-closed** 的入口（**非门控**，不进 `scripts/gate-manifest.json`）：
+
+```bash
+pnpm build && pnpm reverify          # = python3 scripts/reverify.py
+python3 scripts/reverify.py --skip S2,S5   # 跳过慢/联网段
+```
+
+| 段 | 内容 | 为什么 |
+|---|---|---|
+| `S1` | 清单在案的每道门控跑「本体 ＋ `--selftest`」，rc 必须为 0；并核对「`gate_*.py`/`smoke_*.py` 全部登记」 | 门控与登记义务一起复验 |
+| `S2` | `charts` / `topology` 各**两个独立进程**重建，剔除运行时钟字段后逐字节一致；同路径二次运行幂等 | 派生件确定性与幂等（⛔ 同进程二次渲染会 `zr0`→`zr1`，必须跨进程） |
+| `S3` | **数字类断言全量对账**（当场重算，⛔ 不复读记录）：跨产物计数一致、`topology↔metrics` 复算、**上游层次口径共指纹**、产物渲染断言 | 数字类断言只扫记录会漏检；口径漂移会静默产生假结论 |
+| `S4` | 每道声明 `selftest:true` 的门控，其自检输出**必须含负向夹具触发证据** | 防「门控是恒真/哑火」——自检必须真能 FAIL |
+| `S5` | `acceptance_probe`（结构类，须 ALL PASS）＋ `dup_probe`（数值/报告类，只须可跑） | 探针复跑；重合度是**报告项**，⛔ 不判 PASS/FAIL |
+
+> ★ `S3` 的「**上游层次口径共指纹**」是 2026-10-08 勘误后的回归护栏：`build_topology.mjs` 会记录
+> `upstream_layer_parity`（我方复算 vs 上游自带 `layers` 字段的逐节点比对），`reverify` 见 `mismatches > 0` 即 FAIL。
+> 详见 Mission 目录 `ERRATA-batch3-deepseek-acyclic.md`。
 
 ## 信息架构与页面分工
 

@@ -10,6 +10,7 @@
     "start": "next start",
     "preview": "npx --yes serve@14 out -l 4322",
     "typecheck": "tsc --noEmit",
+    "reverify": "python3 scripts/reverify.py",
     "fetch": "python3 scripts/cli.py --config site.config.json --out src/data/projects.json"
   },
   "dependencies": {
