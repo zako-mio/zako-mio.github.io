@@ -2,8 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Disclosure } from '@/components/Disclosure';
+import { PracticeCycleFigure } from '@/components/figures/PracticeCycleFigure';
 import { TocSidebar, type TocItem } from '@/components/TocSidebar';
-import { PROFILE_GROUPS, PROFILE_LEAD } from '@/lib/profile';
+import {
+  PROFILE_FOCUS,
+  PROFILE_GROUPS,
+  PROFILE_LEAD,
+  PROFILE_PRACTICE,
+  PROFILE_ROLE,
+  PROFILE_TIMELINE,
+  PROFILE_TOOLKIT,
+  PROFILE_WORKING_ON,
+} from '@/lib/profile';
 import { loadSiteConfig, SITE_TAGLINE } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -14,17 +24,13 @@ export const metadata: Metadata = {
 
 const TOC: TocItem[] = [
   { id: 'portrait', label: '技术画像' },
+  { id: 'working-on', label: '近期在做' },
   { id: 'directions', label: '方向与兴趣' },
+  { id: 'toolkit', label: '工具链' },
   { id: 'practice', label: '工作方式' },
+  { id: 'timeline', label: '时间线' },
   { id: 'anonymity', label: '关于匿名' },
   { id: 'contact', label: '联系' },
-];
-
-const PRACTICE = [
-  '单一真相源 + 派生：能派生的数字不手抄，改了源就重生成。',
-  '可复现优先：结论要能回源，取证件与门控随产物一起留档。',
-  '先定口径再采数：术语不一致时先写规范，宁可空着也不拼凑可比性。',
-  '原型先于讨论：聊不拢的地方就出一个能跑的样张。',
 ];
 
 export default function AboutPage() {
@@ -40,16 +46,48 @@ export default function AboutPage() {
 
       <div className="detail__layout">
         <article className="detail__main">
-          <section id="portrait" className="detail__section">
+          <section id="portrait" className="detail__section" data-reveal>
             <h2 className="detail__section-title">技术画像</h2>
             <p className="detail__lead prose">{PROFILE_LEAD}</p>
+
+            <ul className="threads">
+              <li className="threads__item">
+                <span className="threads__key">定位</span>
+                <span className="threads__val">{PROFILE_ROLE}</span>
+              </li>
+              <li className="threads__item">
+                <span className="threads__key">主线</span>
+                <span className="threads__val">开源实践 · 可复现的工程体系</span>
+              </li>
+              <li className="threads__item">
+                <span className="threads__key">方式</span>
+                <span className="threads__val">把业务问题翻译成数据与算法问题，再交付结论</span>
+              </li>
+            </ul>
+
             <p className="detail__note">
               与数字有关的取值、口径与边界情况集中在 <Link href="/stats">聚合页</Link>，
               本页不复述，避免同一组数字出现第二处真相源。
             </p>
           </section>
 
-          <section id="directions" className="detail__section">
+          <section id="working-on" className="detail__section" data-reveal>
+            <h2 className="detail__section-title">近期在做</h2>
+            {/* 图形化编排：左侧一条贯穿的强调轨把三条串成「并行推进中」的一条带，
+                ⛔ 不是三个并列的项目符号 —— 形状本身表达了「同一时期、三条线」。 */}
+            <ul className="threads threads--rail">
+              {PROFILE_WORKING_ON.map((item, index) => (
+                <li className="threads__item" key={item}>
+                  <span className="threads__mark" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="threads__val">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section id="directions" className="detail__section" data-reveal>
             <h2 className="detail__section-title">方向与兴趣</h2>
             <div className="about__blocks">
               {PROFILE_GROUPS.map((group) => (
@@ -65,15 +103,51 @@ export default function AboutPage() {
                 </div>
               ))}
             </div>
+            <p className="detail__note">
+              左栏常驻的「关注方向」是这里的压缩视图（{PROFILE_FOCUS.join(' · ')}），
+              两处同源，改一处即改两处。
+            </p>
           </section>
 
-          <section id="practice" className="detail__section">
+          <section id="toolkit" className="detail__section" data-reveal>
+            <h2 className="detail__section-title">工具链</h2>
+            <div className="about__blocks">
+              {PROFILE_TOOLKIT.map((group) => (
+                <div className="about__block" key={group.key}>
+                  <h3 className="about__label">{group.label}</h3>
+                  <ul className="taglist">
+                    {group.items.map((item) => (
+                      <li className="chip" key={item}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section id="practice" className="detail__section" data-reveal>
             <h2 className="detail__section-title">工作方式</h2>
+
+            {/* ★ 四条原则的真实关系是**闭环**（口径错了要回炉、复盘产出下一轮口径）。
+                并列列表会把「环」讲成「清单」，信息被抹平 ⇒ 这里先出图，文字作展开。 */}
+            <figure className="figure">
+              <div className="figure__frame">
+                <PracticeCycleFigure />
+              </div>
+              <figcaption className="figure__caption">
+                四步不是并列而是闭环：复盘的结果回流成下一轮的口径修正。
+                下面是每步的具体做法。
+              </figcaption>
+            </figure>
+
             <ul className="notes notes--plain">
-              {PRACTICE.map((item) => (
+              {PROFILE_PRACTICE.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ul>
+
             <Disclosure summary="这些原则怎么体现在本站里" hint="可展开">
               <ul className="notes notes--plain">
                 <li>项目索引由每日管道从仓库取数生成，不在页面上手抄。</li>
@@ -86,7 +160,27 @@ export default function AboutPage() {
             </Disclosure>
           </section>
 
-          <section id="anonymity" className="detail__section">
+          <section id="timeline" className="detail__section" data-reveal>
+            <h2 className="detail__section-title">时间线</h2>
+            {/* 图形化：用一条纵向脊线把年份串起来，层级由几何位置表达，
+                ⛔ 不靠「第一、其次、最后」这类连接词分点。 */}
+            <ol className="milestones">
+              {PROFILE_TIMELINE.map((entry) => (
+                <li className="milestones__item" key={entry.year}>
+                  <span className="milestones__year">{entry.year}</span>
+                  <span className="milestones__body">
+                    <span className="milestones__title">{entry.title}</span>
+                    <span className="milestones__note">{entry.note}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <p className="detail__note">
+              只到年份粒度：更细的时间点会与可反查的公开记录对上，违背本站的匿名约定。
+            </p>
+          </section>
+
+          <section id="anonymity" className="detail__section" data-reveal>
             <h2 className="detail__section-title">关于匿名</h2>
             <p className="detail__lead prose">
               本站以匿名方式呈现：不出现姓名、单位、地域等可实名定位的字段。
@@ -94,7 +188,7 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section id="contact" className="detail__section">
+          <section id="contact" className="detail__section" data-reveal>
             <h2 className="detail__section-title">联系</h2>
             <ul className="contact__list">
               <li>

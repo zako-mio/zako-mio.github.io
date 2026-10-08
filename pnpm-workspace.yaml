@@ -1,0 +1,6 @@
+# pnpm 11：依赖构建脚本白名单。
+# @tsparticles/engine 的 install 脚本经人工审阅（2026-10-09）：只读根 package.json
+# 并打印「不兼容/已弃用依赖」体检建议，**无写盘、无网络、无子进程** ⇒ 放行。
+# 登记口径：允许列表写在构建工具自己的配置里（唯一真相源），⛔ 不在 package.json 重复声明。
+allowBuilds:
+  '@tsparticles/engine': true

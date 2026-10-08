@@ -14,6 +14,9 @@
     "fetch": "python3 scripts/cli.py --config site.config.json --out src/data/projects.json"
   },
   "dependencies": {
+    "@tsparticles/preset-stars": "4.4.0",
+    "@tsparticles/react": "4.4.0",
+    "@tsparticles/slim": "4.4.0",
     "next": "^15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -1,22 +1,32 @@
 import Link from 'next/link';
 
+import { HeroFigure } from './figures/HeroFigure';
+
+import { PROFILE_ROLE } from '@/lib/profile';
+
 export interface HeroProps {
   displayName: string;
   tagline: string;
+  /** 只有首页确实有「主线作品」区块时才渲染滚动提示 —— ⛔ 不留死锚点。 */
+  hasFeatured?: boolean;
 }
 
 /**
- * Hero。
+ * Hero（第五批：加深氛围与图形层）。
  *
- * ★ 本轮（第三批）收敛入口：原先 Hero 的按钮组与「站点分区」区块指向同样的目标
- *   （`/works`、`/stats`、GitHub），同一批入口在首屏出现了两遍。现 Hero 只留
- *   **一个主 CTA**，其余入口交给下方「站点分区」（每页写明它回答什么问题）。
+ * ★ 入口收敛沿用第三批的决定：Hero 只留**一个主 CTA**，
+ *   其余入口交给下方「站点分区」（每页写明它回答什么问题）。
+ * ★ 新增 `HeroFigure`（`aria-hidden` 的装饰星座）：首屏的图形化承担
+ *   「收敛 → 加工 → 产出」的语义，⛔ 它不重复任何文字结论，也不承载计数。
+ * ★ 进场动效由 CSS 关键帧驱动（`html.js-motion .hero__inner > *`），
+ *   ⛔ 不依赖 JS 计算 ⇒ 首帧即开始，不出现「先静后动」的跳变。
  */
-export function Hero({ displayName, tagline }: HeroProps) {
+export function Hero({ displayName, tagline, hasFeatured = false }: HeroProps) {
   return (
     <section id="top" className="hero">
+      <HeroFigure />
       <div className="container hero__inner">
-        <p className="hero__eyebrow">数据科学 × AI Agent 工程</p>
+        <p className="hero__eyebrow">{PROFILE_ROLE}</p>
         <h1 className="hero__title">{displayName}</h1>
         <p className="hero__tagline prose">{tagline}</p>
         <ul className="hero__actions">
@@ -26,6 +36,17 @@ export function Hero({ displayName, tagline }: HeroProps) {
             </Link>
           </li>
         </ul>
+
+        {/* 几何化的「下面还有内容」提示（⛔ 不是又一个路由入口：
+            它是页内锚点，不参与「同一批入口出现两遍」的那类重叠）。 */}
+        {hasFeatured ? (
+          <a className="hero__cue" href="#featured">
+            <span className="hero__cue-rail" aria-hidden="true">
+              <span className="hero__cue-dot" />
+            </span>
+            向下看主线
+          </a>
+        ) : null}
       </div>
     </section>
   );

@@ -7,6 +7,7 @@ import { ProjectCard } from '@/components/ProjectCard';
 import { ProjectFigure } from '@/components/ProjectFigure';
 import { TocSidebar, type TocItem } from '@/components/TocSidebar';
 import { loadCatalog } from '@/lib/catalog';
+import { recencyRangeOf } from '@/lib/recency';
 import { DOMAIN_LABELS, TYPE_LABELS } from '@/lib/schema';
 
 export const dynamicParams = false;
@@ -42,6 +43,9 @@ export default async function ProjectPage({ params }: PageProps) {
   const { projects } = loadCatalog();
   const project = projects.find((item) => item.name === name);
   if (!project) notFound();
+
+  // 卡片标尺的共享跨度：算一次给全部同类卡（纯函数，不取数）
+  const range = recencyRangeOf(projects);
 
   const typeLabel = TYPE_LABELS[project.type];
   const domainLabels = project.domains.map((domain) => DOMAIN_LABELS[domain]);
@@ -204,7 +208,7 @@ export default async function ProjectPage({ params }: PageProps) {
           <h2 className="detail__section-title">同类作品</h2>
           <div className="projects-grid">
             {related.map(({ project: item }) => (
-              <ProjectCard project={item} key={item.name} />
+              <ProjectCard project={item} key={item.name} range={range} />
             ))}
           </div>
         </section>

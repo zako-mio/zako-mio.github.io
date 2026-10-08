@@ -131,6 +131,31 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   `color-scheme` 不会重算（`fe-starter-kit/docs/STACK-NOTES.md` 两栈各复现一次）。
   `color-scheme` 由 CSS 选择器分支承担，`data-theme` 由 pre-paint 内联脚本落定。
 - **语义 HTML**：卡片取消整卡覆盖层，交互目标是显式链接（键盘 / 屏幕阅读器友好）。
+- **背景系统 = 真实公开素材**（第六批）：浅/深各一帧，显隐由**主题选择器**决定
+  （`[data-theme]` / `prefers-color-scheme` 决定 `.backdrop__photo--day|--night` 谁 `display:block`），
+  非当前主题的一帧 `display:none` ⇒ 浏览器**不会下载**它。⛔ 不要改成「两帧各挂 opacity」。
+  - 夜间：ESO `eso0934a`（真实银河，**CC BY 4.0，须署名**，署名在页脚 `footer__credits`）。
+  - 日间：`Lofoten, Norway (Unsplash)`（极光天幕，**CC0**）按亮度派生的浅色纱幕
+    （暗天空归白 ⇒ 不在浅色页底压出灰幕）。
+  - 产物 `public/backdrop/*.webp`（1280/1920/2560 + 一条夜间竖版）由
+    `scripts/build_backdrop_assets.py` **幂等**生成（需 Pillow + numpy；原始素材不入仓，脚本头注有直链）。
+  - 正文压在照片上 ⇒ **令牌对比度 ≠ 页面对比度**：凡动背景，必须重跑合成后对比度实测
+    （批五 `batch5-evidence/contrast_probe.py` 只覆盖浅色；批六
+    `batch6-evidence/contrast_probe_theme.py` 覆盖**深浅双主题**）。
+- **夜间星野特效（tsparticles，MIT）**：`preset-stars` + 本站覆盖项，**叠加**在银河照片之上。
+  懒加载（`next/dynamic({ssr:false})`）⇒ ⛔ 不进首屏 JS（实测 `/` 仍 106 kB，粒子独立分块 105 KB）。
+  两条熔断**必须保留**：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下**卸载画布**
+  （浅色档同理：`display:none` 只是「不显示」，rAF 仍在算）。判据见
+  `batch6-evidence/verify_backdrop_fx.py`（含「画布 backing = CSS × DPR」的清晰度机检）。
+- **网格/弹性子项必须显式收缩**：`grid-template-columns: 1fr` 与 flex 子项默认 `min-width: auto`
+  ⇒ **不会收缩到内容最小宽度以下**。实测：`.detail__main` 漏了这一条，窄屏被构建期 ECharts SVG
+  与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器
+  （`.chart__frame` / `.mtable__scroll`）并给外层 `min-width: 0`。
+- **内联 SVG 图件**（`src/components/figures/*`）为**手工定位**（无布局引擎）⇒
+  几何缺陷不会自己暴露。判据 `batch6-evidence/verify_svg_layout.py`：
+  `S1` 文字压框/压字、`S2` 箭头落点（矩形切边合法／圆形须留 ≥4px 净距），带 `--selftest` 负向夹具。
+  ⚠ **声明的不覆盖面**：`circle`/`ellipse`/`path` 不判（圆的外接正方形会把「环内中央的文字」
+  误报为重叠）。改动图件后必须重跑该判据。
 
 ## 已知取舍
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ProjectCard, searchBlobOf } from './ProjectCard';
+import type { RecencyRange } from '@/lib/recency';
 import { DOMAIN_LABELS, TYPE_LABELS, type Project } from '@/lib/schema';
 
 type SortKey = 'updated' | 'name' | 'stars';
@@ -24,6 +25,12 @@ const UNLABELLED = '未标注';
 
 export interface WorksExplorerProps {
   projects: Project[];
+  /**
+   * 卡片「活跃度标尺」的共享时间跨度。
+   * ⚠ 必须由**服务端**算好传进来：本组件是客户端组件，
+   *   若自行去 import 取数模块会把 `node:fs` 拽进浏览器包（构建期即失败）。
+   */
+  range?: RecencyRange | null;
 }
 
 function readStateFromUrl() {
@@ -77,7 +84,7 @@ function writeStateToUrl(state: {
  * ★ 无 JS 降级：客户端组件同样参与 SSR，首屏 HTML 含**全部**项目卡；
  *   筛选/排序/视图需要 JS，故附 noscript 说明。⛔ 不得把初始渲染改为「先空列表」。
  */
-export function WorksExplorer({ projects }: WorksExplorerProps) {
+export function WorksExplorer({ projects, range = null }: WorksExplorerProps) {
   const [query, setQuery] = useState('');
   const [types, setTypes] = useState<string[]>([]);
   const [domains, setDomains] = useState<string[]>([]);
@@ -321,7 +328,7 @@ export function WorksExplorer({ projects }: WorksExplorerProps) {
               </h3>
               <div className="projects-grid">
                 {items.map((project) => (
-                  <ProjectCard project={project} key={project.name} />
+                  <ProjectCard project={project} key={project.name} range={range} />
                 ))}
               </div>
             </section>
@@ -330,7 +337,7 @@ export function WorksExplorer({ projects }: WorksExplorerProps) {
       ) : (
         <div className={view === 'list' ? 'projects-grid projects-grid--list' : 'projects-grid'}>
           {visible.map((project) => (
-            <ProjectCard project={project} key={project.name} />
+            <ProjectCard project={project} key={project.name} range={range} />
           ))}
         </div>
       )}

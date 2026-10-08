@@ -28,32 +28,37 @@ function num(value: number | null | undefined) {
 }
 
 function ScopeTable({ entry }: { entry: MetricEntry }) {
+  // ★ 必须套 `.mtable__scroll`（`overflow-x:auto`）：指标表列多、窄屏必然宽于视口，
+  //   没有滚动容器时会把**整页**撑宽（实测 390px 下 403 vs 390，右侧被截断）。
+  //   ⚠ 该 CSS 类此前只被 /stats 用上，本处漏了 —— 属「样式写了但标记没用」的死规则盲区。
   return (
-    <table className="mtable">
-      <caption className="sr-only">该项目的规模指标（按 scope）</caption>
-      <thead>
-        <tr>
-          <th scope="col">scope（图/视图）</th>
-          {METRIC_COLUMNS.map((column) => (
-            <th className="mtable__num" key={column.key} scope="col" title={column.hint}>
-              {column.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {entry.figures.map((figure) => (
-          <tr key={figure.scope}>
-            <td className="mtable__scope">{figure.scope}</td>
+    <div className="mtable__scroll">
+      <table className="mtable">
+        <caption className="sr-only">该项目的规模指标（按 scope）</caption>
+        <thead>
+          <tr>
+            <th scope="col">scope（图/视图）</th>
             {METRIC_COLUMNS.map((column) => (
-              <td className="mtable__num" key={column.key}>
-                {num(figure[column.key])}
-              </td>
+              <th className="mtable__num" key={column.key} scope="col" title={column.hint}>
+                {column.label}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {entry.figures.map((figure) => (
+            <tr key={figure.scope}>
+              <td className="mtable__scope">{figure.scope}</td>
+              {METRIC_COLUMNS.map((column) => (
+                <td className="mtable__num" key={column.key}>
+                  {num(figure[column.key])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

@@ -1,4 +1,5 @@
 import { Disclosure } from '@/components/Disclosure';
+import { StructureFigure } from '@/components/figures/StructureFigure';
 import { loadGateManifest } from '@/lib/build-notes';
 
 /**
@@ -21,12 +22,24 @@ export function SiteBuildNotes() {
   const manifest = loadGateManifest();
 
   return (
-    <section id="build-notes" className="section section--tight">
+    <section id="build-notes" className="section section--tight" data-reveal>
       <div className="container">
         <header className="section__head">
           <h2 className="section__title">本站是怎么做的</h2>
           <p className="section__subtitle">这套站点自身即作品，也是前端能力系统的首个真实调用方</p>
         </header>
+
+        {/* ★ 结构优先：这条链是「源 → 管道 → 产物 → 呈现」的有向链，
+            链式结构的正确表达是图，⛔ 不是又一段分点文字。图只写角色与流向，不写计数。 */}
+        <figure className="figure">
+          <div className="figure__frame">
+            <StructureFigure />
+          </div>
+          <figcaption className="figure__caption">
+            上面这张图是本页要说的全部：左侧是源，中间是管道，右侧是产物与呈现面。
+            下方的三条只是把同一件事讲成句子；两处⛔ 不各说一遍细节。
+          </figcaption>
+        </figure>
 
         <ul className="notes notes--plain">
           <li>

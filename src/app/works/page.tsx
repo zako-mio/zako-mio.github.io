@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { WorksExplorer } from '@/components/WorksExplorer';
 import { loadCatalog } from '@/lib/catalog';
+import { recencyRangeOf } from '@/lib/recency';
 
 export const metadata: Metadata = {
   title: '作品',
@@ -23,7 +24,7 @@ export default function WorksPage() {
         </header>
 
         {ok && projects.length > 0 ? (
-          <WorksExplorer projects={projects} />
+          <WorksExplorer projects={projects} range={recencyRangeOf(projects)} />
         ) : (
           <p className="empty-state">{hint ?? '暂无项目数据。'}</p>
         )}

@@ -47,6 +47,22 @@ export function SiteFooter({ displayName, generatedAt = null, runId = null }: Si
             <code>output: &apos;export&apos;</code>）
           </span>
         </p>
+        <p className="footer__credits">
+          背景素材：
+          <a href="https://www.eso.org/public/images/eso0934a/" rel="noopener noreferrer" target="_blank">
+            ESO/S. Guisard
+          </a>
+          （CC BY 4.0，银河夜景）
+          <span> · 极光天幕 </span>
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Lofoten,_Norway_(Unsplash).jpg"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Unsplash
+          </a>
+          （CC0，经亮度派生为浅色纱幕）
+        </p>
       </div>
     </footer>
   );

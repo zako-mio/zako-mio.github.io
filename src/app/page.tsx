@@ -3,6 +3,7 @@ import { ProjectCard } from '@/components/ProjectCard';
 import { SiteBuildNotes } from '@/components/SiteBuildNotes';
 import { SiteDirectory, type DirectoryItem } from '@/components/SiteDirectory';
 import { loadCatalog } from '@/lib/catalog';
+import { recencyRangeOf } from '@/lib/recency';
 import { loadSiteConfig, SITE_TAGLINE } from '@/lib/site';
 
 const siteConfig = loadSiteConfig();
@@ -51,13 +52,15 @@ export default function HomePage() {
   const github = `https://github.com/${siteConfig.owner}`;
   const featured = projects.filter((project) => project.featured);
   const hasProjects = ok && projects.length > 0;
+  // 卡片标尺的共享跨度：服务端算一次，传给每张卡（⛔ 客户端不取数）
+  const range = recencyRangeOf(projects);
 
   return (
     <>
-      <Hero displayName={siteConfig.display_name} tagline={SITE_TAGLINE} />
+      <Hero displayName={siteConfig.display_name} tagline={SITE_TAGLINE} hasFeatured={featured.length > 0} />
 
       {featured.length > 0 ? (
-        <section id="featured" className="section">
+        <section id="featured" className="section" data-reveal>
           <div className="container">
             <header className="section__head">
               <h2 className="section__title">主线作品</h2>
@@ -69,8 +72,8 @@ export default function HomePage() {
               </p>
             </header>
             <div className="projects-grid">
-              {featured.map((project) => (
-                <ProjectCard project={project} key={project.name} />
+              {featured.map((project, index) => (
+                <ProjectCard project={project} key={project.name} range={range} reveal index={index} />
               ))}
             </div>
           </div>

@@ -17,6 +17,7 @@
 | A7 | `scripts/gate-manifest.json` 声明自洽（脚本存在／`selftest: true` 者真支持 `--selftest`） | — | 全部成立 |
 | A8 | `scripts/` 下符合命名约定的门控**全部已登记**（漏登记 fail-closed） | — | 差集为空 |
 | A9 | 首页**非折叠**可见字符棘轮（剥除 `<details>` 全部内容） | 1884 中含折叠 710（37.7%） | ≥ 1100 |
+| A10 | **全局公共件（左栏 rail）不得夹带某页专属内容**：每页恰好 1 个 rail；rail 内 ⛔ 无 `filterbar`/`stats__grid`/`about__grid`/`contact__list`；⛔ 无 `/works/<name>` 详情链接 | 第五批新增 | 全部成立 |
 
 阈值推导（⛔ 不由规模直觉）：
   A1 上界 5 = 全量 10 之半。首页职责＝定位，「精选」已裁 3 项（`overrides.json` 的 featured）⇒
@@ -26,10 +27,15 @@
   A6 为**棘轮**（ratchet）：阈值取「第三批充实后实测值向下取整到百位」，
      用途是**防回退**，⛔ **不判"内容够不够"** —— 观感充足度属主观裁决，归人
      （见 `03-stage4-verification.md`）。
-  A9 为 A6 的**修正判据**：A6 数的是 HTML 文本量，`<details>` 折叠内容也算在内 ⇒
-     存在「把内容全折起来而 A6 仍绿」的盲区。A9 剥除 `<details>` 全部内容后计数，
-     阈值同样由实测值向下取整（实证：折叠占首页可见字符的 37.7%）。
-     ⚠ A9 只防「折叠吃光首屏」，⛔ 仍不判"够不够"。
+   A9 为 A6 的**修正判据**：A6 数的是 HTML 文本量，`<details>` 折叠内容也算在内 ⇒
+      存在「把内容全折起来而 A6 仍绿」的盲区。A9 剥除 `<details>` 全部内容后计数，
+      阈值同样由实测值向下取整（实证：折叠占首页可见字符的 37.7%）。
+      ⚠ A9 只防「折叠吃光首屏」，⛔ 仍不判"够不够"。
+   A10 为**公共件的越权守卫**（第五批新增）：本批加了「全站常驻左栏」，
+      它是**每页都渲染**的公共件 ⇒ 一旦它夹带某页专属区块或详情链接，
+      各页的「唯一落点」会被公共件在后台破坏，而 A1–A3 只查首页、看不出来。
+      ⇒ 把该纪律前移成结构判据：rail 存在且仅 1 个、rail 内不含三类专属区块，
+      也不含详情链接。⚠ 它只管「有没有越权」，⛔ 不判 rail 长得好不好（观感归人）。
 
 用法：
     python3 scripts/gate_ia_division.py                  # 判 out/
@@ -58,6 +64,9 @@ A6_MIN_CHARS = 1800
 # A9 棘轮：剥除 <details> 后的非折叠可见字符实测 = 1173 ⇒ 向下取整到百位 = 1100
 A9_MIN_CHARS = 1100
 DETAILS = re.compile(r"<details\b.*?</details>", re.S | re.I)
+# 公共件（左栏 rail）：由 aria-label 锚定，避免误抓页面里别的 <aside>
+RAIL = re.compile(r'<aside\b[^>]*class="[^"]*\brail\b[^"]*"[^>]*>(?P<body>.*?)</aside>', re.S | re.I)
+RAIL_FORBIDDEN = ("filterbar", "stats__grid", "about__grid", "contact__list")
 GATE_NAME_RE = re.compile(r"^(gate_|smoke_).*\.py$")
 MANIFEST_REL = Path("scripts") / "gate-manifest.json"
 
@@ -94,6 +103,54 @@ def _visible_chars(path: Path, drop_details: bool = False) -> int:
         raw = DETAILS.sub(" ", raw)
     text = re.sub(r"<[^>]+>", " ", raw)
     return len(re.sub(r"\s+", " ", text).strip())
+
+
+def _rail_checks(root: Path) -> list[tuple[str, bool, str]]:
+    """A10：全局公共件（左栏 rail）的越权守卫。
+
+    公共件是**每页都渲染**的；它若夹带某页专属区块或详情链接，
+    各页的「唯一落点」会被它在后台破坏（A1–A3 只查首页，抓不到）。
+    """
+    pages = sorted(root.rglob("*.html"))
+    if not pages:
+        return [("A10", False, f"{root} 下没有 HTML 产物（先跑 pnpm build）")]
+
+    missing: list[str] = []
+    duplicated: list[str] = []
+    leaked: list[str] = []
+    detail_links: list[str] = []
+
+    for page in pages:
+        rel = page.relative_to(root).as_posix()
+        html = page.read_text(encoding="utf-8", errors="replace")
+        rails = RAIL.findall(html)
+        if not rails:
+            missing.append(rel)
+            continue
+        if len(rails) > 1:
+            duplicated.append(f"{rel}×{len(rails)}")
+        body = "\n".join(rails)
+        hit = [name for name in RAIL_FORBIDDEN if name in body]
+        if hit:
+            leaked.append(f"{rel}:{hit}")
+        detail = DETAIL.findall(body)
+        if detail:
+            detail_links.append(f"{rel}:{detail}")
+
+    results = [
+        ("A10.rail-present", not missing,
+         f"每页恰好 1 个左栏公共件"
+         + (" · 缺 rail: " + ", ".join(missing) if missing else "")
+         + (" · rail 重复: " + ", ".join(duplicated) if duplicated else "")),
+        ("A10.rail-chrome-only", not leaked,
+         "左栏未夹带某页专属区块" if not leaked else "左栏越权: " + "; ".join(leaked)),
+        ("A10.rail-no-detail-links", not detail_links,
+         "左栏无 /works/<name> 详情链接" if not detail_links else "左栏含详情链接: " + "; ".join(detail_links)),
+    ]
+    # 重复的 rail 并入存在性判据一起判：不额外增添 id，避免判据数量与实现漂移
+    if duplicated:
+        results[0] = ("A10.rail-present", False, results[0][2])
+    return results
 
 
 def check(root: Path, repo: Path | None = None) -> list[tuple[str, bool, str]]:
@@ -134,6 +191,7 @@ def check(root: Path, repo: Path | None = None) -> list[tuple[str, bool, str]]:
     results.append(("A9", unfolded >= A9_MIN_CHARS,
                     f"首页非折叠可见字符 {unfolded}（棘轮下限 {A9_MIN_CHARS}；折叠占 {vis - unfolded}）"))
 
+    results.extend(_rail_checks(root))
     results.extend(_check_manifest(repo))
     return results
 
@@ -183,16 +241,21 @@ HERO_OK = (
 FILLER = "门控读真实产物，不读源码自述。能力层记录取用后登记消费。" * 80
 
 
+# 合规的左栏公共件：四路由导航 + 站点标识，⛔ 不含专属区块、不含详情链接
+RAIL_OK = '<aside class="rail" aria-label="站点侧栏"><nav><a href="/works">作品</a><a href="/about">关于</a></nav></aside>'
+
+
 def _compliant_fixture(root: Path) -> None:
-    """合成**合规**基线：A1–A8 全 PASS（含清单与 scripts/ 实际集合一致）。"""
+    """合成**合规**基线：A1–A10 全 PASS（含清单与 scripts/ 实际集合一致）。"""
     (root / "works").mkdir(parents=True, exist_ok=True)
     (root / "about").mkdir(parents=True, exist_ok=True)
     links = "".join(f'<a href="/works/p{i}/">p{i}</a>' for i in range(10))
     (root / "works" / "index.html").write_text(
-        f"<html><body><div class=\"filterbar\">{links}</div></body></html>", encoding="utf-8")
+        f"<html><body>{RAIL_OK}<div class=\"filterbar\">{links}</div></body></html>", encoding="utf-8")
     (root / "about" / "index.html").write_text(
-        '<html><body><ul class="contact__list"><li>mail</li></ul></body></html>', encoding="utf-8")
-    home = HERO_OK + "".join(f'<a href="/works/p{i}/">p{i}</a>' for i in range(3)) + f"<footer>{FILLER}</footer>"
+        f'<html><body>{RAIL_OK}<ul class="contact__list"><li>mail</li></ul></body></html>', encoding="utf-8")
+    home = (RAIL_OK + HERO_OK + "".join(f'<a href="/works/p{i}/">p{i}</a>' for i in range(3))
+            + f"<footer>{FILLER}</footer>")
     (root / "index.html").write_text(f"<html><body>{home}</body></html>", encoding="utf-8")
 
     scripts = root.parent / "scripts"
@@ -246,6 +309,14 @@ def selftest() -> bool:
         mutate_and_probe("A9 内容被整块折进 details", "index.html",
                          lambda s: s.replace(f"<footer>{FILLER}</footer>",
                                              f"<footer><details>{FILLER}</details></footer>"), "A9")
+        mutate_and_probe("A10 左栏夹带别页专属区块", "index.html",
+                         lambda s: s.replace("</nav></aside>", '</nav><ul class="contact__list"></ul></aside>'),
+                         "A10")
+        mutate_and_probe("A10 左栏夹带详情链接", "index.html",
+                         lambda s: s.replace("</nav></aside>", '</nav><a href="/works/p0/">p0</a></aside>'),
+                         "A10")
+        mutate_and_probe("A10 某页缺左栏公共件", "about/index.html",
+                         lambda s: s.replace(RAIL_OK, ""), "A10")
 
         def mutate_file_and_probe(name: str, relpath: str, transform, criterion: str) -> None:
             nonlocal ok
