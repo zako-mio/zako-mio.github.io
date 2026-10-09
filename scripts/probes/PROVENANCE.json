@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "note": "scripts/probes/ 下全部探针的登记表（单一真相源）。完整性由 scripts/probes/check_provenance.py 机检（漏登记 / 幽灵登记 fail-closed）。⛔ 本表不记录任何随上游漂移的状态快照，只记录「来源」与「漂移方向」。",
+  "archive_root": "~/opencode/archive/Mission-file",
+  "origin_enum": {
+    "archive-copy": "从 Mission 归档件复制而来（同一仪器两处副本 ⇒ 需声明漂移方向）",
+    "repo-native": "仓库原生（无归档副本；来源即本仓库）"
+  },
+  "policy": {
+    "direction": "archive-copy 项：scripts/probes/ 下的是 CI 活件（可演进）；Mission 归档件是各批的冻结记录。",
+    "archive_frozen": "归档件⛔ 不追改、不自动同步 —— 批报告的取证件必须保持逐字节可复现。",
+    "drift": "两处副本必然漂移（活件会演进）⇒ 本表只声明方向与来源，⛔ 不把任一侧当作另一侧的真值。",
+    "on_change": "改活件只改活件；登记表里的 source_sha256 是「复制那一刻」的归档锚点，不随后续演进更新。"
+  },
+  "probes": [
+    {
+      "repo": "scripts/probes/svg_layout_probe.py",
+      "origin": "archive-copy",
+      "archive_source": "2026-10/1008-个人主页深化改革/batch6-evidence/verify_svg_layout.py",
+      "copied_from_commit": "1a06be5",
+      "source_sha256": "6cbc9915b6b1b7fec2477a66093ca45f40bd1a6715ba67f98ef31766d658d207",
+      "requires": ["playwright"],
+      "needs_server": true,
+      "selftest": true
+    },
+    {
+      "repo": "scripts/probes/contrast_theme_probe.py",
+      "origin": "archive-copy",
+      "archive_source": "2026-10/1008-个人主页深化改革/batch6-evidence/contrast_probe_theme.py",
+      "copied_from_commit": "1a06be5",
+      "source_sha256": "2d3bd68731acef1ff227ac8080c2c96de9e36fcc6128e1744ae6baf59b3e084b",
+      "requires": ["playwright", "pillow"],
+      "needs_server": true,
+      "selftest": true
+    },
+    {
+      "repo": "scripts/probes/surface_hit_probe.py",
+      "origin": "archive-copy",
+      "archive_source": "2026-10/1008-个人主页深化改革/batch8-evidence/audit_surface_hit.py",
+      "copied_from_commit": "1a06be5",
+      "source_sha256": "addfaf08b036608a77edfb93bc576327b50ee180764c974e150cc71abfefe33b",
+      "requires": ["playwright"],
+      "needs_server": true,
+      "selftest": true
+    },
+    {
+      "repo": "scripts/probes/hover_gating_probe.py",
+      "origin": "archive-copy",
+      "archive_source": "2026-10/1008-个人主页深化改革/batch8-evidence/check_hover_gating.py",
+      "copied_from_commit": "1a06be5",
+      "source_sha256": "24a887cf5672867e955868cdef3c4f12e16592a492c9f63061347f4fca74089c",
+      "requires": [],
+      "needs_server": false,
+      "selftest": true
+    },
+    {
+      "repo": "scripts/probes/acceptance_probe.py",
+      "origin": "repo-native",
+      "requires": [],
+      "needs_server": false,
+      "selftest": true
+    },
+    {
+      "repo": "scripts/probes/dup_probe.py",
+      "origin": "repo-native",
+      "requires": [],
+      "needs_server": false,
+      "selftest": false
+    }
+  ]
+}

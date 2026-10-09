@@ -97,6 +97,64 @@ jobs:
       - name: Background salience gate
         run: python3 scripts/gate_background_salience.py
 
+      # ──────────────────────────────────────────────────────────────────────
+      # 浏览器层判据（第八批 §4-② 硬化）：此前全部是**提示词级**（CI 只跑 python3），
+      # 现补 playwright ＋ 一次静态服务，把四条升为 **runtime 硬阻**。
+      # 活件在 scripts/probes/（来源登记脚本 · scripts/probes/PROVENANCE.json）。
+      # ⚠ 两条读 out/ ⇒ 必须在本步之前 build 过；hover_gating 缺 out/ 会以 rc=2 报「用法错误」。
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Probe provenance check
+        run: python3 scripts/probes/check_provenance.py
+
+      - name: Hover-gating probe (产物 CSS 静态解析，无需浏览器)
+        run: |
+          python3 scripts/probes/hover_gating_probe.py --selftest
+          python3 scripts/probes/hover_gating_probe.py
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # 键从依赖文件派生（⛔ 不写第二处版本字面量，避免与 requirements 漂移）
+          key: playwright-${{ runner.os }}-${{ hashFiles('scripts/probes/requirements-probes.txt') }}
+
+      - name: Install browser-layer deps (playwright + chromium + pillow)
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r scripts/probes/requirements-probes.txt
+          python3 -m playwright install --with-deps chromium
+
+      - name: Serve static export (background, port 4399)
+        run: |
+          nohup python3 -m http.server 4399 --directory out > "$RUNNER_TEMP/http4399.log" 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null http://127.0.0.1:4399/; then echo "server up"; exit 0; fi
+            sleep 0.5
+          done
+          echo "::error::静态服务未起来"; cat "$RUNNER_TEMP/http4399.log"; exit 1
+
+      - name: SVG layout probe (图件几何) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/svg_layout_probe.py --selftest
+          python3 scripts/probes/svg_layout_probe.py
+
+      - name: Composite contrast probe (双主题) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/contrast_theme_probe.py --selftest
+          python3 scripts/probes/contrast_theme_probe.py
+
+      - name: Surface-hit probe (行为口径覆盖率) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/surface_hit_probe.py --selftest --out "$RUNNER_TEMP/surface-hit"
+          python3 scripts/probes/surface_hit_probe.py --out "$RUNNER_TEMP/surface-hit"
+          echo "[artifact] $RUNNER_TEMP/surface-hit/surface-hit-report.md"
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

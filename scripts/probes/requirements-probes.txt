@@ -1,0 +1,5 @@
+# scripts/probes/ 浏览器层判据的 Python 依赖（CI 与本地同源）。
+# ⛔ 只给「探针层」用；站点本体不依赖任何 Python 运行时包（站点是纯静态 Next 导出）。
+# 版本与本地实测环境对齐（playwright 1.63.0 对应 chromium build 1243）。
+playwright==1.63.0
+pillow==12.3.0

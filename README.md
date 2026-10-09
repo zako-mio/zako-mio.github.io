@@ -5,7 +5,7 @@
 - 站点：**Next.js 15**（App Router，`output: 'export'` **纯静态导出** → `out/`）
 - 路由（IA-3）：`/` · `/works` · `/works/<name>` · `/stats` · `/about`
 - 数据管道：`scripts/`（Python 标准库，分层：sources / domain / cli）
-- 自动更新：GitHub Actions 每日 03:17 UTC + 手动触发
+- 自动更新：GitHub Actions 每日 03:17 UTC + 手动触发（含**浏览器层判据**硬阻，见 `scripts/probes/`）
 
 ## 为什么是静态导出
 
@@ -85,13 +85,15 @@ python3 scripts/gate_background_salience.py --selftest
 `container`（非交互容器 —— **只有这一类**的「反馈面 > 热区」才是真缺陷）。
 
 ⚠ **声明的不覆盖面**：真实覆盖率（面积比）须浏览器实测，本门控只校验**契约是否被声明且未腐化**；
-「每个可点目标是否都有 hover 反馈」（欠反馈方向）静态亦不可判。两者由
-`batch7-evidence/audit_site.py`（浏览器层，**提示词级**，CI 无 playwright）承担。
+「每个可点目标是否都有 hover 反馈」（欠反馈方向）静态亦不可判。两者由**行为口径**探针承担：
+历史件 `batch7-evidence/audit_site.py`（几何口径）／活件 `scripts/probes/surface_hit_probe.py`
+（**已是 CI runtime 硬阻**，见下文 `scripts/probes/` 一节）。
 
 > ★★ **几何口径 ≠ 行为口径**（第八批实测）：`batch7-evidence/audit_site.py` 的 coverage 用
 > 「交互后代的**几何盒**面积」当热区 ⇒ 对**伪元素命中区**（stretched link）**结构性失明**：
 > 同一张卡，几何口径仍读 **0.131**，行为口径读 **1.0**（两者都对——量的不是同一个事实）。
-> ⇒ 第八批补 `batch8-evidence/audit_surface_hit.py`：面内布点 → `document.elementFromPoint()`
+> ⇒ 第八批补 **行为口径**仪器（归档件 `batch8-evidence/audit_surface_hit.py`；CI 活件
+> `scripts/probes/surface_hit_probe.py`）：面内布点 → `document.elementFromPoint()`
 > → 命中的可交互祖先是否**在该反馈面之内**。带负向夹具（含「同容器 + stretched ::after」对照臂，
 > 证明它**能看见**几何口径看不见的机制）与「整轮无可量测项即 FAIL」的逃亡门守卫。
 > ⛔ 两口径不可互换，任何一处改口径前先问「我在量哪个事实」。
@@ -108,6 +110,32 @@ python3 scripts/gate_background_salience.py --selftest
 - **报告项（⛔ 不判阈值）**：背景层数、运动层数、纱幕档位、网格遮罩峰值、照片 opacity/filter。
   ⇒ 依 `criterion-design-validation` 的口径：**代理指标不得接自动回写**；
   「背景是否抢焦点」的显著性尚未验证与目标同向，只出读数供人审阅。
+
+### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
+
+上面那些门控都**只跑 python3**。有四类缺陷只有真浏览器能看见（图件几何、合成后对比度、
+悬停反馈面 ≡ 热区、`:hover` 门控），长期是**提示词级**（写进文档、靠人记着跑）。
+现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
+
+| 探针 | 判据 | 需浏览器 |
+|---|---|---|
+| `check_provenance.py` | 探针登记完整性（漏登记 / 幽灵登记 / 空集 fail-closed，带 `--selftest`） | 否 |
+| `hover_gating_probe.py` | 产物 CSS 每条 `:hover` 都在 `@media (hover:hover)` 内 ＋ 源/产物集合一致（带 `--selftest`） | 否 |
+| `svg_layout_probe.py` | `S1` 文字压框/压字、`S2` 箭头落点（带 `--selftest` 负向夹具） | 是 |
+| `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
+| `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
+
+- 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
+  CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
+- 四条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+- 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
+  以 **rc=2** 退「用法错误」（⛔ 不读成判据 FAIL）。
+- ★ **来源登记**：这四个是 Mission 归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋
+  `source_sha256` ＋ 漂移方向：活件可演进、归档件冻结 ⛔ 不追改）。`check_provenance.py` 保证
+  「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，否则 fail-closed。
+  （同目录另两个 `acceptance_probe.py` / `dup_probe.py` 是**仓库原生**，登记 `origin: repo-native`。）
+- ⛔ 这四个活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
+  也就不会派生渲染进首页）；它们由 CI workflow 直接调用。
 
 
 对项目公开的 `*-dag.json` 做**构建期 headless 拓扑复算**（cytoscape 只当内核，不做画布），
@@ -229,8 +257,8 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   - 产物 `public/backdrop/*.webp`（1280/1920/2560 + 一条夜间竖版）由
     `scripts/build_backdrop_assets.py` **幂等**生成（需 Pillow + numpy；原始素材不入仓，脚本头注有直链）。
   - 正文压在照片上 ⇒ **令牌对比度 ≠ 页面对比度**：凡动背景，必须重跑合成后对比度实测
-    （批五 `batch5-evidence/contrast_probe.py` 只覆盖浅色；批六
-    `batch6-evidence/contrast_probe_theme.py` 覆盖**深浅双主题**）。
+    （批五 `batch5-evidence/contrast_probe.py` 只覆盖浅色；**深浅双主题**版＝活件
+    `scripts/probes/contrast_theme_probe.py`，归档件 `batch6-evidence/contrast_probe_theme.py`）。
 - **背景分区分级（第八批 · 裁决③）**：只在**非阅读带**保留强细节，正文带用**局部 scrim**
   （`.backdrop__scrim`，夹在网格之后、运动层之前）。阅读带边界由**布局派生令牌**给出
   （`--backdrop-reading-top` / `--backdrop-reading-left`：窄屏上边界＝导航高、宽屏左边界＝`--rail-w`），
@@ -259,7 +287,8 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器
   （`.chart__frame` / `.mtable__scroll`）并给外层 `min-width: 0`。
 - **内联 SVG 图件**（`src/components/figures/*`）为**手工定位**（无布局引擎）⇒
-  几何缺陷不会自己暴露。判据 `batch6-evidence/verify_svg_layout.py`：
+  几何缺陷不会自己暴露。判据＝活件 `scripts/probes/svg_layout_probe.py`（**CI runtime 硬阻**；
+  归档件 `batch6-evidence/verify_svg_layout.py`）：
   `S1` 文字压框/压字、`S2` 箭头落点（矩形切边合法／圆形须留 ≥4px 净距），带 `--selftest` 负向夹具。
   ⚠ **声明的不覆盖面**：`circle`/`ellipse`/`path` 不判（圆的外接正方形会把「环内中央的文字」
   误报为重叠）。改动图件后必须重跑该判据。
@@ -268,6 +297,9 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
+- **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
+  起静态服务 ＋ 跑四条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
+  换来的是「提示词级（可绕）」→「runtime 硬阻（结构上做不成）」（落地形态强度阶梯）。
 
 ## 留档
 
