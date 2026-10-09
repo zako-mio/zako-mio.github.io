@@ -97,11 +97,11 @@ export function ProjectCard({
         </p>
         <p className="card__links">
           {project.has_pages ? (
-            <a href={project.entry_url} rel="noopener noreferrer" target="_blank">
+            <a className="button button--small" href={project.entry_url} rel="noopener noreferrer" target="_blank">
               在线预览
             </a>
           ) : null}
-          <a href={project.repo_url} rel="noopener noreferrer" target="_blank">
+          <a className="button button--small" href={project.repo_url} rel="noopener noreferrer" target="_blank">
             仓库
           </a>
         </p>

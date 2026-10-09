@@ -1,0 +1,274 @@
+{
+  "schema_version": 1,
+  "note": "交互作用面声明表（治理层·批七；批八按裁决①收口）。它是「悬停/焦点反馈面」与「点击热区」关系的**单一真相源**：globals.css 里每一条含 :hover / :focus-within 的选择器都必须在此登记（双向闭合，漏登记/幽灵登记 = FAIL）。kind 定义：self=元素自身即交互目标；descendant=某交互目标的后代装饰件（判据须上溯最近交互祖先）；container=非交互容器（其反馈面 > 热区即真缺陷）。status=ok 表示反馈面≡热区；status=rework 表示已知缺陷、已登记死区与到期条件，判据对本条只 WARN（⛔ 到期未处理须升级为 FAIL）。★ 第八批：全站 :hover 规则已统一包进 `@media (hover: hover)`（触屏不依赖 hover）；`:focus-within` / `:focus-visible` 等价面**不进**该门控。",
+  "entries": [
+    {
+      "selector": "a:hover",
+      "kind": "self",
+      "hotspot": "a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈 · 全集口径）：**普通链接的站内默认 hover**。覆盖正文/面包屑/说明里的纯文本链接（.breadcrumb a / .detail__note a / .prose a）与 .nav__brand —— 这些在 /about、/works/<name>、窄屏实测均无自身反馈（批七只在 / 取过数，故漏计）。特异性 (0,1,1) 低于所有组件态，组件各自的外观不会被它改掉。"
+    },
+    {
+      "selector": ".skip-link:hover",
+      "kind": "self",
+      "hotspot": ".skip-link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批：`.skip-link` 底色＝--brand-primary，而 `a:hover` 的默认强调色也是它 ⇒ 继承会变成同色不可读。本规则把站内默认态在**带实底的可交互件**上收回（⛔ 不是新增反馈，也不是欠反馈：它 `:focus` 才显形，是键盘专用跳转）。"
+    },
+    {
+      "selector": ".topo__source > summary:hover",
+      "kind": "self",
+      "hotspot": ".topo__source summary",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈）：`ProjectFigure` 的「数据出处与口径」是站内**唯一不带 .disclosure__summary 类**的折叠控件 ⇒ 此前自身无 hover 反馈。"
+    },
+    {
+      "selector": ".button:hover",
+      "kind": "self",
+      "hotspot": "a.button",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "按钮本体即热区；焦点环由全局 :focus-visible 提供。⛔ 注意：卡片页脚外链（.card__links a）**复用**本原子件（类 .button .button--small）⇒ 其反馈面由本条承担，故本表没有独立的 .card__links a:hover 条目。"
+    },
+    {
+      "selector": ".button--primary:hover",
+      "kind": "self",
+      "hotspot": "a.button",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "同上（主按钮变体）"
+    },
+    {
+      "selector": ".card:hover",
+      "kind": "container",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".card:focus-within",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）已修：主链接以 `.card__title a::after` 拉伸层铺满整卡 ⇒ 反馈面（整卡）≡ 热区；页脚外链（.card__links a，z-index:2）与拉伸层（z-index:1）同域抬升。批七实测 coverage 0.131 的假可供性已消除。"
+    },
+    {
+      "selector": ".card:hover::before",
+      "kind": "container",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".card:focus-within::before",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）已修：指针跟随光斑的作用面=整卡，整卡现经拉伸层可点 ⇒ coverage ≡ 1。"
+    },
+    {
+      "selector": ".card:focus-within",
+      "kind": "container",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".card:focus-within",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）已修：键盘等价面与鼠标面同域，整卡可点后死区消除。"
+    },
+    {
+      "selector": ".card:focus-within::before",
+      "kind": "container",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".card:focus-within::before",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）已修：光斑层的焦点等价面，同上。"
+    },
+    {
+      "selector": ".card:hover .card__title a",
+      "kind": "self",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "反馈作用于真实链接自身"
+    },
+    {
+      "selector": ".card__title a:hover",
+      "kind": "self",
+      "hotspot": ".card__title a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "同上"
+    },
+    {
+      "selector": ".contact__link:hover",
+      "kind": "self",
+      "hotspot": "a.contact__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "联系链接本体"
+    },
+    {
+      "selector": ".directory__item:hover .directory__icon",
+      "kind": "descendant",
+      "hotspot": ".directory__head",
+      "coverage_min": null,
+      "focus_equivalent": null,
+      "status": "ok",
+      "reason": "被反馈的是分区入口链接内部的图标（后代装饰件）；判据上溯最近交互祖先 a.related__link.directory__head"
+    },
+    {
+      "selector": ".disclosure__summary:hover",
+      "kind": "self",
+      "hotspot": "summary.disclosure__summary",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "summary 自身是可聚焦的展开控件"
+    },
+    {
+      "selector": ".footer a:hover",
+      "kind": "self",
+      "hotspot": ".footer a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈）：页脚 7 个真实可点目标（站点地图 ×4 / 回到顶部 / 版权行 GitHub / 素材署名 ×2）此前**自身无任何 hover 反馈**。一条规则覆盖页脚全部 <a>（含将来的新链接），避免逐个漏配。"
+    },
+    {
+      "selector": ".hero__cue:hover",
+      "kind": "self",
+      "hotspot": "a.hero__cue",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "页内锚点链接本体"
+    },
+    {
+      "selector": ".nav__link:hover",
+      "kind": "self",
+      "hotspot": "a.nav__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "顶栏导航项本体"
+    },
+    {
+      "selector": ".rail__link:hover",
+      "kind": "self",
+      "hotspot": "a.rail__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "左栏导航项本体"
+    },
+    {
+      "selector": ".rail__link:hover svg",
+      "kind": "descendant",
+      "hotspot": "a.rail__link",
+      "coverage_min": null,
+      "focus_equivalent": null,
+      "status": "ok",
+      "reason": "被反馈的是左栏导航项内部的图标（后代装饰件）"
+    },
+    {
+      "selector": ".rail__masthead:hover",
+      "kind": "self",
+      "hotspot": ".rail__masthead",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈）：左栏站点标识是链接但此前无 hover 反馈。"
+    },
+    {
+      "selector": ".rail__meta a:hover",
+      "kind": "self",
+      "hotspot": ".rail__meta a",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈）：左栏 GitHub 外链此前无 hover 反馈。"
+    },
+    {
+      "selector": ".related__item:focus-within",
+      "kind": "container",
+      "hotspot": ".related__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".related__item:focus-within",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）：列表项的**焦点等价面**（批七缺失 —— 键盘用户看不到鼠标看到的边框/阴影反馈）。整项经 `.related__link::after` 拉伸层可点 ⇒ 反馈面 ≡ 热区。"
+    },
+    {
+      "selector": ".related__item:focus-within .related__link",
+      "kind": "self",
+      "hotspot": ".related__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）：与 `.card:hover .card__title a` 对称 —— 整项聚焦时项内链接文字变色。"
+    },
+    {
+      "selector": ".related__item:hover .related__link",
+      "kind": "self",
+      "hotspot": ".related__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）：与 `.card:hover .card__title a` 对称 —— 整项悬停时项内链接文字变色（补齐 `.related__link` 自身欠反馈）。"
+    },
+    {
+      "selector": ".related__item:hover",
+      "kind": "container",
+      "hotspot": ".related__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".related__item:focus-within",
+      "status": "ok",
+      "reason": "★ 第八批（裁决①）已修：反馈面=整个列表项（含不可点的 .related__shared 描述文字），现经 `.related__link::after` 拉伸层使其 ≡ 热区；批七实测 0.194 的死区与缺失的 :focus-within 等价面均已消除。"
+    },
+    {
+      "selector": ".section__link:hover",
+      "kind": "self",
+      "hotspot": ".section__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 第八批（裁决① · 补齐欠反馈）：正文内 `/works` 索引链接此前无 hover 反馈。"
+    },
+    {
+      "selector": ".theme-toggle:hover",
+      "kind": "self",
+      "hotspot": "button.theme-toggle",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "主题切换按钮本体"
+    },
+    {
+      "selector": ".toc__link:hover",
+      "kind": "self",
+      "hotspot": "a.toc__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "目录侧栏链接本体"
+    },
+    {
+      "selector": "button.chip:hover",
+      "kind": "self",
+      "hotspot": "button.chip",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "筛选 chip 按钮本体（⛔ 注意 li.chip 是标签而非按钮，不在本条作用面内）"
+    }
+  ],
+  "not_covered": [
+    "本表的 coverage_min 是**契约值**，静态判据只能校验其是否被声明、以及 status 是否合法；**真实覆盖率须浏览器实测**（见 batch7-evidence/audit_site.py，属提示词级判据，CI 无 playwright）。",
+    "本表不判「可点目标是否**有** hover 反馈」（欠反馈方向）—— 该方向依赖对全部 <a>/<button> 的 DOM 关系求值，静态不可判，同样由 audit_site.py 的浏览器层承担。",
+    "本表不判 `@media (hover: hover)` 门控是否**在触屏上真的生效** —— CI 无浏览器/触屏仿真，该面由 audit_site.py（提示词级）承担。",
+    "本表不含 `.skip-link`：它是**键盘专用**的跳转链接（`:focus` 才显形）⇒ 有意不做 hover 反馈，不是欠反馈。",
+    "内置 :hover 的元素若未出现在 out/ 产物任何页面（如仅在他站使用的规则），其基选择器命中数可为 0 ⇒ 判据按「至少一个页面命中」判，不做全页面覆盖断言。"
+  ]
+}

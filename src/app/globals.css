@@ -142,13 +142,51 @@
 
   /* --- 栅格与形状 --- */
   --container: 1120px;
+  /* 首屏右区图件宽度：正文列的让位量由它派生（同一真相源） */
+  --hero-map-w: min(420px, 38vw);
   --measure: 66ch;
   --radius: 12px;
   --radius-lg: 18px;
   --nav-h: 64px;
   --rail-w: 252px;
+  /* --- 背景分区分级（批八 · 裁决③）---
+     阅读带的**边界**；非阅读带 = 其外（页顶导航带 / 左栏带）。
+     默认（窄屏）：顶部有吸顶导航 ⇒ 上边界 = 导航高；左侧无侧栏 ⇒ 左边界 0。
+     ⚠ 这两个值是**布局的派生量**（与 `.nav` / `.shell` 共用同一批令牌），⛔ 不得写死像素。 */
+  --backdrop-reading-top: var(--nav-h);
+  --backdrop-reading-left: 0px;
+  /* 局部 scrim 的三档不透明度（按主题切换，与 `.backdrop__veil` 同口径）。
+     浅色档保守、深色档更强（深色照片的高频更显眼）。 */
+  --scrim-1: 12%;
+  --scrim-2: 28%;
+  --scrim-3: 62%;
+  /* 指针光斑（批八 · 裁决④ T1）。浅色档用品牌色的极低不透明度（近白底上表现为淡色晕）。 */
+  --backdrop-glow: color-mix(in srgb, var(--brand-primary) 11%, transparent);
   /* 锚点跳转的吸顶补偿：宽屏无吸顶导航，补偿量归零 */
   --sticky-offset: var(--nav-h);
+
+  /* --- 交互状态令牌（治理层 · 批七）---
+     ★ 为什么要有这一层：此前「悬停该长什么样」由 7 处规则各自手写
+       （`.button`/`.nav__link`/`.rail__link`/`.theme-toggle`/`.contact__link`/
+        `.disclosure__summary`/`.hero__cue` 都写 `var(--brand-primary)`）。
+       同一件事有 7 个副本 ⇒ 改一处配色要记得改 7 处，且必然漂移。
+       本层把它收敛为**语义别名**：组件只引用「状态」，配色换在下面一处。
+     ★ 与 `scripts/interaction-surfaces.json` 配套、分工不同：
+       本组令牌管**状态外观**（四态长什么样），声明表管**作用面**（反馈面 ≡ 热区）。
+       两者都由判据看住：外观经 `gate_contrast.py`（读真实十六进制令牌），
+       作用面经 `gate_interaction_surface.py`（读声明表与真实 :hover 规则集合）。
+     ⚠ 这些是 `var()` 别名而非新色值 ⇒ 不参与 `gate_contrast` 的十六进制扫描，
+       也不改变任何既有观感（本次为等值重构，逐条对照后生效）。
+     ⛔ 不要在这里 `:root` 直接写十六进制 —— 会变成绕过主题的第二真相源。
+
+     ★ 第八批补充：**全站每一条 `:hover` 规则都包在 `@media (hover: hover)` 里**。
+       理由（MDN）：`:hover` 在触屏上不可靠且会「粘滞」——点完一处后该处长期保持悬停态；
+       且内容不得**只能**靠 hover 才可达。`:focus-within` / `:focus-visible` 等价面
+       ⛔ **不进**本门控 —— 键盘与辅助技术在任何输入设备上都必须看得到反馈。
+       代价（如实登记）：本机 CI 只跑 python3 静态判据，**无法**验证触屏真实行为；
+       浏览器层由 `batch7-evidence/audit_site.py`（提示词级）承担。 */
+  --state-hover-accent: var(--brand-primary);  /* 悬停时的前景/描边强调 */
+  --state-hover-surface: var(--brand-soft);    /* 悬停时的弱底（导航类） */
 }
 
 /* 系统深色（未被显式强制浅色时生效） */
@@ -181,6 +219,12 @@
     --focus-ring: #8fb4ff;
     --grid-line: rgba(146, 176, 255, 0.055);
     --meteor: rgba(232, 242, 255, 1);
+    /* 局部 scrim（批八裁决③）：深色档更强 */
+    --scrim-1: 26%;
+    --scrim-2: 44%;
+    --scrim-3: 70%;
+    /* 指针光斑（批八裁决④ T1）：深色档用偏亮星光色 */
+    --backdrop-glow: color-mix(in srgb, var(--brand-bright) 15%, transparent);
     --rail-bg: rgba(11, 17, 32, 0.72);
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 36px -14px rgba(0, 0, 0, 0.6);
@@ -219,6 +263,12 @@
   --focus-ring: #8fb4ff;
   --grid-line: rgba(146, 176, 255, 0.055);
   --meteor: rgba(232, 242, 255, 1);
+  /* 局部 scrim（批八裁决③）：深色档更强 */
+  --scrim-1: 26%;
+  --scrim-2: 44%;
+  --scrim-3: 70%;
+  /* 指针光斑（批八裁决④ T1）：深色档用偏亮星光色 */
+  --backdrop-glow: color-mix(in srgb, var(--brand-bright) 15%, transparent);
   --rail-bg: rgba(11, 17, 32, 0.72);
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.5), 0 16px 36px -14px rgba(0, 0, 0, 0.6);
@@ -280,6 +330,19 @@ svg {
 a {
   color: var(--link);
   text-underline-offset: 3px;
+}
+
+/* ★ 第八批（裁决① · 补齐欠反馈 · **全集口径**）：正文/面包屑/说明里的**纯文本链接**
+   （`.breadcrumb a` / `.detail__note a` / `.prose a` / `.nav__brand` …）此前自身
+   没有任何 hover 反馈，而这批在 `/about`、`/works/<name>` 上实测复现（批七只在 `/` 取过数）。
+   ⇒ 给「普通链接」一个站内默认态。特异性 (0,1,1) **低于**所有组件态
+   （`.button:hover` / `.nav__link:hover` / `.rail__link:hover` / `.footer a:hover` … 均 ≥(0,2,0)）
+   ⇒ 组件态一律覆盖它，不会把设计意图改掉。
+   ⚠ `.skip-link` 例外：它的底色就是 `--brand-primary`，继承本色会变成同色不可读 ⇒ 见其自身规则。 */
+@media (hover: hover) {
+  a:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 button {
@@ -379,6 +442,52 @@ section {
   .backdrop__photo--night {
     background-image: url('/backdrop/night-2560.webp');
   }
+}
+
+/* ★ 第八批（裁决④ · T1）：**指针光斑** —— 主题无关的交互通道，解决现状「仅夜间 ＋ 不可发现」。
+   ★ 三个设计约束，逐条对应裁决护栏：
+     ① **触屏不启用**：只在 `(hover: hover) and (pointer: fine)` 下 `display:block`（默认 none）。
+     ② **幅度受限（结构性，不靠调参）**：本层夹在「照片之上、纱幕/网格/scrim 之下」
+        ⇒ 光斑永远不可能比照片本身更亮地照到文字层；正文带的合成对比度只会被它*压低*。
+     ③ **不触发布局/重绘**：整层是一个 680×680 的固定件，靠 `transform: translate3d(...)`
+        随指针移动（合成层）；⛔ 不用 `background-position` 或 `inset:0` 全屏重绘。
+   ★ `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入
+     （⛔ 不新增监听器、不逐卡绑定）；首次移动后才淡入（`html[data-pointer]`）。 */
+.backdrop__glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  width: 680px;
+  height: 680px;
+  margin: -340px 0 0 -340px; /* 让 transform 的落点对准圆心 */
+  background: radial-gradient(circle 340px at 50% 50%, var(--backdrop-glow) 0%, transparent 70%);
+  transform: translate3d(var(--pointer-x, 50vw), var(--pointer-y, 50vh), 0);
+  will-change: transform;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .backdrop__glow {
+    display: block;
+  }
+}
+
+html[data-pointer] .backdrop__glow {
+  opacity: 1;
+}
+
+/* 熔断：与背景其余动效同口径（前庭敏感用户 / 动效开关关闭 ⇒ 直接不显示） */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop__glow {
+    display: none;
+  }
+}
+
+:root[data-motion='off'] .backdrop__glow {
+  display: none;
 }
 
 /* 纱幕（遮罩）：把正文压在可预期的合成亮度区间内。
@@ -558,6 +667,34 @@ section {
   -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 78%);
 }
 
+/* ★ 第八批（裁决③）：**背景分区分级** —— 只在非阅读带保留强细节，正文带用**局部 scrim**。
+   ★ 为什么不是「横向分列」：本站阅读列 = 左栏 252px 之后的区域，`.container` 只有 1120px
+     ⇒ 1440px 下两侧 gutter 各仅 ~34px（实测）——「两侧留细节」在几何上**没有可用的面**。
+     故分区落在**真实存在**的两处非阅读带：① 页顶导航带（`--backdrop-reading-top`）；
+     ② 左栏带（`--backdrop-reading-left`，仅 ≥1180px 存在）。
+   ★ 位置：在 `.backdrop__grid` **之后**、流星/粒子**之前** ——
+     ① 阅读带内的网格与照片高频细节被一并压住（这才是「强细节只在非阅读带」的实质）；
+     ② ⛔ 不压运动层 ——「减正文带运动层」是裁决里**未采纳**的独立提案。
+   ★ 它是**加法层**：原 `.backdrop__veil` 一格不改 ⇒ 非阅读带细节原样保留、合成对比度只增不减。
+   ⛔ 本轮**不动**照片 `filter`、**不移动**网格遮罩峰值（同属「未采纳」，可作独立提案重提）。 */
+.backdrop__scrim {
+  position: absolute;
+  top: var(--backdrop-reading-top);
+  left: var(--backdrop-reading-left);
+  right: 0;
+  bottom: 0;
+  display: block;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-page) var(--scrim-1), transparent) 0%,
+    color-mix(in srgb, var(--surface-page) var(--scrim-2), transparent) 52%,
+    color-mix(in srgb, var(--surface-page) var(--scrim-3), transparent) 100%
+  );
+  /* 上缘柔和淡入：⛔ 不要在导航条下方留下可辨认的横向硬边 */
+  mask-image: linear-gradient(180deg, transparent 0, #000 96px);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 96px);
+}
+
 @keyframes backdrop-drift {
   from {
     transform: scale(1.07) translate3d(0, 0, 0);
@@ -599,6 +736,10 @@ section {
   :root {
     /* 宽屏由左栏承担导航，吸顶补偿归零 */
     --sticky-offset: var(--space-4);
+    /* ★ 批八（裁决③）：宽屏无吸顶导航 ⇒ 阅读带上边界归零；
+       左栏是常驻侧栏（覆盖该带）⇒ 阅读带左边界 = 左栏宽（同一令牌，不写死）。 */
+    --backdrop-reading-top: 0px;
+    --backdrop-reading-left: var(--rail-w);
   }
 }
 
@@ -626,6 +767,13 @@ section {
   align-items: center;
   gap: var(--space-3);
   text-decoration: none;
+}
+
+/* ★ 第八批（裁决① · 补齐欠反馈）：左栏站点标识是链接但无 hover 反馈。 */
+@media (hover: hover) {
+  .rail__masthead:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 .rail__mark {
@@ -695,13 +843,15 @@ section {
   opacity: 0.72;
 }
 
-.rail__link:hover {
-  color: var(--text-primary);
-  background: var(--brand-soft);
-}
+@media (hover: hover) {
+  .rail__link:hover {
+    color: var(--text-primary);
+    background: var(--state-hover-surface);
+  }
 
-.rail__link:hover svg {
-  opacity: 1;
+  .rail__link:hover svg {
+    opacity: 1;
+  }
 }
 
 .rail__link[aria-current='page'] {
@@ -751,6 +901,15 @@ section {
 
 .rail__meta a {
   font-weight: 500;
+}
+
+/* ★ 第八批（裁决① · 补齐欠反馈）：左栏 GitHub 外链此前无 hover 反馈。 */
+@media (hover: hover) {
+  .rail__meta a:hover {
+    color: var(--state-hover-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 @media (min-width: 1180px) {
@@ -831,6 +990,15 @@ section {
   font-weight: 500;
 }
 
+/* ★ 第八批（裁决① · 补齐欠反馈）：正文内的 `/works` 索引链接。 */
+@media (hover: hover) {
+  .section__link:hover {
+    color: var(--state-hover-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
 .prose {
   max-inline-size: var(--measure);
 }
@@ -880,6 +1048,15 @@ section {
   top: var(--space-2);
 }
 
+/* ★ 第八批：`.skip-link` 底色＝`--brand-primary`，而 `a:hover` 的默认强调色**也是**它
+   ⇒ 继承会变成同色不可读。此处显式收回本色 —— 这不是「新增反馈」，而是把
+   站内默认态在**这类带实底的可交互件**上收回（对比度优先于一致性）。 */
+@media (hover: hover) {
+  .skip-link:hover {
+    color: var(--on-brand);
+  }
+}
+
 /* ------------------------------------------------------------- 原子件 ----- */
 
 .chip {
@@ -905,9 +1082,11 @@ button.chip {
   cursor: pointer;
 }
 
-button.chip:hover {
-  color: var(--text-primary);
-  border-color: var(--border-line);
+@media (hover: hover) {
+  button.chip:hover {
+    color: var(--text-primary);
+    border-color: var(--border-line);
+  }
 }
 
 .chip.is-active,
@@ -955,10 +1134,12 @@ button.chip[aria-pressed='true'] {
     transform var(--dur-1) var(--ease-out);
 }
 
-.button:hover {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
+@media (hover: hover) {
+  .button:hover {
+    border-color: var(--state-hover-accent);
+    color: var(--state-hover-accent);
+    box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
+  }
 }
 
 .button--primary {
@@ -971,13 +1152,15 @@ button.chip[aria-pressed='true'] {
     inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
-.button--primary:hover {
-  color: var(--on-brand);
-  transform: translateY(-1px);
-  box-shadow:
-    0 2px 4px rgba(19, 32, 64, 0.2),
-    0 12px 28px -10px var(--brand-tint),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+@media (hover: hover) {
+  .button--primary:hover {
+    color: var(--on-brand);
+    transform: translateY(-1px);
+    box-shadow:
+      0 2px 4px rgba(19, 32, 64, 0.2),
+      0 12px 28px -10px var(--brand-tint),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
 }
 
 .button--small {
@@ -988,7 +1171,10 @@ button.chip[aria-pressed='true'] {
 
 /* ------------------------------------------------------------- 卡片 ------- */
 /* ★ 第五批：卡片层次 = 可见柔边 + 顶部高光 + 分层阴影 + 渐变底面。
-   卡片嵌套交互修复沿用：取消整卡 ::after 覆盖，仅标题与底部链接可点。 */
+   ★ 第八批（裁决① · 问题 1）：**整卡可点 ＋ 外链按钮化**。
+     批三为「标题＋页脚两处显式可点」删掉了整卡 `::after`，但整卡的 hover 视觉
+     （抬起/描边/指针光斑）没有同步收回 ⇒ 反馈面 117154px² vs 热区 15331px²，
+     实测 coverage **0.131**（87% 死区）＝ 假可供性。现按裁决把热区扩到反馈面。 */
 
 .card {
   position: relative;
@@ -1011,11 +1197,20 @@ button.chip[aria-pressed='true'] {
     border-color var(--dur-2) var(--ease-out);
 }
 
-.card:hover,
+/* ★ 第八批（裁决①）：整卡可点 —— 反馈面（整卡）与热区（拉伸层）在此对齐。
+   详细理由与 Bootstrap 陷阱见本文件 `.card__title a::after` 处的注释。 */
 .card:focus-within {
   transform: translateY(-3px);
   border-color: var(--brand-tint);
   box-shadow: var(--shadow-2), inset 0 1px 0 var(--edge-highlight);
+}
+
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--brand-tint);
+    box-shadow: var(--shadow-2), inset 0 1px 0 var(--edge-highlight);
+  }
 }
 
 .card__tags {
@@ -1038,9 +1233,28 @@ button.chip[aria-pressed='true'] {
   text-decoration: none;
 }
 
-.card:hover .card__title a,
-.card__title a:hover {
-  color: var(--brand-primary);
+/* ★ 整卡可点（stretched link）：主链接的 `::after` 铺满整卡 ⇒ 整卡 → 站内详情页。
+   ⚠ Bootstrap `stretched-link` 明列的陷阱：祖先若带 `transform` / `perspective` /
+     `filter` / `will-change`，该祖先会成为新的 containing block，令 `::after` 只覆盖到它。
+     ⇒ 本站的 containing block 就是 `.card` 本体（`position: relative`），
+       ⛔ 不要把 transform 挪到外层包装；⛔ 也不要给链接自身加 `position: relative`
+       （那会让拉伸层缩回链接自己的盒子）。
+   ⚠ 由此产生的必然结果：卡片里**非交互**的正文（摘要 / 标签 / meta）落在拉伸层之下
+     ⇒ 它们的文字**不可选中**、原生 `title` 提示不触发。这是「整卡可点」的既定代价
+     （Bootstrap 同款行为），不是缺陷；⛔ 不得用「把非交互元素也抬升」来绕 ——
+       那会在热区里重新挖出空洞（stretched-link 官方点名的反模式）。 */
+.card__title a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  .card:hover .card__title a,
+  .card__title a:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 .card__summary {
@@ -1088,15 +1302,19 @@ button.chip[aria-pressed='true'] {
 .card__links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--fs-label);
 }
 
+/* ★ 外链按钮化（裁决①）：页脚外链由纯文字升为**显式次级按钮**（`.button .button--small`，
+   外观与 hover/focus 全部复用既有原子件 ⇒ 不新增 hover 规则、不新增登记条目）。
+   ★ 必须**抬升**：拉伸层（`.card__title a::after`，z-index 1）铺满整卡，
+     页脚外链若不同域抬升，就会被它盖住、点不到（stretched-link 的经典配套要求）。
+   ⚠ 只抬升**真交互件**；⛔ 非交互的 `.card__meta` 不抬（否则热区出现空洞）。 */
 .card__links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  font-weight: 500;
+  position: relative;
+  z-index: 2;
 }
 
 /* ------------------------------------------------------------------ 导航 ---- */
@@ -1153,9 +1371,11 @@ button.chip[aria-pressed='true'] {
   border-radius: 8px;
 }
 
-.nav__link:hover {
-  color: var(--brand-primary);
-  background: var(--brand-soft);
+@media (hover: hover) {
+  .nav__link:hover {
+    color: var(--state-hover-accent);
+    background: var(--state-hover-surface);
+  }
 }
 
 .nav__link[aria-current='page'] {
@@ -1182,9 +1402,11 @@ button.chip[aria-pressed='true'] {
     border-color var(--dur-1) var(--ease-out);
 }
 
-.theme-toggle:hover {
-  color: var(--brand-primary);
-  border-color: var(--brand-primary);
+@media (hover: hover) {
+  .theme-toggle:hover {
+    color: var(--state-hover-accent);
+    border-color: var(--state-hover-accent);
+  }
 }
 
 .theme-toggle__dot {
@@ -1277,20 +1499,71 @@ button.chip[aria-pressed='true'] {
 }
 
 /* 英雄区的图形化副件：抽象星座/结构标记，纯装饰 */
-.hero__figure {
+/* ★ 第八批（裁决② V3）：首屏右区由**装饰星座**升级为**承载信息的定位图**。
+   旧件 `.hero__figure` 是 aria-hidden 的纯装饰（opacity .5）；本件是信息件 ⇒ 不透明、
+   文字取正文级令牌，并且**不再 aria-hidden**（见 `HeroPositionMap.tsx` 的 role/desc）。
+   ⛔ 窄屏隐藏不造成信息丢失：这份内容在**同页 Hero 标语里以文字存在**（图形化 ≠ 新信息）。 */
+.hero__map {
   position: absolute;
-  right: max(0px, calc((100% - var(--container)) / 2 + var(--space-5)));
+  right: max(0px, calc((100% - var(--container)) / 2 + var(--space-3)));
   top: 50%;
-  width: min(360px, 34vw);
-  aspect-ratio: 1;
-  transform: translateY(-50%);
-  color: var(--brand-primary);
-  opacity: 0.5;
+  width: var(--hero-map-w);
+  aspect-ratio: 420 / 360;
+  /* ⛔ 居中**必须**用独立的 `translate` 属性，不能用 `transform: translateY(-50%)`：
+     进场动画 `rise-in` 的终态写 `transform: none`，会把居中一起吃掉 ⇒ 图件下坠半个身位
+     （实测：非 reduced-motion 下 top=239 而应为 59 —— 批八实测到的**既有**缺陷）。 */
+  translate: 0 -50%;
+  color: var(--text-secondary);
   pointer-events: none;
 }
 
+/* chip 底色 = 页面底色令牌 ⇒ 随主题走，⛔ 不写死色值；连接线在其下层，不会穿字 */
+.hero__map .hm-chip rect {
+  fill: color-mix(in srgb, var(--surface-page) 88%, transparent);
+  stroke: var(--border-card);
+  stroke-width: 1;
+}
+
+.hero__map .hm-chip--core rect {
+  fill: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  stroke: var(--brand-tint);
+}
+
+.hero__map .hm-chip text {
+  fill: var(--text-primary);
+  font-size: 11px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.hero__map .hm-core text {
+  font-size: 11px;
+}
+
+.hero__map .hm-chip--core text {
+  fill: var(--text-primary);
+  font-weight: 600;
+}
+
+.hero__map .hm-edge path {
+  fill: none;
+  stroke: var(--brand-tint);
+  stroke-width: 1.5;
+}
+
+/* ★ 正文列必须给右区**让位**：否则标语首行会压到图件的 chip 上
+   （实测 overlapX 47–110px @1440/1180/1024）。两个量用同一个令牌 ⇒ 改图件宽度时正文列自动跟随，
+   ⛔ 不写「魔法数字」的第二处副本。 */
+@media (min-width: 1024px) {
+  .hero__inner > * {
+    max-inline-size: calc(100% - var(--hero-map-w) - var(--space-5));
+  }
+}
+
+/* 窄屏（<1024px）不显示图件：那份信息在**同页 Hero 标语里以文字存在**（图形化 ≠ 新信息） */
 @media (max-width: 1023px) {
-  .hero__figure {
+  .hero__map {
     display: none;
   }
 }
@@ -1458,9 +1731,11 @@ button.chip[aria-pressed='true'] {
     box-shadow var(--dur-2) var(--ease-out);
 }
 
-.contact__link:hover {
-  border-color: var(--brand-primary);
-  box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
+@media (hover: hover) {
+  .contact__link:hover {
+    border-color: var(--state-hover-accent);
+    box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
+  }
 }
 
 .contact__k {
@@ -1538,6 +1813,18 @@ button.chip[aria-pressed='true'] {
 
 .footer a {
   color: var(--link);
+}
+
+/* ★ 第八批（裁决① · 补齐欠反馈）：页脚 7 个真实可点目标（站点地图 ×4 / 回到顶部 /
+   版权行 GitHub / 素材署名 ×2）此前**自身没有任何 hover 反馈** ⇒ 真欠反馈
+   （其中署名链接还挂 CC BY 署名义务，其可达性同样应达标）。
+   一条规则覆盖页脚**全部** `<a>`（含将来的新链接），避免逐个漏配。 */
+@media (hover: hover) {
+  .footer a:hover {
+    color: var(--state-hover-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 /* ------------------------------------------------- 筛选条 / 作品索引 ----- */
@@ -1947,6 +2234,7 @@ button.chip[disabled] {
 }
 
 .related__item {
+  position: relative; /* ★ 第八批：作 .related__link 拉伸层的 containing block */
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3);
@@ -1959,13 +2247,43 @@ button.chip[disabled] {
     box-shadow var(--dur-2) var(--ease-out);
 }
 
-.related__item:hover {
+/* ★ 第八批（裁决①）：列表项同样「整项可点」——反馈面（整个 li，含不可点的
+   `.related__shared` 描述文字）与热区对齐。原实测 coverage **0.194**（81% 死区），
+   且**缺 `:focus-within` 等价面**（键盘用户看不到鼠标看到的边框/阴影变化）。
+   ⚠ 代价同 `.card`：描述文字落在拉伸层之下 ⇒ 不可选中。 */
+.related__item:focus-within {
   border-color: var(--brand-tint);
   box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
 }
 
+@media (hover: hover) {
+  .related__item:hover {
+    border-color: var(--brand-tint);
+    box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
+  }
+}
+
 .related__link {
   font-weight: 600;
+}
+
+/* ★ 第八批（裁决①）：与 `.card:hover .card__title a` 对称 —— 整项悬停/聚焦时，
+   项内链接文字一并变色（对 `.directory__head` 同样生效）。 */
+.related__item:focus-within .related__link {
+  color: var(--state-hover-accent);
+}
+
+@media (hover: hover) {
+  .related__item:hover .related__link {
+    color: var(--state-hover-accent);
+  }
+}
+
+.related__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 .related__shared {
@@ -2016,8 +2334,10 @@ button.chip[disabled] {
   font-weight: 600;
 }
 
-.directory__item:hover .directory__icon {
-  opacity: 1;
+@media (hover: hover) {
+  .directory__item:hover .directory__icon {
+    opacity: 1;
+  }
 }
 
 /* 目录侧栏 */
@@ -2053,7 +2373,13 @@ button.chip[disabled] {
   text-decoration: none;
 }
 
-.toc__link:hover,
+@media (hover: hover) {
+  .toc__link:hover {
+    color: var(--brand-primary);
+    font-weight: 600;
+  }
+}
+
 .toc__link[aria-current='location'] {
   color: var(--brand-primary);
   font-weight: 600;
@@ -2081,8 +2407,10 @@ button.chip[disabled] {
   color: var(--text-secondary);
 }
 
-.disclosure__summary:hover {
-  color: var(--brand-primary);
+@media (hover: hover) {
+  .disclosure__summary:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 .disclosure__hint {
@@ -2350,6 +2678,14 @@ button.chip[disabled] {
      行内文字链接按 WCAG 2.2「Inline」例外不适用本条，但折叠控件不是行内文字。 */
   min-height: 44px;
   padding-block: 12px;
+}
+
+/* ★ 第八批（裁决① · 补齐欠反馈）：这是**唯一一个不带 `.disclosure__summary`** 的
+   折叠控件（`ProjectFigure` 的「数据出处与口径」）⇒ 此前自身无 hover 反馈。 */
+@media (hover: hover) {
+  .topo__source > summary:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 /* ══════════════════════════════════ 图形化表达件 ═══════════════════════════ */
@@ -2645,37 +2981,6 @@ button.chip[disabled] {
   stroke-width: 1.4;
 }
 
-/* Hero 装饰星座：颜色随主题（继承 .hero__figure 的 currentColor） */
-.hf-edge {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.1;
-  opacity: 0.42;
-}
-
-.hf-orbit {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1;
-  stroke-dasharray: 2 8;
-  stroke-linecap: round;
-  opacity: 0.3;
-}
-
-.hf-node {
-  fill: currentColor;
-  opacity: 0.7;
-}
-
-.hf-core {
-  fill: currentColor;
-  opacity: 0.18;
-}
-
-.hf-core-inner {
-  fill: currentColor;
-}
-
 /* 动效开关的指示点：与主题点区分（主题=实心渐变，动效=描边环） */
 .theme-toggle__dot--motion {
   background: transparent;
@@ -2691,18 +2996,39 @@ button.chip[disabled] {
    · `prefers-reduced-motion: reduce` 与 `[data-motion='off']` 两条独立的熔断，
      任一命中即把元素置回终态并把全局动画时长压到 ~0。 */
 
+/* ★ 第八批（既有缺陷修复）：进场改用 **`@keyframes` 动画**，并且位移走**独立的 `translate` 属性**。
+   为什么必须这么改（两条都是实测出来的既有缺陷，非本批引入）：
+   ① `[data-reveal].is-in { transform: none }` 特异性是 (0,3,1)，压过
+      `.card:hover { transform: translateY(-3px) }` 的 (0,1,1) ⇒ 首页精选卡
+      **hover 时从不抬起**（只有描边/阴影/光斑），而 `/works`（卡片不带 `data-reveal`）会抬起
+      —— 同一个组件两种行为。改用 `translate` 属性后两者互不竞争（规范上依次应用、互不覆盖）。
+   ② 原来在 `.is-in` 里声明 `transition: opacity, transform`，而它的特异性 (0,3,1) 同样压过
+      `.card { transition: transform, box-shadow, border-color }` (0,1,0) ⇒ 首页卡片的
+      **描边/阴影 hover 一直没有过渡**（瞬变），`/works` 却有过渡。
+      改用动画后**根本不声明 transition**，元素自身的过渡完整保留。
+   ⛔ 不要退回「抬高 .card:hover / .card 特异性」的写法：那是把渲染顺序问题伪装成权重问题。 */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--reveal-shift);
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
 html.js-motion [data-reveal] {
   opacity: 0;
-  transform: translate3d(0, var(--reveal-shift), 0);
+  translate: 0 var(--reveal-shift);
 }
 
 html.js-motion [data-reveal].is-in {
   opacity: 1;
-  transform: none;
-  transition:
-    opacity var(--dur-3) var(--ease-out),
-    transform var(--dur-4) var(--ease-out);
-  transition-delay: calc(var(--i, 0) * 70ms);
+  translate: 0 0;
+  animation: reveal-in var(--dur-4) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2713,7 +3039,7 @@ html.js-motion [data-reveal].is-in {
   html.js-motion [data-reveal],
   html.js-motion [data-reveal].is-in {
     opacity: 1 !important;
-    transform: none !important;
+    translate: none !important;
     transition: none !important;
   }
 
@@ -2729,7 +3055,7 @@ html.js-motion [data-reveal].is-in {
 :root[data-motion='off'] [data-reveal],
 :root[data-motion='off'] [data-reveal].is-in {
   opacity: 1 !important;
-  transform: none !important;
+  translate: none !important;
   transition: none !important;
 }
 
@@ -2804,9 +3130,14 @@ html.js-motion [data-reveal].is-in {
   pointer-events: none;
 }
 
-.card:hover::before,
 .card:focus-within::before {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .card:hover::before {
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2817,19 +3148,6 @@ html.js-motion [data-reveal].is-in {
 
 :root[data-motion='off'] .card::before {
   display: none;
-}
-
-/* Hero 星座：两圈轨道极缓自转（200s）⇒ 首屏「活着」，但不产生可察觉的位移 */
-.hf-orbit {
-  transform-box: view-box;
-  transform-origin: 168px 180px;
-  animation: hf-spin 200s linear infinite;
-}
-
-@keyframes hf-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* Hero 滚动提示：一条短脊线 + 下移的光点（几何表达「下面还有内容」） */
@@ -2870,8 +3188,10 @@ html.js-motion [data-reveal].is-in {
   animation: cue-drop 2.4s var(--ease-in-out) infinite;
 }
 
-.hero__cue:hover {
-  color: var(--brand-primary);
+@media (hover: hover) {
+  .hero__cue:hover {
+    color: var(--state-hover-accent);
+  }
 }
 
 @keyframes cue-drop {
@@ -2919,18 +3239,18 @@ html.js-motion .hero__inner > *:nth-child(4) {
   animation-delay: 0.18s;
 }
 
-html.js-motion .hero__figure {
+html.js-motion .hero__map {
   animation: rise-in var(--dur-4) var(--ease-out) 0.24s both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.js-motion .hero__inner > *,
-  html.js-motion .hero__figure {
+  html.js-motion .hero__map {
     animation: none !important;
   }
 }
 
 :root[data-motion='off'] .hero__inner > *,
-:root[data-motion='off'] .hero__figure {
+:root[data-motion='off'] .hero__map {
   animation: none !important;
 }

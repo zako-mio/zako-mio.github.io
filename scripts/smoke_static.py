@@ -10,7 +10,8 @@
   S6  **无 JS 可读**：剥掉 script/style 后，每页可见文字 ≥ 200 字符
   S7  **主题防闪烁脚本**内联在 HTML 中（每页 1 处）
   S8  **三态**选择器在 CSS 产物中存在（`[data-theme=dark]` 与 `[data-theme=light]` 分支）
-  S9  卡片嵌套修复生效：产物中不出现整卡覆盖用的 `inset: 0` 形态的 `::after`（按类名检查）
+  S9  卡片嵌套交互契约：整卡拉伸层（`.card__title a::after{inset}`）与「页脚外链抬升」
+      （`.card__links a{position:relative; z-index}` 且 z-index **大于**拉伸层）必须成对出现
   S10 首页含「主线作品」区块且主线数与 overrides.json 的 featured 数一致
   S11 `--selftest` 负向夹具：在临时目录构造缺件产物，判据必须转 FAIL
 
@@ -117,14 +118,8 @@ def run(out_dir: Path = OUT) -> bool:
     has_light = "data-theme=light" in css or 'data-theme="light"' in css
     check("S8", has_dark and has_light, f"三态分支 dark={has_dark} light={has_light}")
 
-    card_css = re.search(r"\.card__title a::after\s*\{(?P<body>[^}]*)\}", css)
-    overlay_removed = card_css is None or "inset" not in card_css.group("body")
-    check(
-        "S9",
-        overlay_removed,
-        "未发现整卡覆盖层"
-        + ("" if card_css is None else "（.card__title a::after 存在但无 inset）"),
-    )
+    s9_ok, s9_detail = s9_card_nesting(css)
+    check("S9", s9_ok, s9_detail)
 
     home = pages.get("index.html", "")
     featured_in_page = len(set(re.findall(r'class="chip chip--type"', home))) > 0
@@ -144,6 +139,54 @@ def run(out_dir: Path = OUT) -> bool:
     )
 
     return report(results)
+
+
+def s9_card_nesting(css: str) -> tuple[bool, str]:
+    """S9 卡片嵌套交互契约（★ 第八批按裁决①反转批三断言）。
+
+    旧断言＝「产物中不得出现整卡覆盖层」（批三取消了整卡 `::after`）；
+    新断言＝「必须有整卡拉伸层，且卡片内的**嵌套交互件必须被抬升到其之上**」。
+    为什么必须成对：拉伸层铺满整卡后，若页脚外链不同域抬升，就会被它盖住 ⇒
+    外链变成**死区**（Bootstrap `stretched-link` 官方点名的问题）。
+    ⛔ 不是恒真判据：任一侧缺失 / 抬升不足（z 值不增）都会 FAIL。
+
+    独立成函数 ⇒ 自检可做**定向负向夹具**（不必只靠「整目录缺件」这种粗夹具）。
+    """
+    def decl_body(sel: str) -> str | None:
+        """在（可能被 minify/合并选择器的）产物 CSS 里取某选择器的声明体。
+
+        ⚠ 归一化两件事（实测产物形态）：① 空白；② `::after` 被 minify 成 `:after`
+          （伪元素双冒号收敛为单冒号）⇒ 判据侧必须同样收敛，否则会**假 FAIL**。
+        """
+        want = re.sub(r"\s+", "", sel).replace("::", ":")
+        for match in re.finditer(r"([^{}]+)\{([^{}]*)\}", css):
+            heads = [
+                re.sub(r"\s+", "", part).replace("::", ":") for part in match.group(1).split(",")
+            ]
+            if want in heads:
+                return match.group(2)
+        return None
+
+    def z_index(body: str | None) -> int:
+        found = re.search(r"z-index:\s*(-?\d+)", body or "")
+        return int(found.group(1)) if found else 0
+
+    overlay = decl_body(".card__title a::after")
+    raised = decl_body(".card__links a")
+    overlay_ok = overlay is not None and "inset" in re.sub(r"\s+", "", overlay)
+    raised_ok = raised is not None and "position:relative" in re.sub(r"\s+", "", raised)
+    raised_above = z_index(raised) > z_index(overlay)
+    detail = (
+        "整卡拉伸层就位且嵌套外链已抬升"
+        + ("" if overlay_ok else " · 缺 .card__title a::after{inset}")
+        + ("" if raised_ok else " · 缺 .card__links a{position:relative}")
+        + (
+            ""
+            if raised_above
+            else f" · 抬升不足（overlay z={z_index(overlay)} ≥ links z={z_index(raised)}）"
+        )
+    )
+    return overlay_ok and raised_ok and raised_above, detail
 
 
 def report(results: list[tuple[str, bool, str]]) -> bool:
@@ -170,7 +213,44 @@ def selftest() -> int:
     real = run(OUT)
     print("\n  真实 out/（期望 PASS）:", "PASS" if real else "FAIL")
     print("  缺件夹具（期望 FAIL）:", "FAIL" if not broken else "PASS（判据可能恒真）")
-    passed = real and not broken
+
+    # ★ S9 定向负向夹具（比「整目录缺件」精确得多，逐条对准判据的每个分支）
+    s9_samples: list[tuple[str, str, bool]] = [
+        (
+            "基线：拉伸层＋抬升齐备",
+            '.card__title a::after{content:"";position:absolute;inset:0;z-index:1}'
+            ".card__links a{position:relative;z-index:2}",
+            True,
+        ),
+        (
+            "负向夹具：缺整卡拉伸层（期望 FAIL）",
+            ".card__links a{position:relative;z-index:2}",
+            False,
+        ),
+        (
+            "负向夹具：缺页脚外链抬升（期望 FAIL）",
+            ".card__title a::after{inset:0;z-index:1}.card__links a{z-index:2}",
+            False,
+        ),
+        (
+            "负向夹具：抬升不足 z 值不增（期望 FAIL）",
+            ".card__title a::after{inset:0;z-index:1}.card__links a{position:relative;z-index:1}",
+            False,
+        ),
+        (
+            "负向夹具：拉伸层无 inset（半成品，期望 FAIL）",
+            '.card__title a::after{content:"";z-index:1}.card__links a{position:relative;z-index:2}',
+            False,
+        ),
+    ]
+    print("\n  -- S9 定向夹具（伪元素 minify 形态 `:after` 一并覆盖）--")
+    s9_results: list[bool] = []
+    for name, sample, expect in s9_samples:
+        got, _ = s9_card_nesting(sample)
+        s9_results.append(got == expect)
+        print(f"    [{'PASS' if got == expect else 'FAIL'}] {name}（判据={got} 期望={expect}）")
+
+    passed = real and not broken and all(s9_results)
     print("  SELFTEST:", "PASS" if passed else "FAIL")
     return 0 if passed else 1
 

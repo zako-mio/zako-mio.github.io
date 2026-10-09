@@ -33,6 +33,8 @@ python3 scripts/smoke_static.py           # 静态导出冒烟：读 out/ 的实
 python3 scripts/gate_metrics.py           # E 指标口径（G1–G10）：读 src/data/metrics.json ＋ E4 确认登记
 python3 scripts/gate_ia_division.py       # 页面分工：读 out/，判「每类内容唯一落点」
 python3 scripts/gate_theme_states.py      # 主题三态 × 双模图表同步（防新增主题档时静默失效）
+python3 scripts/gate_interaction_surface.py  # 交互作用面：悬停反馈面 ≡ 点击热区（关系型判据）
+python3 scripts/gate_background_salience.py  # 背景显著性：背景层结构护栏 ＋ 显著性报告项
 ```
 
 > 门控**集合与口径的单一真相源**是 `scripts/gate-manifest.json`（`A8` 硬门保证漏登记即 FAIL）——
@@ -46,7 +48,13 @@ python3 scripts/smoke_static.py --selftest
 python3 scripts/gate_metrics.py --selftest
 python3 scripts/gate_ia_division.py --selftest
 python3 scripts/gate_theme_states.py --selftest
+python3 scripts/gate_interaction_surface.py --selftest
+python3 scripts/gate_background_salience.py --selftest
 ```
+
+> ★ **阈值型判据有结构性盲区**：「悬停有反馈但点击无响应」「背景抢焦点」这类缺陷是
+> **关系型 / 层级型**的，对比度、溢出、包体这类**阈值型**门控看不见它们。
+> ⇒ 第七批补的这两道门控专门管「关系」（作用面之间的对齐），⛔ 不要用调阈值的方式去凑。
 
 ### `scripts/gate_theme_states.py`（`T1`–`T5`）
 
@@ -57,7 +65,50 @@ python3 scripts/gate_theme_states.py --selftest
 跟随系统分支存在且以「非强制浅色」限定（`T2`）、默认态基线存在（`T3`）、
 `charts.json` 每图 `svg.light`/`svg.dark` 成对非空（`T4`）、产物中双模帧实例成对（`T5`）。
 
-### 图谱分层口径（`scripts/build_topology.mjs`）
+### `scripts/gate_interaction_surface.py`（交互作用面：反馈面 ≡ 热区）
+
+**要解决的问题**：给「非交互区块」加悬停动效＝**假可供性** —— 用户会读作「这里能点」。
+实测反例（批七取证）：整卡有抬起/描边/指针光斑，但仅标题链接与页脚外链可点，
+**coverage = 0.131**（87% 的反馈面是死区）；分区项 `.related__item` 为 **0.194**。
+
+本门控把「反馈面 ≡ 热区」固化为**契约**，静态可跑（CI 无需浏览器）：
+
+| 判据 | 内容 |
+|---|---|
+| `C1` 双向闭合 | `globals.css` 的 `:hover`/`:focus-within` 规则集合 ⟺ `scripts/interaction-surfaces.json`（漏登记 / 幽灵登记 ⇒ FAIL） |
+| `C2` 空集守卫 | 每条登记的「去伪类基选择器」必须在 **out/ 全量产物**里命中 ≥1（防登记表静默腐化） |
+| `C3` 覆盖率契约 | `kind ∈ {self, container}` 必须声明 `coverage_min ≥ 0.98`；已知缺陷可登记为 `status: rework`（须带 `deadzone_note` + `expires_at`，只 WARN） |
+| `C4` 焦点等价 | 有 hover 就必须有焦点等价面（WCAG 2.2 SC 1.4.13） |
+
+**对象必须分类**（第一版判据在此踩坑）：`self`（元素自身即交互目标）／
+`descendant`（某交互目标的后代装饰件，coverage=0 属正常，判据上溯最近交互祖先）／
+`container`（非交互容器 —— **只有这一类**的「反馈面 > 热区」才是真缺陷）。
+
+⚠ **声明的不覆盖面**：真实覆盖率（面积比）须浏览器实测，本门控只校验**契约是否被声明且未腐化**；
+「每个可点目标是否都有 hover 反馈」（欠反馈方向）静态亦不可判。两者由
+`batch7-evidence/audit_site.py`（浏览器层，**提示词级**，CI 无 playwright）承担。
+
+> ★★ **几何口径 ≠ 行为口径**（第八批实测）：`batch7-evidence/audit_site.py` 的 coverage 用
+> 「交互后代的**几何盒**面积」当热区 ⇒ 对**伪元素命中区**（stretched link）**结构性失明**：
+> 同一张卡，几何口径仍读 **0.131**，行为口径读 **1.0**（两者都对——量的不是同一个事实）。
+> ⇒ 第八批补 `batch8-evidence/audit_surface_hit.py`：面内布点 → `document.elementFromPoint()`
+> → 命中的可交互祖先是否**在该反馈面之内**。带负向夹具（含「同容器 + stretched ::after」对照臂，
+> 证明它**能看见**几何口径看不见的机制）与「整轮无可量测项即 FAIL」的逃亡门守卫。
+> ⛔ 两口径不可互换，任何一处改口径前先问「我在量哪个事实」。
+
+### `scripts/gate_background_salience.py`（背景显著性）
+
+对比度门控管的是**令牌对**（≥4.5:1），管不了「背景是否抢焦点」——后者是**显著性/层级**问题。
+本门控把强度分成两档，⛔ **不得混用**：
+
+- **护栏（fail-closed）**：`B1` `.backdrop` 必须 `pointer-events:none` 且 `z-index < 0`；
+  `B2` 全量产物的 `.backdrop` 子树内不得含可聚焦元素；
+  `B3` 动效熔断必须是**全局**（`reduced-motion` 与 `[data-motion='off']` 下各有 `*` 级 animation 压制）
+  且不得被 `animation-duration: … !important` 绕过。
+- **报告项（⛔ 不判阈值）**：背景层数、运动层数、纱幕档位、网格遮罩峰值、照片 opacity/filter。
+  ⇒ 依 `criterion-design-validation` 的口径：**代理指标不得接自动回写**；
+  「背景是否抢焦点」的显著性尚未验证与目标同向，只出读数供人审阅。
+
 
 对项目公开的 `*-dag.json` 做**构建期 headless 拓扑复算**（cytoscape 只当内核，不做画布），
 与项目自称**并陈**。分层口径须与上游一致，否则会把合法图误报成「有环」：
@@ -97,7 +148,7 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 
 | 路由 | 回答的问题 | 专属内容（唯一落点） |
 |---|---|---|
-| `/` | 这个人**是谁、做什么、强在哪** | 定位陈述、精选代表作（`overrides.json` 的 `featured`）、**本站做法**（由 `scripts/gate-manifest.json` 派生）、站点分区导航 |
+| `/` | 这个人**是谁、做什么、强在哪** | 定位陈述、**首屏定位图**（`HeroPositionMap`，第八批）、精选代表作（`overrides.json` 的 `featured`）、**本站做法**（由 `scripts/gate-manifest.json` 派生）、站点分区导航 |
 | `/works` | **都有哪些作品** | 全量索引 ＋ 筛选/排序/搜索（筛选态写入地址栏） |
 | `/stats` | **数据的规模与口径边界** | 一切聚合数字：计数、规模指标（E）、分布、时间线 |
 | `/about` | 这个人**是谁、怎么工作、怎么联系** | 技术画像、工作方式、匿名约定、联系方式 |
@@ -122,6 +173,26 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 
 ## 设计系统约定
 
+- **首屏右区 = 定位图（第八批 · 裁决② 的 V3 方案）**：`src/components/figures/HeroPositionMap.tsx`。
+  旧件 `HeroFigure` 是 `aria-hidden` 的纯装饰星座（不承载信息；夜间该区高亮像素占比 0.000）；
+  本件把 Hero 那句话的**结构**画出来（复合背景 → 核心动作 → 三个聚焦方向），于是首屏最大的
+  视觉权重承载与首页职能自洽的内容。三条纪律：
+  ① **撤 `aria-hidden`**，改 `role="img"` ＋ `<title>`/`<desc>` 给等价文本（⛔ 不得对承载信息的
+     可见内容用 `aria-hidden`）；② ⛔ 不引入 `/stats` 的聚合数字与 `/works` 的作品枚举 ——
+     标签只取自定位陈述与 `PROFILE_FOCUS`（它是**图形化**，不是第二处正文）；
+  ③ `<1024px` 隐藏**不造成信息丢失**：同一份内容在同页 Hero 标语里以文字存在。
+  ⚠ **正文列必须给右区让位**：`.hero__inner > *` 的 `max-inline-size` 由 `--hero-map-w`
+  派生（同一令牌，⛔ 不写第二处魔法数字）—— 否则标语首行会压到图件 chip 上（实测 47–110px）。
+  ⚠ 标签用**带底色的 chip**：连接线画在其下层不穿字（判据 S1），且文字对比度 ≥15.9（不受背景细节影响）。
+- **进场动效走独立 `translate` 属性（第八批 · 既有缺陷修复）**：`[data-reveal]` 的进场位移原本用
+  `transform`，而 `[data-reveal].is-in { transform: none }` 的特异性 (0,3,1) 会连锁压过三处：
+  ① `.card:hover { transform: translateY(-3px) }` ⇒ 首页精选卡**从不抬起**（`/works` 却抬起）；
+  ② `.card { transition: … }` ⇒ 首页卡片的描边/阴影 hover **一直是瞬变**；
+  ③ `.hero__figure { transform: translateY(-50%) }` ⇒ 右区图件**下坠半个身位**
+  （实测非 reduced-motion 下 `top=239` 而应为 `59`，一半溢出 Hero ——**线上一直如此**）。
+  ⇒ 现改为：进场用 `@keyframes`（**不再声明 `transition`**）＋ 位移/居中走独立 `translate` 属性，
+  三者互不竞争。⛔ 不要用「抬高特异性」绕过 —— 那是把渲染顺序问题伪装成权重问题。
+
 - **角色令牌**（`src/app/globals.css` 的 `:root` / `:root[data-theme='dark']`）与
   `fe-starter-kit/tokens/contract.json` 的 11 个 role 同名对齐：`text.primary` / `text.secondary` /
   `text.tertiary` / `link` / `brand.primary` / `border.line` / `border.subtle` / `surface.page` /
@@ -130,7 +201,25 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   ⛔ **不要改用 `light-dark()`**：栈 B/C 的 CSS 管线会把它降级为静态双变量，运行时改
   `color-scheme` 不会重算（`fe-starter-kit/docs/STACK-NOTES.md` 两栈各复现一次）。
   `color-scheme` 由 CSS 选择器分支承担，`data-theme` 由 pre-paint 内联脚本落定。
-- **语义 HTML**：卡片取消整卡覆盖层，交互目标是显式链接（键盘 / 屏幕阅读器友好）。
+- **卡片 = 整卡可点 ＋ 页脚外链按钮化**（第八批按用户裁决①落地；**有意反转**批三「取消整卡 `::after`」的决定）：
+  主链接用 **stretched link**（`.card__title a::after{position:absolute;inset:0;z-index:1}`）铺满整卡
+  ⇒ 反馈面（整卡）≡ 热区；页脚外链改为显式次级按钮（复用 `.button .button--small`）并
+  `position:relative;z-index:2` **抬升到拉伸层之上**（⛔ 不抬就会被盖住 ⇒ 外链变死区，
+  这是 Bootstrap `stretched-link` 官方点名的配套要求）。`.related__item` 同理（`.related__link::after`）。
+  ⚠ 陷阱：祖先带 `transform` / `perspective` / `filter` / `will-change` 会成为新的 containing block
+  （拉伸层只覆盖到它）；⛔ 也不要给链接自身加 `position: relative`（拉伸层会缩回链接自己的盒子）。
+  ⚠ **既定代价（如实登记）**：卡片内**非交互**正文落在拉伸层之下 ⇒ 文字不可选中、原生 `title` 不触发；
+  ⛔ 不得用「把非交互元素也抬升」来绕 —— 那会在热区里重新挖出空洞（官方点名的反模式）。
+  ⇒ 机检：`smoke_static.py` 的 **S9**（拉伸层与嵌套抬升必须**成对**，任一侧缺失或抬升不足即 FAIL）。
+- **交互状态一律包在 `@media (hover: hover)` 里**（第八批）：`:hover` 在触屏上不可靠且会「粘滞」，
+  且内容不得只能靠 hover 才可达。`:focus-within` / `:focus-visible` 等价面 ⛔ **不进**该门控
+  （键盘与辅助技术在任何输入设备上都必须看得到反馈）。
+  普通文本链接由站内默认态 `a:hover` 覆盖（正文/面包屑/说明/`.nav__brand` 等；
+  其特异性 (0,1,1) **低于**所有组件态 ⇒ 组件外观不会被它改掉）；
+  ⚠ `.skip-link` 例外：它的底色就是 `--brand-primary`，继承默认强调色会变成同色不可读 ⇒ 显式收回本色。
+- **交互状态令牌（批七）**：`:root` 的 `--state-hover-accent` / `--state-hover-surface` 是**语义别名**
+  （`var()` 指向既有角色令牌，⛔ 不引入新色值、⛔ 不绕过主题）。新增可交互件只引用这两个语义令牌，
+  ⛔ 不要各处再写 `var(--brand-primary)` —— 「同一件事有 7 个副本」正是先前漂移的成因。
 - **背景系统 = 真实公开素材**（第六批）：浅/深各一帧，显隐由**主题选择器**决定
   （`[data-theme]` / `prefers-color-scheme` 决定 `.backdrop__photo--day|--night` 谁 `display:block`），
   非当前主题的一帧 `display:none` ⇒ 浏览器**不会下载**它。⛔ 不要改成「两帧各挂 opacity」。
@@ -142,11 +231,29 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   - 正文压在照片上 ⇒ **令牌对比度 ≠ 页面对比度**：凡动背景，必须重跑合成后对比度实测
     （批五 `batch5-evidence/contrast_probe.py` 只覆盖浅色；批六
     `batch6-evidence/contrast_probe_theme.py` 覆盖**深浅双主题**）。
-- **夜间星野特效（tsparticles，MIT）**：`preset-stars` + 本站覆盖项，**叠加**在银河照片之上。
-  懒加载（`next/dynamic({ssr:false})`）⇒ ⛔ 不进首屏 JS（实测 `/` 仍 106 kB，粒子独立分块 105 KB）。
+- **背景分区分级（第八批 · 裁决③）**：只在**非阅读带**保留强细节，正文带用**局部 scrim**
+  （`.backdrop__scrim`，夹在网格之后、运动层之前）。阅读带边界由**布局派生令牌**给出
+  （`--backdrop-reading-top` / `--backdrop-reading-left`：窄屏上边界＝导航高、宽屏左边界＝`--rail-w`），
+  ⛔ 不写死像素。★ 为什么不是「横向分列」：1440px 下两侧 gutter 各仅 ~34px（实测），
+  「两侧留细节」**没有可用的面** ⇒ 分区只能落在真实存在的页顶带与左栏带。
+  ⛔ 它是**加法层**：原 `.backdrop__veil` 一格不改 ⇒ 非阅读带细节原样保留、合成对比度只增不减。
+  ⛔ 本轮**不动**照片 `filter`、**不移**网格遮罩峰值（同属裁决里**未采纳**的独立提案，可重提）。
+- **指针光斑（第八批 · 裁决④ T1）**：`.backdrop__glow` —— **主题无关**的交互通道
+  （现状粒子交互「仅夜间 ＋ 不可发现」，光斑补的是对称性与可发现性）。三条护栏：
+  ① 只在 `(hover: hover) and (pointer: fine)` 下 `display:block`（**触屏不启用**）；
+  ② **幅度受限是结构性的**：本层夹在「照片之上、纱幕/网格/scrim 之下」
+     ⇒ 光斑永远不可能比照片更亮地照到文字层（实测对正文脚下亮度影响 ≤ ±3/255）；
+  ③ 靠 `transform: translate3d()` 随指针移动（合成层，⛔ 不全屏重绘）；
+     变量写在光斑元素自身（⛔ 不写 `:root`，那会让整棵树重算样式）。
+  `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入（⛔ 不新增监听器）。
+  熔断：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下 `display:none`。
+- **夜间星野特效（tsparticles，MIT）**：`preset-stars` + 本站覆盖项，**叠加**在银河照片之上。  懒加载（`next/dynamic({ssr:false})`）⇒ ⛔ 不进首屏 JS（实测 `/` 仍 106 kB，粒子独立分块 105 KB）。
   两条熔断**必须保留**：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下**卸载画布**
   （浅色档同理：`display:none` 只是「不显示」，rAF 仍在算）。判据见
   `batch6-evidence/verify_backdrop_fx.py`（含「画布 backing = CSS × DPR」的清晰度机检）。
+  ★ 批八（裁决④ · T2）**只调「可发现性」这一维**（`grab.distance` 190→260、`links.opacity` 0.22→0.45），
+  ⛔ 不加新交互模式、不加依赖、不新增字节。**星野仍是有意的夜间专属**：浅底上白星不可见，
+  改成深色星点会引入一条没有任何裁决依据的新视觉母题 ⇒ 主题对称性由上面那道**主题无关的指针光斑**承担。
 - **网格/弹性子项必须显式收缩**：`grid-template-columns: 1fr` 与 flex 子项默认 `min-width: auto`
   ⇒ **不会收缩到内容最小宽度以下**。实测：`.detail__main` 漏了这一条，窄屏被构建期 ECharts SVG
   与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器

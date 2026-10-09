@@ -26,6 +26,16 @@
       "script": "scripts/gate_theme_states.py",
       "reads": "src/lib/theme.ts ＋ globals.css ＋ charts.json ＋ out/ 的双模帧",
       "selftest": true
+    },
+    {
+      "script": "scripts/gate_interaction_surface.py",
+      "reads": "src/app/globals.css 的真实 :hover/:focus-within 规则集合 ＋ scripts/interaction-surfaces.json 声明表 ＋ out/ 全量产物",
+      "selftest": true
+    },
+    {
+      "script": "scripts/gate_background_salience.py",
+      "reads": "src/app/globals.css 的背景层规则 ＋ out/ 全量产物的 .backdrop 子树",
+      "selftest": true
     }
   ],
   "capability_uses": [

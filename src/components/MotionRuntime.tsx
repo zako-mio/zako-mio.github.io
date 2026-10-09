@@ -24,12 +24,55 @@ export function MotionRuntime() {
     const root = document.documentElement;
     root.setAttribute(MOTION_RUNTIME_FLAG, '');
 
+    // ---------------------------------------------------------------- 指针位置
+    // ★ 第八批（裁决④ · T1）：把指针的**视口坐标**喂给 `.backdrop__glow`（背景光斑）。
+    //   门槛（与卡片光斑同口径）：精确指针 + 动效未被熔断 —— 触屏与前庭敏感用户一律不启用。
+    //   ⛔ 不新增监听器：与卡片光斑共用下面这**同一个**委托 listener。
+    //   ⛔ 变量写在光斑元素**自身**上（不是 :root）：改 :root 的自定义属性会让整棵树重算样式，
+    //      而写在元素上只影响它自己。光斑靠 transform 移动 ⇒ 合成层，不触发重绘。
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    const motionOff = root.getAttribute('data-motion') === 'off';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let onPointerMove: ((event: PointerEvent) => void) | null = null;
+    if (finePointer && !motionOff && !reduced) {
+      const glow = document.querySelector<HTMLElement>('.backdrop__glow');
+      let pointerFlagged = false;
+      let current: HTMLElement | null = null;
+      onPointerMove = (event: PointerEvent) => {
+        if (glow) {
+          glow.style.setProperty('--pointer-x', `${event.clientX}px`);
+          glow.style.setProperty('--pointer-y', `${event.clientY}px`);
+          if (!pointerFlagged) {
+            pointerFlagged = true;
+            root.setAttribute('data-pointer', '');
+          }
+        }
+        const target = event.target as Element | null;
+        const card = target?.closest?.('.card') as HTMLElement | null;
+        if (card !== current) current = card;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+        card.style.setProperty('--my', `${event.clientY - rect.top}px`);
+      };
+      window.addEventListener('pointermove', onPointerMove, { passive: true });
+    }
+
+    // ⚠ 指针监听必须**先于**下面这个 early return 注册：`/stats` 等页可能没有
+    //   `[data-reveal]` 元素，若在后面注册，那些页的指针通道会静默消失。
     const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    if (nodes.length === 0) return;
+    if (nodes.length === 0) {
+      return () => {
+        if (onPointerMove) window.removeEventListener('pointermove', onPointerMove);
+      };
+    }
 
     if (!('IntersectionObserver' in window)) {
       nodes.forEach((node) => node.classList.add('is-in'));
-      return;
+      return () => {
+        if (onPointerMove) window.removeEventListener('pointermove', onPointerMove);
+      };
     }
 
     const observer = new IntersectionObserver(
@@ -44,29 +87,6 @@ export function MotionRuntime() {
     );
 
     nodes.forEach((node) => observer.observe(node));
-
-    // ---------------------------------------------------------------- 卡片光斑
-    // 单个**委托**监听器服务全站卡片（⛔ 不逐卡 addEventListener）。
-    // 门槛：指针为精确型 + 动效未被熔断；`--mx/--my` 只喂给 CSS 的 radial-gradient，
-    // 因此每帧成本 = 一次样式写入，且只在真正位于卡片内时才写。
-    const finePointer = window.matchMedia('(pointer: fine)').matches;
-    const motionOff = root.getAttribute('data-motion') === 'off';
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    let onPointerMove: ((event: PointerEvent) => void) | null = null;
-    if (finePointer && !motionOff && !reduced) {
-      let current: HTMLElement | null = null;
-      onPointerMove = (event: PointerEvent) => {
-        const target = event.target as Element | null;
-        const card = target?.closest?.('.card') as HTMLElement | null;
-        if (card !== current) current = card;
-        if (!card) return;
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
-        card.style.setProperty('--my', `${event.clientY - rect.top}px`);
-      };
-      window.addEventListener('pointermove', onPointerMove, { passive: true });
-    }
 
     return () => {
       observer.disconnect();

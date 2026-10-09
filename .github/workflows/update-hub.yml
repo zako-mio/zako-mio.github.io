@@ -86,6 +86,17 @@ jobs:
       - name: Theme states gate
         run: python3 scripts/gate_theme_states.py
 
+      # 交互作用面（关系型判据）：悬停反馈面 ≡ 点击热区。
+      # 阈值型门控（对比度/溢出/包体）结构性看不见这类缺陷，故单列一道。
+      # 读 globals.css 的真实 :hover 规则集合 + 声明表 + out/ 全量产物。
+      - name: Interaction surface gate
+        run: python3 scripts/gate_interaction_surface.py
+
+      # 背景显著性：背景层结构护栏（不可交互 / 不得含可聚焦件 / 熔断全局且不可绕过）
+      # + 显著性报告项（⛔ 代理指标不判阈值、不接自动回写）。
+      - name: Background salience gate
+        run: python3 scripts/gate_background_salience.py
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

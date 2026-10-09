@@ -26,9 +26,16 @@ export function Backdrop() {
     <div className="backdrop" aria-hidden="true">
       <span className="backdrop__photo backdrop__photo--day" />
       <span className="backdrop__photo backdrop__photo--night" />
+      {/* ★ 批八（裁决④ T1）：指针光斑（主题无关）。夹在照片之上、纱幕/网格/scrim 之下 ——
+          这是**结构性**的幅度限制：光斑永远不可能比照片更亮地照到文字层。 */}
+      <span className="backdrop__glow" />
       <span className="backdrop__veil backdrop__veil--day" />
       <span className="backdrop__veil backdrop__veil--night" />
       <span className="backdrop__grid" />
+      {/* ★ 批八（裁决③）：局部 scrim —— 只保护**阅读带**，非阅读带（页顶/左栏）保持照片原样。
+          位置在网格**之后**、运动层**之前**：既压住阅读带的网格与照片细节，又不压运动层
+          （「减正文带运动层」属裁决里**未采纳**的独立提案）。 */}
+      <span className="backdrop__scrim" />
       <span className="backdrop__meteors">
         <i className="backdrop__meteor backdrop__meteor--1" />
         <i className="backdrop__meteor backdrop__meteor--2" />

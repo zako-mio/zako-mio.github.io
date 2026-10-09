@@ -64,7 +64,10 @@ const OPTIONS = {
       resize: { enable: true },
     },
     modes: {
-      grab: { distance: 190, links: { opacity: 0.22, color: '#9fc0ff' } },
+      // ★ 第八批（裁决④ · T2）：**只调「可发现性」这一维，不加新效果类型、不加依赖**。
+      //   实测原档 grab.distance=190 / links.opacity=0.22 在 1440×900 上「要恰好碰到星点才出现」，
+      //   等于不可发现 ⇒ 扩大响应半径并提高连线可见度（仍是同一模式、0 新增字节）。
+      grab: { distance: 260, links: { opacity: 0.45, color: '#9fc0ff' } },
     },
   },
 };
