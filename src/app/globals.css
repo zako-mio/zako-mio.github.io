@@ -1418,6 +1418,19 @@ button.chip[aria-pressed='true'] {
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
+/* ★ 批九（缺陷修复）：标签宽度必须与「档位」和「是否已水合」**无关**。
+   实测证据：SSR 首帧渲染 2 字占位（『主题』/『动效』），水合后变最长档『跟随系统』（4 字）
+   ⇒ 每次加载产生一次位移（CLS 源 = `.rail__foot`）；且左栏可用宽 203px 装不下两个
+   4 字按钮（104+104 > 203）⇒ 点一次主题键就在「单行 ↔ 上下结构」之间反复横跳（实测跳 44px）。
+   预留宽度取**最宽档** = 4 个全角字 = `4em`（由 `--fs-label` 派生，⛔ 不是魔法数字）。
+   ⇒ 各档宽度一致 ⇒ 左栏恒两行、零跳动；导航（641–1179px）亦不再有水合位移。
+   ⚠ `≤640px` 的图标态（`display:none`）在下方媒体查询里，源序更后 ⇒ 仍覆盖本规则。 */
+.theme-toggle__text {
+  display: inline-block;
+  min-inline-size: 4em;
+  text-align: start;
+}
+
 @media (max-width: 640px) {
   .nav__link {
     padding: 0 var(--space-1);
