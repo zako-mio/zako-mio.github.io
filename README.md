@@ -136,8 +136,8 @@ python3 scripts/gate_motion_budget.py --selftest
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
-上面那些门控都**只跑 python3**。有四类缺陷只有真浏览器能看见（图件几何、合成后对比度、
-悬停反馈面 ≡ 热区、`:hover` 门控），长期是**提示词级**（写进文档、靠人记着跑）。
+上面那些门控都**只跑 python3**。有五类缺陷只有真浏览器能看见（图件几何、合成后对比度、
+悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**），长期是**提示词级**（写进文档、靠人记着跑）。
 现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
 
 | 探针 | 判据 | 需浏览器 |
@@ -147,18 +147,21 @@ python3 scripts/gate_motion_budget.py --selftest
 | `svg_layout_probe.py` | `S1` 文字压框/压字、`S2` 箭头落点（带 `--selftest` 负向夹具） | 是 |
 | `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
+| `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
-- 四条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+- 五条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
   以 **rc=2** 退「用法错误」（⛔ 不读成判据 FAIL）。
-- ★ **来源登记**：这四个是 Mission 归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋
-  `source_sha256` ＋ 漂移方向：活件可演进、归档件冻结 ⛔ 不追改）。`check_provenance.py` 保证
-  「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，否则 fail-closed。
-  （同目录另两个 `acceptance_probe.py` / `dup_probe.py` 是**仓库原生**，登记 `origin: repo-native`。）
-- ⛔ 这四个活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
-  也就不会派生渲染进首页）；它们由 CI workflow 直接调用。
+- ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
+  归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
+  活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）是**仓库原生**。
+  `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
+  否则 fail-closed。（同目录另两个 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
+- ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
+  也就不会派生渲染进首页）；它们由 CI workflow 直接调用，⚠ **workflow 步骤是逐条列举的 ⇒
+  新探针必须同批改 `.github/workflows/update-hub.yml`**（「已登记」≠「已进 CI」）。
 
 
 对项目公开的 `*-dag.json` 做**构建期 headless 拓扑复算**（cytoscape 只当内核，不做画布），
@@ -243,6 +246,16 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   （实测非 reduced-motion 下 `top=239` 而应为 `59`，一半溢出 Hero ——**线上一直如此**）。
   ⇒ 现改为：进场用 `@keyframes`（**不再声明 `transition`**）＋ 位移/居中走独立 `translate` 属性，
   三者互不竞争。⛔ 不要用「抬高特异性」绕过 —— 那是把渲染顺序问题伪装成权重问题。
+- **进场的「接管作用面」必须持续跟随 DOM（第十二批 · 缺陷修复）**：`MotionRuntime` 挂在**根布局**上，
+  App Router 的 layout **跨客户端路由常驻**，而 `useEffect(…, [])` 只跑一次 ⇒ 首次扫描之后
+  新挂载的 `[data-reveal]` 无人 observe，永远停在隐藏态。用户可见症状＝**动效开时「切回首页 /
+  进关于页 ⇒ 内容消失」**（实测：客户端导航后 `/about` 8 个 section、`/` 的 `#featured` 等全为
+  `opacity:0 / is-in:false`）。⇒ 现由 `MutationObserver`（只盯 `childList`，⛔ 不盯 `attributes`，
+  否则自触发成死循环）**持续接管**新节点，并由 `reveal_nav_probe.py` 把「进入路径无关性」
+  升为 CI 硬阻。⛔ 不要退回「挂载时扫描一次」或「`nodes.length === 0` 提前 return」
+  （`/works` 没有 `[data-reveal]`，提前 return 会让「从 `/works` 回首页」这一半缺陷重现）。
+  ⚠ 连带订正：`ProjectCard` 头注里「动态重渲染的卡片不得用 `data-reveal`」的**根因**已消失，
+  但该参数**仍保持 opt-in**（`/works` 筛选器反复重渲染会让卡片重播进场动画）。
 
 - **角色令牌**（`src/app/globals.css` 的 `:root` / `:root[data-theme='dark']`）与
   `fe-starter-kit/tokens/contract.json` 的 11 个 role 同名对齐：`text.primary` / `text.secondary` /
@@ -337,7 +350,7 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
-  起静态服务 ＋ 跑四条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
+  起静态服务 ＋ 跑五条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
   换来的是「提示词级（可绕）」→「runtime 硬阻（结构上做不成）」（落地形态强度阶梯）。
 
 ## 留档

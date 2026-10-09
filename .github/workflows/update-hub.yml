@@ -160,6 +160,16 @@ jobs:
           python3 scripts/probes/surface_hit_probe.py --out "$RUNNER_TEMP/surface-hit"
           echo "[artifact] $RUNNER_TEMP/surface-hit/surface-hit-report.md"
 
+      # 进场可见性 × 进入路径（第十二批 §4-①）：已有四探针各自**单页整页加载**，
+      # 跨客户端路由导航这一维**无人在看** ⇒ 动效开时「切回首页/进关于页 ⇒ 内容消失」
+      # 静默穿过全部八闸五探针。本探针用站内 <Link> 真点一遍，判「进入路径无关性」。
+      - name: Reveal-visibility probe (进入路径无关性) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/reveal_nav_probe.py --selftest
+          python3 scripts/probes/reveal_nav_probe.py
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5

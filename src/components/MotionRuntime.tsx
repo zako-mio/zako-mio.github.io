@@ -112,16 +112,43 @@ export function MotionRuntime() {
       window.addEventListener('touchcancel', onTouchEnd, { passive: true });
     }
 
-    // ⚠ 指针/触摸监听必须**先于**下面这个 early return 注册：`/stats` 等页可能没有
-    //   `[data-reveal]` 元素，若在后面注册，那些页的指针通道会静默消失。
-    const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    if (nodes.length === 0) {
-      return removeListeners;
+    // ── 进场接管的**作用面**必须持续跟随 DOM，⛔ 不是「挂载时扫描一次」
+    // ★ 第十二批修掉的缺陷（★ 全站八闸五探针**无一**覆盖这个作用面）：
+    //   本件挂在**根布局**上 ⇒ App Router 的 layout 跨客户端路由**常驻**，
+    //   而 `useEffect(…, [])` 全生命周期只跑一次 ⇒ 首次扫描之后，客户端导航新挂载的
+    //   `[data-reveal]` **从未被 observe**，永远停在 `html.js-motion [data-reveal]{opacity:0}`
+    //   的隐藏态（1.8s 兜底也不会救 —— 它读的 `data-motion-ready` 早已落过）。
+    //   实测（`batch12-evidence/repro_motion_nav.py`，`navigation entries=1` 证明是客户端路由）：
+    //     · `/` →（客户端点击）→ `/about`：about 的 8 个 section 全部 `opacity=0 / is-in=false`；
+    //     · 再从 `/about` 点回 `/`：首页 `#featured` / `#build-notes` / `#directory` 同样全灭。
+    //   ⇒ 用户可见症状即「动效开时，切回首页 / 进关于页 ⇒ 内容消失」。
+    //   ⇒ 修法＝**从一次性扫描改为持续接管**：MutationObserver 盯 `body` 子树，
+    //     新出现的 `[data-reveal]` 立刻交给**同一个** IntersectionObserver（仍全站唯一一处）。
+    //     ⚠ 这同时解除了 `ProjectCard` 头注里「动态重渲染的节点不得带 `data-reveal`」的**根因**
+    //       （该限制原本是绕开本缺陷，不是设计意图）；`reveal` 是否 opt-in 仍由卡片自己决定。
+    //   ⛔ 只观察 `childList`（**不观察 `attributes`**）：下面会给节点加 `.is-in` 类，
+    //     把属性变更纳入观察面会自我触发成死循环。
+    //   ⛔ 不要退回「early return when nodes.length === 0」：`/works` 没有 `[data-reveal]`，
+    //     一旦提前返回，从 `/works` 导航到 `/` 时仍然没人接管首页节点（这正是原缺陷的一半）。
+    // 在管节点集合：防重复 observe，并用于回收「已从小卸载」的节点
+    // （⛔ 不回收 ⇒ 每次路由切换都会往 Set 里攒一批游离节点，增长无界）。
+    const tracked = new Set<Element>();
+
+    /** 无 `IntersectionObserver` 的退化路径：不观察、直接置终态（退化＝没有动画，⛔ 不是没有内容）。 */
+    function revealAll(): void {
+      document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((node) => node.classList.add('is-in'));
     }
 
     if (!('IntersectionObserver' in window)) {
-      nodes.forEach((node) => node.classList.add('is-in'));
-      return removeListeners;
+      revealAll();
+      if (!('MutationObserver' in window)) return removeListeners;
+      // 退化路径同样要**持续接管**，否则客户端路由切换后新内容照样不显示。
+      const fallbackMutations = new MutationObserver(revealAll);
+      fallbackMutations.observe(document.body, { childList: true, subtree: true });
+      return () => {
+        fallbackMutations.disconnect();
+        removeListeners();
+      };
     }
 
     const observer = new IntersectionObserver(
@@ -130,15 +157,43 @@ export function MotionRuntime() {
           if (!entry.isIntersecting) return;
           entry.target.classList.add('is-in');
           observer.unobserve(entry.target);
+          tracked.delete(entry.target);
         });
       },
       { rootMargin: '0px 0px -10% 0px', threshold: 0.06 },
     );
 
-    nodes.forEach((node) => observer.observe(node));
+    function collectReveals(): void {
+      document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((node) => {
+        // 已进终态（`.is-in`）的节点不必再观察；重复 observe 同一节点也无意义。
+        if (tracked.has(node) || node.classList.contains('is-in')) return;
+        tracked.add(node);
+        observer.observe(node);
+      });
+      tracked.forEach((node) => {
+        if (node.isConnected) return;
+        observer.unobserve(node);
+        tracked.delete(node);
+      });
+    }
+
+    collectReveals();
+
+    if (!('MutationObserver' in window)) {
+      // 极老环境：退回「挂载时扫描一次」（行为 == 修复前，仅用于不会有路由切换的场景）。
+      return () => {
+        observer.disconnect();
+        removeListeners();
+      };
+    }
+
+    const mutations = new MutationObserver(collectReveals);
+    mutations.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      mutations.disconnect();
       observer.disconnect();
+      tracked.clear();
       removeListeners();
     };
   }, []);

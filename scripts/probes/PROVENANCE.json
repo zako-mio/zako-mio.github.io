@@ -66,6 +66,13 @@
       "requires": [],
       "needs_server": false,
       "selftest": false
+    },
+    {
+      "repo": "scripts/probes/reveal_nav_probe.py",
+      "origin": "repo-native",
+      "requires": ["playwright"],
+      "needs_server": true,
+      "selftest": true
     }
   ]
 }
