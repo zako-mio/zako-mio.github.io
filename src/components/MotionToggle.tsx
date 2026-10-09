@@ -6,6 +6,7 @@ import {
   MOTION_LABELS,
   MOTION_MODES,
   MOTION_STORAGE_KEY,
+  motionForcesOn,
   motionForcesOff,
   type MotionMode,
 } from '@/lib/motion';
@@ -16,9 +17,18 @@ const NEXT_MODE: Record<MotionMode, MotionMode> = {
   off: 'system',
 };
 
+/**
+ * 三态落属性（★ 批十：**必须三态各不相同**）。
+ *   off    ⇒ `data-motion="off"`（CSS 与 JS 双熔断）
+ *   on     ⇒ `data-motion="on"` （**覆盖 OS 的 reduce** —— 用户显式要求）
+ *   system ⇒ 不落属性（交给 CSS 的 `prefers-reduced-motion` 裁决）
+ * ⛔ 早先版本 `on` 与 `system` 都只是 removeAttribute ⇒ 两者不可区分，
+ *   于是「动效开」在 OS 开了 reduce 的机器上被静默压掉（实测踩到）。
+ */
 function applyMode(mode: MotionMode) {
   const root = document.documentElement;
   if (motionForcesOff(mode)) root.setAttribute('data-motion', 'off');
+  else if (motionForcesOn(mode)) root.setAttribute('data-motion', 'on');
   else root.removeAttribute('data-motion');
 }
 

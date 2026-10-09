@@ -38,9 +38,12 @@ function isNightTheme(): boolean {
 }
 
 function motionAllowed(): boolean {
+  const attr = document.documentElement.getAttribute('data-motion');
+  // ★ 批十：「动效开」＝用户显式要求 ⇒ 覆盖 OS 的 reduce（与 CSS 同口径，唯一判据「属性」优先于媒体查询）
+  if (attr === 'on') return true;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
   // 属性优先（CSS 真相源）；存储仅作二次兜底
-  if (document.documentElement.getAttribute('data-motion') === 'off') return false;
+  if (attr === 'off') return false;
   try {
     if (localStorage.getItem(MOTION_STORAGE_KEY) === 'off') return false;
   } catch {

@@ -26,6 +26,8 @@ type DocumentWithVT = Document & {
 
 function motionAllowed(): boolean {
   if (typeof window === 'undefined') return false;
+  // ★ 批十：「动效开」＝用户显式要求 ⇒ 覆盖 OS 的 reduce（与 CSS/BackdropFx/MotionRuntime 同口径）
+  if (document.documentElement.getAttribute('data-motion') === 'on') return true;
   try {
     if (localStorage.getItem(MOTION_STORAGE_KEY) === 'off') return false;
   } catch {

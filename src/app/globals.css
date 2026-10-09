@@ -479,9 +479,10 @@ html[data-pointer] .backdrop__glow {
   opacity: 1;
 }
 
-/* 熔断：与背景其余动效同口径（前庭敏感用户 / 动效开关关闭 ⇒ 直接不显示） */
+/* 熔断：与背景其余动效同口径（前庭敏感用户 / 动效开关关闭 ⇒ 直接不显示）
+   ★ 批十：加 `:not([data-motion='on'])` ⇒「动效开」时不被 OS 的 reduce 压掉。 */
 @media (prefers-reduced-motion: reduce) {
-  .backdrop__glow {
+  :root:not([data-motion='on']) .backdrop__glow {
     display: none;
   }
 }
@@ -1016,6 +1017,8 @@ html[data-pointer] .backdrop__glow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  /* ★ 批十：flex 子项默认 `min-width:auto` ⇒ 不收缩到内容最小宽以下（本站既有铁律） */
+  min-inline-size: 0;
 }
 
 .visually-hidden {
@@ -1075,7 +1078,14 @@ html[data-pointer] .backdrop__glow {
   border: 1px solid var(--border-card);
   border-radius: 999px;
   box-shadow: inset 0 1px 0 var(--edge-highlight);
-  white-space: nowrap;
+  /* ★ 批十（移动端版型修复）：原为 `nowrap` ⇒ 长条目把容器撑破。
+     实测（/about 360px）：单条「开源实践主线：独立完成 opencode Agent 体系改造」固有宽 **375px**
+     ⇒ `ul.taglist`（flex-wrap）min-content = 375 ⇒ `.about__block` 375 ⇒ **整页横向溢出 +31px**。
+     ⇒ 改为允许换行（中文在字间断行，短条目行为不变），并显式限宽。
+     ⛔ 不要用 `nowrap + overflow:hidden` 糊 —— 那是把内容藏起来，不是修版型。 */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-inline-size: 100%;
 }
 
 button.chip {
@@ -1658,6 +1668,9 @@ button.chip[aria-pressed='true'] {
   display: grid;
   gap: var(--space-5);
   margin-top: var(--space-5);
+  /* ★ 批十：隐式列是 `auto` ⇒ 会被子项 min-content 撑破（实测 375px > 328px 可用宽）
+     ⇒ 显式 `minmax(0, 1fr)` 让列可收缩（本站既有铁律：网格/弹性子项必须显式收缩）。 */
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .about__label {
@@ -3045,20 +3058,24 @@ html.js-motion [data-reveal].is-in {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
+  /* ★ 批十（用户裁决）：「动效开」＝用户**显式要求**，必须覆盖 OS 的 reduce；
+     「跟随系统」（无属性）＝尊重 OS。故本块整体以 `:not([data-motion='on'])` 限定。
+     ⛔ `*` 必须留在选择器里 —— `gate_background_salience` 的 B3 认「at-rule 内嵌套 `*` 规则」为形态 A。
+     ⛔ 选择器以 `html` 开头时**不能**前置 `:root`（`:root html` 永不匹配）⇒ 用 `html:not(...)`。 */
+  html:not([data-motion='on']) {
     scroll-behavior: auto;
   }
 
-  html.js-motion [data-reveal],
-  html.js-motion [data-reveal].is-in {
+  html:not([data-motion='on']).js-motion [data-reveal],
+  html:not([data-motion='on']).js-motion [data-reveal].is-in {
     opacity: 1 !important;
     translate: none !important;
     transition: none !important;
   }
 
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion='on']) *,
+  :root:not([data-motion='on']) *::before,
+  :root:not([data-motion='on']) *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -3154,7 +3171,7 @@ html.js-motion [data-reveal].is-in {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card::before {
+  :root:not([data-motion='on']) .card::before {
     display: none;
   }
 }
@@ -3257,8 +3274,8 @@ html.js-motion .hero__map {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.js-motion .hero__inner > *,
-  html.js-motion .hero__map {
+  html:not([data-motion='on']).js-motion .hero__inner > *,
+  html:not([data-motion='on']).js-motion .hero__map {
     animation: none !important;
   }
 }

@@ -7,8 +7,9 @@
  *   本站**没有**自己画星（那是批五被走查否掉的「自绘点阵」）；这里只用官方预设 +
  *   极少量贴合本站主题的覆盖项，且覆盖项逐条有理由（见 OPTIONS 注释）。
  *
- * ★ 清晰度：`detectRetina: true` ⇒ 画布按 `devicePixelRatio` 放大、粒子按设备像素画
+ * ★ 清晰度：`detectRetina` ⇒ 画布按 `devicePixelRatio` 放大、粒子按设备像素画
  *   ⇒ 在 2x/3x 屏上是**锐利圆点**，不是被拉伸的低像素贴图。
+ *   ⚠ 批十起为**按输入能力分档**（见下）：只有精确指针档才开 retina。
  *
  * ★ 可交互：`detectsOn: 'window'` —— 背景层是 `pointer-events:none` 且在 `z-index:-1`，
  *   画布本身收不到指针事件，只有挂在 window 上才算得到真实光标位置（悬停连线）。
@@ -16,8 +17,21 @@
  * ★ 懒加载：引擎与预设体积不小，故用 `next/dynamic({ ssr:false })` 延后到水合之后，
  *   ⛔ 不把粒子塞进首屏 JS（首屏预算 106 kB 是本站硬约束）。
  *
+ * ★ 输入能力分档（★ 批十，用户实测驱动）：`FINE_POINTER` ＝ 精确指针 + 悬停能力。
+ *   · `onHover.enable` 只在 `FINE_POINTER` 时为真 —— tsParticles 的 `onHover` 会被
+ *     `touchstart`/`touchmove` 一起喂坐标（bundle 内 `touchStartEvent`/`touchMoveEvent`），
+ *     ⇒ **触屏上手指按住背景即触发 `grab` 连线**。实测（本机 100% 复现）：
+ *     连线像素 **0 → 8 128**、canvas 非透明像素 **1 095 → 12 116（≈11×）**、
+ *     对照臂噪声为 0。用户机型（华为畅享70X / HarmonyOS 4.2 / 微信浏览器）与「别人也反馈手机卡」一致。
+ *     ⇒ 判据是「**悬停语义不该在没有悬停能力的输入上生效**」，与 `.backdrop__glow`
+ *       的「触屏不启用」是**同一口径**（该层已用 `@media (hover:hover) and (pointer:fine)` 门控）。
+ *   · `detectRetina` 在触屏下关掉（DPR 回 1）：画布是**全屏每帧重绘**，3x 屏下栅格化面积
+ *     约为 1x 的 9 倍，是入门机掉帧的另一条独立成本。⚠ **代价**：星点在非 retina 画布上
+ *     会被浏览器放大 ⇒ 略柔（与 README 早先「2x/3x 屏上锐利圆点」的表述相抵）—— 若观感不可接受，
+ *     把它改回 `true` 即可（`onHover` 那条与它无关，⛔ 不要一起回退）。
+ *
  * ★ 熔断：`prefers-reduced-motion: reduce` 或 `[data-motion='off']` 时**根本不挂载**
- *   （见 BackdropFx.tsx 的门），退化路径是「没有特效」，⛔ 不是「没有背景」。
+ *   （见 BackdropFx.tsx 的门）；★ 批十：「动效开」(`data-motion='on'`) 可覆盖 OS 的 reduce。
  */
 import { Particles, ParticlesProvider } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
@@ -32,11 +46,17 @@ const initEngine = async (engine: Parameters<typeof loadSlim>[0]): Promise<void>
   await loadStarsPreset(engine);
 };
 
+/** 本件经 `next/dynamic({ssr:false})` 懒加载 ⇒ 模块求值期已在浏览器；仍做防御性判断。 */
+const FINE_POINTER =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
 const OPTIONS = {
   // 预设自带 `fullScreen: true` 与黑色背景 ⇒ 必须关掉并由本站容器接管尺寸/底色
   fullScreen: { enable: false },
   preset: 'stars',
-  detectRetina: true,
+  // ★ 批十：触屏（粗指针）关掉 retina ⇒ DPR 1（全屏每帧重绘的面积降到 ~1/9）
+  detectRetina: FINE_POINTER,
   fpsLimit: 60,
   background: { color: { value: 'transparent' } },
   particles: {
@@ -59,7 +79,9 @@ const OPTIONS = {
   interactivity: {
     detectsOn: 'window' as const,
     events: {
-      onHover: { enable: true, mode: 'grab' }, // 唯一的交互：悬停时与邻近星点拉出细线
+      // ★ 批十：**触屏不启用** —— 悬停语义不该在没有悬停能力的输入上生效
+      //   （tsParticles 的 onHover 会被 touchstart/touchmove 触发 ⇒ 手机按住背景即拉线 ≈11× 绘制量）。
+      onHover: { enable: FINE_POINTER, mode: 'grab' },
       onClick: { enable: false },
       resize: { enable: true },
     },

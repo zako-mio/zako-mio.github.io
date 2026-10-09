@@ -32,7 +32,9 @@ export function MotionRuntime() {
     //      而写在元素上只影响它自己。光斑靠 transform 移动 ⇒ 合成层，不触发重绘。
     const finePointer = window.matchMedia('(pointer: fine)').matches;
     const motionOff = root.getAttribute('data-motion') === 'off';
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // ★ 批十：「动效开」＝用户显式要求 ⇒ 忽略 OS 的 reduce（与 CSS 的 :not([data-motion='on']) 同口径）。
+    const motionForcedOn = root.getAttribute('data-motion') === 'on';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches && !motionForcedOn;
 
     let onPointerMove: ((event: PointerEvent) => void) | null = null;
     if (finePointer && !motionOff && !reduced) {
