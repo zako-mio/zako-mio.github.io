@@ -25,11 +25,20 @@
     ⛔ 不写路由/选择器字面量清单（那会随改版静默腐化）。
   ⛔ 总数 0 ⇒ 判 FAIL（判据在此哑火，不得静默通过）。
 
+⚠ **声明的不覆盖面**：候选路由只取「无 `target`/`download` 的同 origin 链接」。
+  线上本站与各项目站同 origin（`zako-mio.github.io/<name>/`），故**不能**靠「跨域」判外链 ——
+  排除靠 `target`/`download` 属性这一**书写形态**；若日后新增同 origin 的项目站直链（不带 target），
+  本探针会把它当路由去点并在 `wait_for_function` 上超时 ⇒ 属**已知假 FAIL 形态**，届时按属性补排除规则。
+  ⛔ 不得改成按 href 前缀/项目名字面量排除（会随改版腐化）。
+
 用法：
     setsid python3 -m http.server 4399 --directory out >/tmp/…log 2>&1 </dev/null & disown
     python3 scripts/probes/reveal_nav_probe.py                  # 实测 out/
     python3 scripts/probes/reveal_nav_probe.py --selftest       # 活 DOM 上复原缺陷，验判据非恒真
     SITE_BASE=http://127.0.0.1:4400 python3 scripts/probes/reveal_nav_probe.py
+    python3 scripts/probes/reveal_nav_probe.py https://zako-mio.github.io   # ★ 上线后对生产站点复验
+      （⚠ 指生产 origin 时会把「项目站同 origin」纳入视野，故必须靠 target/download 属性排除外链；
+        见 ROUTES_JS 头注。这是「上线后复验」直接可跑的那一条。）
 ⛔ 只读页面，不改仓库。
 
 ⚠ 实测口径两条（都是首版踩过的假 FAIL）：
@@ -72,10 +81,17 @@ MEASURE_JS = r"""
 # 从首页的**站内链接**派生候选路由，⛔ 不写死路由清单。
 # 返回 [{path, href}]：`href` 是**产物里的原样写法**（点名要用它 —— 本项目同一路由存在
 # `/works` 与 `/works/` 两种写法，用前缀匹配会点到 `/works/<name>/` 上去）。
+#
+# ★ 必须排除 `target` / `download` 链接（第十二批实跑所得，CI 里看不到）：
+#   本站（`zako-mio.github.io`）与各**项目站**（`zako-mio.github.io/<name>/`）**同 origin**，
+#   故「跨域即外链」这条判据在**线上**失效 —— 卡片页脚的「在线预览」是 `target="_blank"`，
+#   点它会开新标签页、当前页 pathname 永不变化 ⇒ 探针超时（本该只读的判据通道被带偏）。
+#   ⛔ 不要改成「按 href 前缀排除 /works/」：那是把项目名当字面量写进判据（会腐化）。
 ROUTES_JS = r"""
 () => {
   const seen = new Map();
   document.querySelectorAll('a[href]').forEach((a) => {
+    if (a.hasAttribute('target') || a.hasAttribute('download')) return;  // 新标签页/下载 ⇒ 非路由
     const raw = a.getAttribute('href');
     let u;
     try { u = new URL(raw, location.origin); } catch (e) { return; }
