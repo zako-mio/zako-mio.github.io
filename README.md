@@ -35,6 +35,7 @@ python3 scripts/gate_ia_division.py       # 页面分工：读 out/，判「每�
 python3 scripts/gate_theme_states.py      # 主题三态 × 双模图表同步（防新增主题档时静默失效）
 python3 scripts/gate_interaction_surface.py  # 交互作用面：悬停反馈面 ≡ 点击热区（关系型判据）
 python3 scripts/gate_background_salience.py  # 背景显著性：背景层结构护栏 ＋ 显著性报告项
+python3 scripts/gate_motion_budget.py        # 动效预算：进场/常驻动效的失控守卫（四项上界）
 ```
 
 > 门控**集合与口径的单一真相源**是 `scripts/gate-manifest.json`（`A8` 硬门保证漏登记即 FAIL）——
@@ -50,6 +51,7 @@ python3 scripts/gate_ia_division.py --selftest
 python3 scripts/gate_theme_states.py --selftest
 python3 scripts/gate_interaction_surface.py --selftest
 python3 scripts/gate_background_salience.py --selftest
+python3 scripts/gate_motion_budget.py --selftest
 ```
 
 > ★ **阈值型判据有结构性盲区**：「悬停有反馈但点击无响应」「背景抢焦点」这类缺陷是
@@ -110,6 +112,27 @@ python3 scripts/gate_background_salience.py --selftest
 - **报告项（⛔ 不判阈值）**：背景层数、运动层数、纱幕档位、网格遮罩峰值、照片 opacity/filter。
   ⇒ 依 `criterion-design-validation` 的口径：**代理指标不得接自动回写**；
   「背景是否抢焦点」的显著性尚未验证与目标同向，只出读数供人审阅。
+
+### `scripts/gate_motion_budget.py`（动效预算）
+
+「动效预算」不是对比度/包体那样的**贴合式**阈值，而是**数量级失控守卫**：防止某次改版静默引入
+「一页上百个进场元素」「错峰三秒」「常驻动画几十个」这类总时长/总开销失控。⛔ 它**不判**动效好不好看
+（观感归人），也不判「够不够」——与 `A6`/`A9` 棘轮同一取向。四项**上界**：
+
+| 判据 | 量 | 基线（`as_of=2026-10-09`） | 阈值 |
+|---|---|---|---|
+| `M1` | 单页 `[data-reveal]` 实例数 | 8（`/about`） | ≤ 32 |
+| `M2` | **进场完成时间** = 最大错峰（`--i×70ms`）＋ 最长 `--dur-*` | 990ms | ≤ 兜底窗口（1800ms） |
+| `M3` | `--dur-*` 设计令牌之和 | 1.79s | ≤ 3.6s |
+| `M4` | 常驻（`infinite`）动画的元素数 | 6（`/`） | ≤ 12 |
+
+★ **阈值推导不许由规模直觉**（`b89`）：`M1/M3/M4` ＝「实测基线 × 声明余量」（×4 / ×2 / ×2，理由是
+「正常内容增删不触发、数量级失控才触发」）；`M2` 的上界**由项目常量推导** —— 取
+`MOTION_INIT_SCRIPT` 的 **1800ms 兜底窗口**（运行时未接管就把全部 `[data-reveal]` 一次摊平），
+语义是「进场动效应当在兜底触发前结束」；该数字**当场从 `src/lib/motion.ts` 解析**，⛔ 不写第二处字面量。
+⚠ **作用面声明**：`M2` 只量**进场**类错峰；CSS 里另一族 `animation-delay`（流星 2.5/9/16s 等
+**常驻环境**动画）**不是进场延迟**，只作报告项（首版判据正是错把 16s 流星当「错峰」而假 FAIL）。
+⚠ **不判面**：本门控⛔ 不度量真实帧率/掉帧/耗电（须真机）。
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
@@ -266,22 +289,35 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   「两侧留细节」**没有可用的面** ⇒ 分区只能落在真实存在的页顶带与左栏带。
   ⛔ 它是**加法层**：原 `.backdrop__veil` 一格不改 ⇒ 非阅读带细节原样保留、合成对比度只增不减。
   ⛔ 本轮**不动**照片 `filter`、**不移**网格遮罩峰值（同属裁决里**未采纳**的独立提案，可重提）。
-- **指针光斑（第八批 · 裁决④ T1）**：`.backdrop__glow` —— **主题无关**的交互通道
+- **指针光斑（第八批 · 裁决④ T1；★ 批十一 F-d1 反转输入面）**：`.backdrop__glow` —— **主题无关**的交互通道
   （现状粒子交互「仅夜间 ＋ 不可发现」，光斑补的是对称性与可发现性）。三条护栏：
-  ① 只在 `(hover: hover) and (pointer: fine)` 下 `display:block`（**触屏不启用**）；
+  ① **输入面**：`(hover:hover) and (pointer:fine)` **或** `(pointer: coarse)` 下 `display:block`。
+     ⚠ **批十一有意反转**了批八的「触屏不启用」：批十为消除手机卡顿关掉了星野 `grab`，触屏于是没有触摸反馈；
+     用户裁决「换成更流畅的动画」⇒ 触屏也用这层**合成层**光斑（⛔ 不回 canvas 重绘）。
+     触屏坐标由 `MotionRuntime` 额外绑的 `touchstart`/`touchmove` 写入（`touchend`/`touchcancel` 移除
+     `data-pointer` ⇒ 淡出）；⛔ 卡片光斑（`--mx/--my`）仍只在精确指针路径。
   ② **幅度受限是结构性的**：本层夹在「照片之上、纱幕/网格/scrim 之下」
-     ⇒ 光斑永远不可能比照片更亮地照到文字层（实测对正文脚下亮度影响 ≤ ±3/255）；
+     ⇒ 光斑永远不可能比照片更亮地照到文字层（实测对正文脚下亮度影响 ≤ ±3/255）。
   ③ 靠 `transform: translate3d()` 随指针移动（合成层，⛔ 不全屏重绘）；
      变量写在光斑元素自身（⛔ 不写 `:root`，那会让整棵树重算样式）。
-  `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入（⛔ 不新增监听器）。
-  熔断：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下 `display:none`。
+     `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入（⛔ 不新增监听器）。
+  熔断：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下 `display:none`
+  （前者以 `:not([data-motion='on'])` 限定 ⇒「动效开」可覆盖 OS）。
 - **夜间星野特效（tsparticles，MIT）**：`preset-stars` + 本站覆盖项，**叠加**在银河照片之上。  懒加载（`next/dynamic({ssr:false})`）⇒ ⛔ 不进首屏 JS（实测 `/` 仍 106 kB，粒子独立分块 105 KB）。
   两条熔断**必须保留**：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下**卸载画布**
   （浅色档同理：`display:none` 只是「不显示」，rAF 仍在算）。判据见
   `batch6-evidence/verify_backdrop_fx.py`（含「画布 backing = CSS × DPR」的清晰度机检）。
+  ⚠ **批十一（进行中）**：`detectRetina` 已**改回 `true`**（触屏也开 retina）作**真机归因 A/B** ——
+  分离 `be457d8` 里同时上的「关 `grab`」与「关 `detectRetina`」。真机裁定前本行⛔ 不作「已定」陈述；
+  ⛔ 无论结果如何，`onHover.enable` 那条**不改回**（它是**正确性**主张，不是性能手段）。
   ★ 批八（裁决④ · T2）**只调「可发现性」这一维**（`grab.distance` 190→260、`links.opacity` 0.22→0.45），
   ⛔ 不加新交互模式、不加依赖、不新增字节。**星野仍是有意的夜间专属**：浅底上白星不可见，
   改成深色星点会引入一条没有任何裁决依据的新视觉母题 ⇒ 主题对称性由上面那道**主题无关的指针光斑**承担。
+- **长页目录（`TocSidebar`）**：`≥1280px` 为**粘性侧栏**（右列）；**`<1280px` 单列时隐藏**（★ 批十一裁决）。
+  原因：单列下 `.detail__aside` 按文档流排在正文**全部 section 之后**（实测 `/about@390`：目录 `top=3822`、
+  `/stats@390`：`top=5085`）⇒ 页尾目录在移动端基本无用。隐藏是**如实登记「移动端无目录」**，
+  ⛔ 不是「已适配」。⛔ 不要改成 `order:-1` 提到前面（目录块实测高 226–326px，
+  会挡在**页面标题之前**）；⛔ 也不要另造第二份移动端目录（DOM 重复 ⇒ 重复 landmark 与锚点）。
 - **网格/弹性子项必须显式收缩**：`grid-template-columns: 1fr` 与 flex 子项默认 `min-width: auto`
   ⇒ **不会收缩到内容最小宽度以下**。实测：`.detail__main` 漏了这一条，窄屏被构建期 ECharts SVG
   与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器

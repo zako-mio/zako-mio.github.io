@@ -446,13 +446,19 @@ section {
 
 /* ★ 第八批（裁决④ · T1）：**指针光斑** —— 主题无关的交互通道，解决现状「仅夜间 ＋ 不可发现」。
    ★ 三个设计约束，逐条对应裁决护栏：
-     ① **触屏不启用**：只在 `(hover: hover) and (pointer: fine)` 下 `display:block`（默认 none）。
+     ① **输入面**（★ 批十一 F-d1 **有意反转**批八的「触屏不启用」）：`display:block` 的条件由
+        `(hover:hover) and (pointer:fine)` 放宽为 **再加 `(pointer: coarse)`**。
+        起因：批十为消除手机卡顿关掉了星野 `grab`，触屏于是**没有任何触摸反馈**；用户裁决
+        「换成更流畅的动画作为降级措施」—— 用**合成层**光斑替代 canvas 重绘。
+        ⛔ 反转的只是「触屏不启用」这一条；下面两条护栏（②③）与两道熔断一字未改。
      ② **幅度受限（结构性，不靠调参）**：本层夹在「照片之上、纱幕/网格/scrim 之下」
         ⇒ 光斑永远不可能比照片本身更亮地照到文字层；正文带的合成对比度只会被它*压低*。
      ③ **不触发布局/重绘**：整层是一个 680×680 的固定件，靠 `transform: translate3d(...)`
         随指针移动（合成层）；⛔ 不用 `background-position` 或 `inset:0` 全屏重绘。
    ★ `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入
-     （⛔ 不新增监听器、不逐卡绑定）；首次移动后才淡入（`html[data-pointer]`）。 */
+     （⛔ 不新增监听器、不逐卡绑定）；首次移动后才淡入（`html[data-pointer]`）。
+   ★ 批十一：触屏侧由 `MotionRuntime` 额外绑 `touchstart`/`touchmove`/`touchend`/`touchcancel`
+     —— 桌面 CDP 触摸**不产生 `pointermove`**，只绑 pointer 通道则本机测不到、真机反馈也会迟一档。 */
 .backdrop__glow {
   position: absolute;
   top: 0;
@@ -469,7 +475,9 @@ section {
   transition: opacity var(--dur-3) var(--ease-out);
 }
 
-@media (hover: hover) and (pointer: fine) {
+/* ★ 批十一 F-d1：`(pointer: coarse)` 分支＝触屏（合成层柔光斑）。两个分支的并集：
+   桌面＝精确指针（鼠标），触屏＝粗指针（手指）。⛔ 不得删掉 `(pointer: coarse)` 分支（触屏反馈会消失）。 */
+@media (hover: hover) and (pointer: fine), (pointer: coarse) {
   .backdrop__glow {
     display: block;
   }
@@ -2069,6 +2077,20 @@ button.chip[disabled] {
   .detail__aside {
     position: sticky;
     top: var(--space-4);
+  }
+}
+
+/* ★ 批十一 §4-③（存量缺陷修复 · 用户裁决＝「移动端隐藏」，⛔ 不是「已适配」）：
+   `<1280px` 时 `.detail__layout` 退化为单列，`.detail__aside` 按文档流排在正文**全部 section
+   之后** ⇒ 目录落在页尾。实测（/about @390：正文 249→3774、目录 top=3822；/stats @390：目录
+   top=5085）⇒ 一个目录放在页尾，移动端基本无用。
+   裁决：**移动端直接隐藏**，并如实登记「移动端无目录」。
+   ⛔ 不要改成 `order: -1` 把它提到前面：整块目录实测高 226–326px，会挡在**页面标题之前**
+      （/about 标题会被推到 ~575px），变成「标题之前先看到一堵链接墙」。
+   ⛔ 也不要另造第二份移动端目录（DOM 重复 ⇒ 重复 landmark 与重复锚点）。 */
+@media (max-width: 1279px) {
+  .detail__aside {
+    display: none;
   }
 }
 

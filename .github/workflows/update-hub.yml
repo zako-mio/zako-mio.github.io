@@ -24,14 +24,14 @@ jobs:
       - uses: actions/checkout@v6
 
       # pnpm 须先于 setup-node，cache: 'pnpm' 才能直接命中
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version-file: '.python-version'
 
@@ -97,6 +97,11 @@ jobs:
       - name: Background salience gate
         run: python3 scripts/gate_background_salience.py
 
+      # 动效预算（批十一 §4-②）：进场/常驻动效的**数量级失控守卫**（M1–M4 四项上界）。
+      # 阈值由实测基线 × 声明余量推导（M2 由 motion.ts 的兜底窗口推导），带 --selftest 负向夹具。
+      - name: Motion budget gate
+        run: python3 scripts/gate_motion_budget.py
+
       # ──────────────────────────────────────────────────────────────────────
       # 浏览器层判据（第八批 §4-② 硬化）：此前全部是**提示词级**（CI 只跑 python3），
       # 现补 playwright ＋ 一次静态服务，把四条升为 **runtime 硬阻**。
@@ -112,7 +117,7 @@ jobs:
           python3 scripts/probes/hover_gating_probe.py
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           # 键从依赖文件派生（⛔ 不写第二处版本字面量，避免与 requirements 漂移）
@@ -155,9 +160,9 @@ jobs:
           python3 scripts/probes/surface_hit_probe.py --out "$RUNNER_TEMP/surface-hit"
           echo "[artifact] $RUNNER_TEMP/surface-hit/surface-hit-report.md"
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: './out'
 
@@ -172,4 +177,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

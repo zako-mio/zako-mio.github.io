@@ -30,6 +30,17 @@
  *     会被浏览器放大 ⇒ 略柔（与 README 早先「2x/3x 屏上锐利圆点」的表述相抵）—— 若观感不可接受，
  *     把它改回 `true` 即可（`onHover` 那条与它无关，⛔ 不要一起回退）。
  *
+ * ★★ 批十一 · 真机归因分离（进行中，⚠ 这是一次**有意的临时 A/B**）：
+ *   `be457d8` **同时**上了「关 `grab`」与「关 `detectRetina`」两项缓解，用户真机裁定「不卡了」，
+ *   但**不知是哪一项生效** ⇒ 若主因是「关 grab」，则 retina 降档是**不必要的代价**（星点变柔）。
+ *   ⇒ 本批把 `detectRetina` **改回 `true`（触屏也开 retina）**、部署后请用户在同一机型实测：
+ *     · 仍不卡 ⇒ **保留 `true`**（拿回锐利星点），结论＝「`grab` 是主因，retina 无关」；
+ *     · 又卡   ⇒ 改回 `FINE_POINTER`，结论＝「两者共同作用，retina 降档必要」。
+ *   ⛔ **无论结果如何，`onHover.enable = FINE_POINTER` 都不改回** —— 那是**正确性**主张
+ *     （悬停语义不该在没有悬停能力的输入上生效），不是性能手段；两者混谈会变成
+ *     「为了性能把正确性回退」（b102：一次只改一个因子）。
+ *   ⚠ 待办：真机结论出来后，把本段改成结论陈述（含机型与部署 sha）。
+ *
  * ★ 熔断：`prefers-reduced-motion: reduce` 或 `[data-motion='off']` 时**根本不挂载**
  *   （见 BackdropFx.tsx 的门）；★ 批十：「动效开」(`data-motion='on'`) 可覆盖 OS 的 reduce。
  */
@@ -55,8 +66,10 @@ const OPTIONS = {
   // 预设自带 `fullScreen: true` 与黑色背景 ⇒ 必须关掉并由本站容器接管尺寸/底色
   fullScreen: { enable: false },
   preset: 'stars',
-  // ★ 批十：触屏（粗指针）关掉 retina ⇒ DPR 1（全屏每帧重绘的面积降到 ~1/9）
-  detectRetina: FINE_POINTER,
+  // ★ 批十一 · 真机归因分离（临时 A/B）：改回 `true` ⇒ 触屏也开 retina（拿回锐利星点）。
+  //   ⚠ 待真机裁定：仍不卡 ⇒ 保留；又卡 ⇒ 改回 `FINE_POINTER`。参见文件头注。
+  //   ⛔ 与下面 `onHover.enable` 那条**分开裁决**（后者是正确性主张，永不改回）。
+  detectRetina: true,
   fpsLimit: 60,
   background: { color: { value: 'transparent' } },
   particles: {

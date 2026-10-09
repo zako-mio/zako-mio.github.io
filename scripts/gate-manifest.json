@@ -36,6 +36,11 @@
       "script": "scripts/gate_background_salience.py",
       "reads": "src/app/globals.css 的背景层规则 ＋ out/ 全量产物的 .backdrop 子树",
       "selftest": true
+    },
+    {
+      "script": "scripts/gate_motion_budget.py",
+      "reads": "globals.css 的 --dur-* 与 infinite 选择器 ＋ src/lib/motion.ts 的兜底窗口 ＋ out/ 全量产物的 [data-reveal] 计数",
+      "selftest": true
     }
   ],
   "capability_uses": [
