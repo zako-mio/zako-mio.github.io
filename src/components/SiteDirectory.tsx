@@ -101,7 +101,11 @@ export function SiteDirectory({ items, github }: SiteDirectoryProps) {
                   </Link>
                 )}
                 <span className="related__shared">
-                  {row.question} —— {row.note}
+                  {/* ★ 批十七（AI 味裁决 V-A3＝B）：分隔符 `——` → `：`。
+                      ⚠ 本处**未出现在**对比件里（预览件只覆盖首页「本站做法」明细那 11 处）
+                      ⇒ 属用户**显式追加**的范围（2026-10-11：「4 处分隔符一并改」，同 V-A2 那次
+                      「一并去（保持母题一致）」的口径）。同一组件渲染 4 行 ⇒ 改一处覆盖 4 处。 */}
+                  {row.question}：{row.note}
                 </span>
               </li>
             );
