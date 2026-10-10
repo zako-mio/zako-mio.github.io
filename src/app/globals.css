@@ -2501,6 +2501,94 @@ button.chip[disabled] {
   line-height: 1.75;
 }
 
+/* ── 术语解释层（第十四批 W2）─────────────────────────────────────────────
+   单一真相源＝`src/data/glossary.json`（经 `src/lib/glossary.ts`）；本层只负责**呈现**。
+   ★ 触发三态：hover（CSS）＋ focus（CSS `:focus-within`：键盘可达、触屏点按即聚焦）
+     ＋ 触屏点按（同上，点按 `button` 即聚焦）—— 三态**全由 CSS 承担**，⛔ 不靠 JS 注入。
+   ★ 无 JS 可读：定义面板**常驻 DOM**（服务端渲染），`display:none` 仅控制呈现。
+   ★ Esc 关闭由 `MotionRuntime` 的一个委托 `keydown` 承担（⛔ 不逐件加监听器）。
+   ⛔ 不新增色值：全部走既有令牌。 */
+.term {
+  position: relative;
+  display: inline;
+}
+
+.term__trigger {
+  /* ★ 复用 `<button>` 只为「原生可聚焦 + 可点按」（判据要求真实可点目标自身有 hover 反馈）。
+     外观仍是行内文字 ⇒ 这里把 UA 的按钮样式**全部复位**。 */
+  appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: help;
+  border-bottom: 1px dotted var(--border-line);
+}
+
+@media (hover: hover) {
+  .term__trigger:hover {
+    color: var(--link);
+    border-bottom-color: currentColor;
+  }
+
+  /* 面板的 hover 呈现。⚠ 必须在 `@media (hover: hover)` 内
+     （第八批门控：触屏不依赖 hover）——由 `hover_gating_probe.py` 机检。 */
+  .term:hover .term__def {
+    display: block;
+  }
+}
+
+.term__trigger:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.term__def {
+  position: absolute;
+  left: 0;
+  top: calc(100% + var(--space-2));
+  z-index: 60;
+  display: none;
+  width: min(22rem, 76vw);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-label);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.term__def > span {
+  display: block;
+}
+
+.term__name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.term__boundary {
+  margin-top: var(--space-1);
+  color: var(--text-tertiary);
+}
+
+/* ⭐ 无 JS 的呈现路径：键盘聚焦 / 触屏点按（点按 `<button>` 即聚焦）⇒ `:focus-within`。
+   ⇒ 禁用 JS 时解释仍可读（渐进增强的「底」）。 */
+.term:focus-within .term__def {
+  display: block;
+}
+
+/* Esc 关闭（JS 落 `data-term-closed`）：⛔ 必须排在 `:hover`/`:focus-within` 之后
+   —— 三者特异性相同，靠书写顺序决胜。 */
+.term[data-term-closed] .term__def {
+  display: none;
+}
+
 /* ── E 枢纽聚合仪表盘（2b-4）──────────────────────────────────────────── */
 .sr-only {
   position: absolute;

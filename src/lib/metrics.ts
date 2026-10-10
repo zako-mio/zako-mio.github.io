@@ -76,12 +76,16 @@ const INVALID_HINT =
   'E 指标未通过契约校验，已临时降级为空；修复 src/data/metrics.json 后重新构建即可恢复。';
 
 export const METRIC_COLUMNS = [
-  { key: 'entity_count', label: '实体', hint: '节点 / 知识点 / 插件 / 包…' },
-  { key: 'group_count', label: '组', hint: '知识组 / 分组…' },
-  { key: 'relation_count', label: '关系', hint: '边 / 关系边…' },
-  { key: 'layer_count', label: '拓扑层', hint: '图论分层（最长路径）' },
-  { key: 'stage_count', label: '学习阶段', hint: '教学分期 basic→advanced' },
+  { key: 'entity_count', label: '实体' },
+  { key: 'group_count', label: '组' },
+  { key: 'relation_count', label: '关系' },
+  { key: 'layer_count', label: '拓扑层' },
+  { key: 'stage_count', label: '学习阶段' },
 ] as const;
+
+// ⚠ 列名的**解释文字**（旧字段 `hint`）已移除：它曾以 `title` 属性出现两处，
+//   与 `src/data/glossary.json` 构成**第二处解释** ⇒ 按 W2 收敛到 glossary
+//   （渲染层用 `<Term id={column.key}>`，见 `ProjectFigure` / `MetricsDashboard`）。
 
 export type MetricColumnKey = (typeof METRIC_COLUMNS)[number]['key'];
 

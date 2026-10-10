@@ -72,6 +72,29 @@ def visible_html(path: Path) -> str:
     return WS.sub(" ", COMMENT.sub(" ", raw))
 
 
+TOPO_ITEM_OPEN = re.compile(r'<li class="topo__item"[^>]*>')
+
+
+def _li_slice(text: str, start: int) -> str:
+    """从 `start`（某个 `<li>` 的起点）切到与之**配对**的 `</li>`（按嵌套计数）。"""
+    depth = 0
+    for m in re.finditer(r"<li\b|</li>", text[start:]):
+        depth += 1 if m.group(0) == "<li" else -1
+        if depth == 0:
+            return text[start : start + m.end()]
+    return text[start:]
+
+
+def topo_items(text: str) -> list[str]:
+    """切出每个图谱项（`<li class="topo__item">`）**自身**的 HTML 片段。
+
+    ★ 为什么必须切块（批十四 W2 实测到的假 FAIL）：C5/C6 原来以**整页**文本搜
+      「不可判定」，而本批新增的**术语解释层**（`.term__def`，通用词条文本）恰好含这四个字
+      ⇒ 页面无端被判「仍显示不可判定」。判据作用面必须 = 被判对象（该图谱项的渲染结果）。
+    """
+    return [_li_slice(text, m.start()) for m in TOPO_ITEM_OPEN.finditer(text)]
+
+
 # ────────────────────────────── S1 / S4 ──────────────────────────────
 
 NEGATIVE_EVIDENCE = re.compile(r"期望 FAIL|被抓到|负向样本|负向夹具")
@@ -218,12 +241,18 @@ def section_numeric_reconcile() -> None:
         a = g["analysis"]
         if g["scope"] not in h:
             render_issues.append(f"{g['project']}/{g['scope']}: 页面未呈现 scope")
+        # ★ 断言**只在该图谱项自身**的渲染块内做（⛔ 不用整页文本 —— 会被术语解释层等
+        #   通用文本污染成假 FAIL，见 `topo_items()` 的说明）。
+        block = next((b for b in topo_items(h) if g["scope"] in b), None)
+        if block is None:
+            render_issues.append(f"{g['project']}/{g['scope']}: 未找到该项的 topo__item 渲染块")
+            continue
         if a["acyclic"] and a["longest_path_layers"] is not None:
-            if f"{a['longest_path_layers']} 层" not in h:
+            if f"{a['longest_path_layers']} 层" not in block:
                 render_issues.append(f"{g['project']}/{g['scope']}: 页面未呈现「{a['longest_path_layers']} 层」")
-            if "不可判定" in h:
+            if "不可判定" in block:
                 render_issues.append(f"{g['project']}/{g['scope']}: 页面仍显示「不可判定」")
-        if g.get("agreement", {}).get("acyclic") is True and "与独立复算一致" not in h:
+        if g.get("agreement", {}).get("acyclic") is True and "与独立复算一致" not in block:
             render_issues.append(f"{g['project']}/{g['scope']}: 未呈现「与独立复算一致」")
     record("S3", not render_issues, f"图谱渲染断言通过（问题：{render_issues or '无'}）")
 

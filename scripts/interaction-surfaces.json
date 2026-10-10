@@ -262,6 +262,33 @@
       "focus_equivalent": ":focus-visible",
       "status": "ok",
       "reason": "筛选 chip 按钮本体（⛔ 注意 li.chip 是标签而非按钮，不在本条作用面内）"
+    },
+    {
+      "selector": ".term__trigger:hover",
+      "kind": "self",
+      "hotspot": ".term__trigger",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".term:focus-within .term__def",
+      "status": "ok",
+      "reason": "★ 批十四 W2 术语触发器本体：`<button>`（原生可聚焦 + 触屏点按即聚焦）⇒ hover 反馈（颜色/下划线）落在自身 ⇒ 自身即热区。⛔ 用 `<span>` 会被 surface_hit 的反向检查判「真实可点目标自身无 hover 反馈」。"
+    },
+    {
+      "selector": ".term:focus-within .term__def",
+      "kind": "self",
+      "hotspot": ".term__trigger",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".term:focus-within .term__def",
+      "status": "ok",
+      "reason": "★ 批十四 W2 术语定义面板的**呈现规则**（`display:none → block`）。面板与触发器同属**一个交互单元**故按 self 登记（⛔ 不用 descendant/decor 盖章跳过 C3/C4）；面板元素静止态 `display:none` ⇒ 浏览器探针按设计取不到有效采样点（SKIPPED，⛔ 不是 FAIL）。"
+    },
+    {
+      "selector": ".term:hover .term__def",
+      "kind": "self",
+      "hotspot": ".term__trigger",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".term:focus-within .term__def",
+      "status": "ok",
+      "reason": "★ 批十四 W2 术语定义面板的 hover 呈现规则（与上一条同为一个交互单元；⛔ 同在 `@media (hover: hover)` 内）。"
     }
   ],
   "not_covered": [

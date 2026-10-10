@@ -42,6 +42,8 @@ export function MotionRuntime() {
     let onPointerMove: ((event: PointerEvent) => void) | null = null;
     let onTouchPoint: ((event: TouchEvent) => void) | null = null;
     let onTouchEnd: (() => void) | null = null;
+    let onTermKeydown: ((event: KeyboardEvent) => void) | null = null;
+    let onTermLeave: ((event: PointerEvent) => void) | null = null;
 
     function removeListeners() {
       if (onPointerMove) window.removeEventListener('pointermove', onPointerMove);
@@ -53,7 +55,32 @@ export function MotionRuntime() {
         window.removeEventListener('touchend', onTouchEnd);
         window.removeEventListener('touchcancel', onTouchEnd);
       }
+      if (onTermKeydown) window.removeEventListener('keydown', onTermKeydown);
+      if (onTermLeave) window.removeEventListener('pointerout', onTermLeave);
     }
+
+    // ── 术语解释层（第十四批 W2）：**只补 Esc 关闭**。
+    //   hover / focus / 触屏点按的**呈现**全由 CSS 承担（`:hover` 与 `:focus-within`）
+    //   ⇒ ⛔ 这里不写「展开」逻辑，否则会与 CSS 形成两条互相打架的裁决路径（批十 b95 的教训）。
+    //   WAI-ARIA tooltip 模式：Esc 关闭且焦点退回触发器。落 `data-term-closed` 是为了
+    //   **同时**压住 hover 路径（CSS 里该规则排在 `:hover` 之后）；指针离开该词时清除。
+    onTermKeydown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      const active = document.activeElement as HTMLElement | null;
+      const term = active?.closest?.('.term') as HTMLElement | null;
+      if (!term) return;
+      term.setAttribute('data-term-closed', '');
+      active?.blur();
+    };
+    onTermLeave = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      const term = target?.closest?.('.term') as HTMLElement | null;
+      if (term && !term.contains(event.relatedTarget as Node | null)) {
+        term.removeAttribute('data-term-closed');
+      }
+    };
+    window.addEventListener('keydown', onTermKeydown);
+    window.addEventListener('pointerout', onTermLeave, { passive: true });
 
     // ── 精确指针（桌面）：光斑跟随鼠标 ＋ 卡片光斑（--mx/--my）。
     if (finePointer && motionAllowed) {

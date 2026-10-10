@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Term } from '@/components/Term';
 import {
   METRIC_COLUMNS,
   SECTION_LABELS,
@@ -39,8 +40,8 @@ function ScopeTable({ entry }: { entry: MetricEntry }) {
           <tr>
             <th scope="col">scope（图/视图）</th>
             {METRIC_COLUMNS.map((column) => (
-              <th className="mtable__num" key={column.key} scope="col" title={column.hint}>
-                {column.label}
+              <th className="mtable__num" key={column.key} scope="col">
+                <Term id={column.key}>{column.label}</Term>
               </th>
             ))}
           </tr>
