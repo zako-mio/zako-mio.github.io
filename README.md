@@ -426,6 +426,14 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   （定义文本照旧常驻 HTML、读屏与无 JS 取文本不受影响，仅视觉被裁）。⛔ 未采用 Popover API：
   其声明式只支持**点按**触发，会打断 hover/focus 路径且与既有 CSS 呈现路径打架；亦未用纯 CSS
   Anchor Positioning（需**每实例唯一 `anchor-name`**，而 `Term` 是 RSC 无 `useId`，且支持面 partial）。
+- ⚠ **术语面板的 `id` 在同一页内重复**（第十六批 W4/C3 期间发现，⛔ **未修**）：`Term` 用
+  `glossary-<词条 id>` 作面板 `id`，而同一词条在同页会多次出现（`/stats` 实测 **`glossary-missing` ×22 ·
+  `glossary-collectability` ×10**，计数类词条各 ×4）⇒ 违反 HTML `id` 唯一性。
+  功能上 `aria-describedby` 解析到**首个**同名面板（内容逐字相同 ⇒ 读屏不受实质影响）
+  ⇒ 属**规范/有效性**缺陷，非功能性缺陷。⚠ **既有判据不覆盖**：`axe_a11y_probe` 用的 axe-core 4.14
+  **已移除** `duplicate-id*` 规则族（故它不会报）。
+  修法方向＝面板 `id` 每实例唯一；⚠ `Term` 是**服务端组件**（无 `useId`）⇒ 须由调用侧传唯一键，
+  或把 `Term` 改为客户端组件（代价＝包体）。⛔ 未做，登记待裁决。
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
