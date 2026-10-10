@@ -169,31 +169,35 @@ export default async function ProjectPage({ params }: PageProps) {
 
           <section id="links" className="detail__section">
             <h2 className="detail__section-title">入口</h2>
-            <ul className="contact__list">
+            {/* ★ 批十九 W3-2.D（用户裁决「详情页改名 links__list」）：本区块语义是「入口外链」，
+                与 /about 的「联系信息」不同 ⇒ 块名由 `contact__*` 改为 `links__*`，
+                ⛔ 不再与 /about 共用同名两义的类名（CSS 侧合并选择器共用同一套外观）。
+                ⚠ /about 仍用 `contact__*`（语义确实是联系）；两者由 `gate_ia_division` 的 A5 分别看住。 */}
+            <ul className="links__list">
               {project.has_pages ? (
                 <li>
                   <a
-                    className="contact__link"
+                    className="links__link"
                     data-spotlight="soft"
                     href={project.entry_url}
                     rel="noopener noreferrer"
                     target="_blank"
                   >
-                    <span className="contact__k">在线预览</span>
-                    <span className="contact__v">{project.entry_url.replace(/^https?:\/\//, '')}</span>
+                    <span className="links__k">在线预览</span>
+                    <span className="links__v">{project.entry_url.replace(/^https?:\/\//, '')}</span>
                   </a>
                 </li>
               ) : null}
               <li>
                 <a
-                  className="contact__link"
+                  className="links__link"
                   data-spotlight="soft"
                   href={project.repo_url}
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <span className="contact__k">仓库</span>
-                  <span className="contact__v">{project.repo_url.replace(/^https?:\/\//, '')}</span>
+                  <span className="links__k">仓库</span>
+                  <span className="links__v">{project.repo_url.replace(/^https?:\/\//, '')}</span>
                 </a>
               </li>
             </ul>

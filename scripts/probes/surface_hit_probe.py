@@ -69,7 +69,8 @@ NARROW = {"width": 390, "height": 844}
 GRID = 11  # 11×11 = 121 个取样点
 
 # ★ 按「同类项全集」取路由（⛔ 只看首页会漏掉 chip/contact/nav 三处反馈面）：
-#   `.chip` 只在 /works、`.contact__link` 只在 /about、`.nav__link` 只在窄屏（≤1179px 顶栏接管）。
+#   `.chip` 只在 /works、`.contact__link` 只在 /about、`.links__link` 只在详情页（★ 批十九 W3-2.D 改名，
+#   与 `.contact__link` 分列）、`.nav__link` 只在窄屏（≤1179px 顶栏接管）。
 #   ★ 批十三 W1 收口新增 /stats（⚠ 补给项）：`.mtable__scroll` 与 `.metrics__item` 只出现在
 #     `/stats` 与详情页 ⇒ 漏了 `/stats/` 就**根本没测到这两个面**（判据覆盖面 < 交付面）。
 #     ⇒ 纪律：新增「同类项集合」时，必须把**消费该集合的路由**同步纳管进来。

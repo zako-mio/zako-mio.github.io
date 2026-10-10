@@ -108,7 +108,16 @@
       "coverage_min": 0.98,
       "focus_equivalent": ":focus-visible",
       "status": "ok",
-      "reason": "联系链接本体"
+      "reason": "联系链接本体（★ 批十九 W3-2.D：本条现只服务 /about 的「联系」块；作品详情页的「入口」块已改名为 `.links__link` 并**分列一条**，⛔ 不再同名两义）"
+    },
+    {
+      "selector": ".links__link:hover",
+      "kind": "self",
+      "hotspot": "a.links__link",
+      "coverage_min": 0.98,
+      "focus_equivalent": ":focus-visible",
+      "status": "ok",
+      "reason": "★ 批十九 W3-2.D（用户裁决「详情页改名 links__list」）新增：作品详情页「入口」块的外链本体。与 `.contact__link` 外观逐字节相同（globals.css 合并选择器），仅块名分列以消除「同名两义」。它在 10 个 `/works/<name>` 路由上存在 ⇒ 满足 C2 空集守卫。"
     },
     {
       "selector": ".directory__item:hover .directory__icon",

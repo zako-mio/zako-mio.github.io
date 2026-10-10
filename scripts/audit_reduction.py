@@ -61,7 +61,7 @@ MIN_BLOCK_LEN = 14  # 标签级(≤13) vs 句级(≥14) 的分界；实测直方
 # 公共件锚点：以 <main> 为界，main 之外即公共件（rail / 顶部 nav / 站点 footer）
 # R3c 关注的区块类名（`如` 列举者可扩展；扩展时须同批复核本表）
 SECTION_CLASSES = ("filterbar", "stats__grid", "about__grid", "contact__list",
-                   "projects-grid", "detail__section")
+                   "links__list", "projects-grid", "detail__section")
 
 # ---- 正则 ----------------------------------------------------------------
 SCRIPT = re.compile(r"<script\b.*?</script>", re.S | re.I)

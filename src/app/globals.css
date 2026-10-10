@@ -1796,16 +1796,24 @@ button.chip[aria-pressed='true'] {
   color: var(--text-primary);
 }
 
-/* ----------------------------------------------------------- 联系 --------- */
+/* --------------------------------------------- 联系 / 入口链接 --------- */
 
-.contact__list {
+/* ★ 批十九 W3-2.D：同一套外观服务两种语义，**块名分列**（⛔ 不再同名两义）：
+     · `.contact__*` = /about 的「联系信息」（邮件 / GitHub）
+     · `.links__*`   = 作品详情页的「入口」（在线预览 / 仓库）
+   两者共用同一组规则（合并选择器），故外观逐字节相同；改名只动语义命名。
+   ⚠ `.links__link:hover` 已同步登记 `scripts/interaction-surfaces.json`（C1 双向闭合）。 */
+
+.contact__list,
+.links__list {
   display: grid;
   gap: var(--space-2);
   margin-top: var(--space-4);
   max-inline-size: var(--measure);
 }
 
-.contact__link {
+.contact__link,
+.links__link {
   /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
   position: relative;
   display: flex;
@@ -1825,13 +1833,15 @@ button.chip[aria-pressed='true'] {
 }
 
 @media (hover: hover) {
-  .contact__link:hover {
+  .contact__link:hover,
+  .links__link:hover {
     border-color: var(--state-hover-accent);
     box-shadow: var(--shadow-1), inset 0 1px 0 var(--edge-highlight);
   }
 }
 
-.contact__k {
+.contact__k,
+.links__k {
   min-width: 4.5rem;
   font-size: var(--fs-label);
   font-weight: 500;
@@ -1840,7 +1850,8 @@ button.chip[aria-pressed='true'] {
   text-transform: uppercase;
 }
 
-.contact__v {
+.contact__v,
+.links__v {
   font-family: var(--font-mono);
   font-size: var(--fs-nav);
   color: var(--link);
