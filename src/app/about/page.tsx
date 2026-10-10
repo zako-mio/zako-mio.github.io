@@ -50,7 +50,7 @@ export default function AboutPage() {
             <h2 className="detail__section-title">技术画像</h2>
             <p className="detail__lead prose">{PROFILE_LEAD}</p>
 
-            <ul className="threads" data-spotlight="base">
+            <ul className="threads" data-spotlight="soft">
               <li className="threads__item">
                 <span className="threads__key">定位</span>
                 <span className="threads__val">{PROFILE_ROLE}</span>
@@ -75,7 +75,7 @@ export default function AboutPage() {
             <h2 className="detail__section-title">近期在做</h2>
             {/* 图形化编排：左侧一条贯穿的强调轨把三条串成「并行推进中」的一条带，
                 ⛔ 不是三个并列的项目符号 —— 形状本身表达了「同一时期、三条线」。 */}
-            <ul className="threads threads--rail" data-spotlight="base">
+            <ul className="threads threads--rail" data-spotlight="soft">
               {PROFILE_WORKING_ON.map((item, index) => (
                 <li className="threads__item" key={item}>
                   <span className="threads__mark" aria-hidden="true">
@@ -132,7 +132,7 @@ export default function AboutPage() {
 
             {/* ★ 四条原则的真实关系是**闭环**（口径错了要回炉、复盘产出下一轮口径）。
                 并列列表会把「环」讲成「清单」，信息被抹平 ⇒ 这里先出图，文字作展开。 */}
-            <figure className="figure" data-spotlight="base">
+            <figure className="figure" data-spotlight="soft">
               <div className="figure__frame">
                 <PracticeCycleFigure />
               </div>

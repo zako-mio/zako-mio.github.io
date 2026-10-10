@@ -64,12 +64,21 @@ export function ProjectCard({
   const domainLabels = project.domains.map((domain) => DOMAIN_LABELS[domain]);
 
   return (
-    <article
-      className="card"
-      data-spotlight="base"
-      data-reveal={reveal ? '' : undefined}
-      style={reveal ? ({ '--i': index } as CSSProperties) : undefined}
-    >
+    /* ★ 批十九（裁决 D3）：`.card-slot` 是**容器查询的容器**（`container: card / inline-size`）。
+       ⚠ 为什么必须有这一层：容器查询只能**作用于容器的后代**，⛔ 不能作用于容器自身 ——
+       而本批要按「卡片可用宽度」决定的是 `.card` **自身**的 `flex-direction`。
+       ⛔ 不能把 `container-type` 直接放在 `.card` 上（那样它只能驱动自己的后代，方向改不了）；
+       ⛔ 也不能放在 `.projects-grid` 上（那是**整行**宽度，不是**列宽**）。
+       ⇒ 这一层让「卡片自己的宽度」成为可查询量，取代原先以**视口**代理容器宽度的做法。
+       ⚠ 布局副作用由 CSS 兜住：`.card-slot` 用 `display:grid` 使 `.card` 撑满槽位（含高度）。 */
+    <div className="card-slot">
+      <article
+        className="card"
+        /* ★ 批十九（裁决 V-A6＝soft）：W1 指针高光强度由默认档（320px/1.0）降为 soft（240px/0.55）。 */
+        data-spotlight="soft"
+        data-reveal={reveal ? '' : undefined}
+        style={reveal ? ({ '--i': index } as CSSProperties) : undefined}
+      >
       <div className="card__body">
         <ul className="card__tags">
           <li className="chip chip--type" data-spotlight="micro">{typeLabel}</li>
@@ -112,6 +121,7 @@ export function ProjectCard({
           </a>
         </p>
       </footer>
-    </article>
+      </article>
+    </div>
   );
 }

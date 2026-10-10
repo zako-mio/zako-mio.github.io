@@ -137,14 +137,14 @@ export function ChartFigure({ chart }: { chart: Chart }) {
       <figcaption className="chart__caption">{chart.title}</figcaption>
       <div
         className="chart__frame"
-        data-spotlight="base"
+        data-spotlight="soft"
         role="img"
         aria-label={`${chart.title}。数值与口径见上表；图为量级概览，不作复杂度排序。`}
         dangerouslySetInnerHTML={{ __html: light }}
       />
       <div
         className="chart__frame chart__frame--dark"
-        data-spotlight="base"
+        data-spotlight="soft"
         aria-hidden="true"
         dangerouslySetInnerHTML={{ __html: dark }}
       />

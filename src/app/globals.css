@@ -1484,17 +1484,20 @@ button.chip[aria-pressed='true'] {
   align-items: center;
   gap: var(--space-2);
   align-self: flex-start;
-  padding: 4px 12px;
   font-family: var(--font-mono);
   font-size: var(--fs-label);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--text-secondary);
-  background: var(--glass-bg);
-  border: 1px solid var(--border-card);
-  border-radius: 999px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* ★ 批十九（裁决 V-A5＝B「去壳」）：**去掉了「标题上方小标签」的药丸容器** ——
+     原先这里还有 `padding: 4px 12px` ＋ `background: var(--glass-bg)` ＋
+     `border: 1px solid var(--border-card)` ＋ `border-radius: 999px` ＋ `backdrop-filter: blur(8px)`。
+     理由：那是 AI 味清单里「标题上方的 badge/label」套路的**载体**（有边／有底／有模糊／全圆角）；
+     去掉壳之后它退回**一行带状态点的定位文字**，仍是本页的**定位陈述**（信息不丢）。
+     ⛔ 只去壳，**排版一律不动**（mono / 字号 / 字距 / 字重 / 颜色原样）—— 变体 B 的定义就是如此，
+     故本次改动**不掺入**任何排版层面的取舍（那些不在本裁决范围内）。
+     ⚠ 代价如实登记：`--glass-bg` 在本件上不再使用（另有两处在用，令牌未成孤儿）；
+     `padding` 归零后本件与 `.hero__inner` 的 `gap` 对齐基线与标题一致（更整齐，非缺陷）。 */
 }
 
 /* ⚠ 本件是 `[data-spotlight]` 宿主 ⇒ `::before` 已**让给高光层**（否则高光会吃掉这颗点）。
@@ -2037,37 +2040,55 @@ button.chip[disabled] {
   gap: var(--space-3);
 }
 
-.projects-grid--list .card {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: var(--space-4);
+/* ★★ 批十九（裁决 D3）：**容器查询** —— 卡片按**自己的可用宽度**排版，
+   ⛔ 不再以**视口**宽度代理容器宽度。
+
+   改动前（视口代理，现删除）：
+     `.projects-grid--list .card { flex-direction: row; … }` ＋ `@media (max-width:640px) { … column … }`
+   —— 这组规则把「卡片宽不宽」表达成「**视口**宽不宽」，于是两处失真：
+     ① `.projects-grid` 在 ≥640/≥1024px 是 2/3 列，列宽只有 284–336px，**视口**却已 ">640"
+        ⇒ 代理量与目标量（列宽）脱钩（今天靠「网格里不加 `--list` 类」绕开，属**约定耦合**）；
+     ② 容器本身有 `max-width`（1440px 视口下网格宽 1056px）⇒ 视口再宽也不会改变卡片宽度，
+        而 media query 仍在变 —— 代理量**继续偏离**目标量。
+
+   改动后：`.card-slot` 成为**具名容器**（`container: card / inline-size`），
+   卡片自己的宽度就是被查询量；`.projects-grid` 无论几列、容器有无 `max-width`，都自动正确。
+   ⚠ 为什么必须多一层 `.card-slot`：容器查询只能作用于**容器的后代**，
+     ⛔ 不能作用于容器自身 —— 而这里要改的恰是 `.card` **自身**的 `flex-direction`
+     （`container-type` 若直接放 `.card` 上，它只能驱动自己的后代，方向改不了）。
+
+   ⚠ **阈值 640px 的来历（⛔ 不是魔法数）**：沿用设计与既有断点同一档的 640px。
+     改动前列表卡的切换点等价于「视口 ≥641px」＝「卡片宽 ≥593px」；取 640px 作**卡片宽**阈值后，
+     唯一差异窗口＝**视口 641–687px 的列表模式**（卡宽 593–639px 由「并排」改为「堆叠」）。
+     该窗口经**前后对照实测**确认（见 `batch19-evidence/d3-container-query-check.md`），
+     已登记进 README「已知取舍」。⛔ 未用「593px」这种由内边距凑出的等价数 ——
+     它依赖当档 48px 内边距，而该内边距本身随断点变（48/64），作阈值反而**更**不稳定。 */
+.card-slot {
+  container: card / inline-size;
+  /* 让 `.card` 撑满槽位：宽跟随网格列，高跟随行（对齐行为与改动前 `.card` 直接作网格项时一致）。 */
+  display: grid;
 }
 
-.projects-grid--list .card__body {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.projects-grid--list .card__footer {
-  flex: 0 0 auto;
-  flex-direction: column;
-  align-items: flex-end;
-  border-top: 0;
-  padding-top: 0;
-  gap: var(--space-2);
-}
-
-@media (max-width: 640px) {
-  .projects-grid--list .card {
-    flex-direction: column;
+@container card (min-width: 640px) {
+  /* 宽卡片：正文与页脚**并排**（改动前由 `.projects-grid--list .card` 承担）。 */
+  .card {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-4);
   }
 
-  .projects-grid--list .card__footer {
-    flex-direction: row;
-    align-items: center;
-    border-top: 1px solid var(--border-subtle);
-    padding-top: var(--space-3);
-    width: 100%;
+  .card__body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .card__footer {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-end;
+    border-top: 0;
+    padding-top: 0;
+    gap: var(--space-2);
   }
 }
 
@@ -3395,6 +3416,11 @@ html.js-motion [data-reveal].is-in {
 }
 
 /* 强度分层（半径 / 不透明度）。⛔ 只有这四档（`base` 即无值的默认档）；
+   ★ 批十九（裁决 V-A6＝soft）：**全部原先用默认档的宿主已改为 `soft`** ——
+     `.card` / `.figure` ×2 / `.chart__frame` ×2 / `.threads` ×2（共 6 处）。
+     故当前站内**实际只有 soft 与 micro 两档在用**；`base` 保留为**任何未给值的宿主的兜底默认**
+     （⛔ 未删除：删除会让「忘了给值的宿主」静默落到 320px/1.0 之外的未知态）。
+     用户裁决理由＝W1 高光偏强；`soft`＝同一套 `--spotlight-*` 令牌的低强度档，⛔ 未新增令牌、未改熔断。
    新增档须同步改 `scripts/interaction-surfaces.json` 的 note 与探针白名单，
    避免出现「无判据的档」。档位口径＝**元素尺度 + 是否已有自身反馈**：
    已有反馈的件取更低档（⛔ 避免与既有 affordance 叠加成双重信号）。 */

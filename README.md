@@ -369,14 +369,19 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   （前者以 `:not([data-motion='on'])` 限定 ⇒「动效开」可覆盖 OS）。
 - **元素级指针高光（第十三批 W1 · 统一约定 `[data-spotlight]`）**：批八起的「卡片指针跟随光斑」
   此前**写死** `.card::before` ＋ `closest('.card')`；批十三把它抽成**全站统一约定**：
-  - **宿主**：任何**已定位**（`position != static`）的 HTML 元素挂 `data-spotlight="base|soft|micro"`；
+  - **宿主**：任何**已定位**（`position != static`）的 HTML 元素挂 `data-spotlight="soft|micro"`；
     强度分层由 `--spotlight-radius` / `--spotlight-opacity` 承担（四档；`base` 即无值的默认档）：
-    `base` 320px/1 · `soft` 240px/0.55 · `micro` 120px/0.45 ·（`strong` 440px/1，保留未用）。
+    `soft` 240px/0.55（**现役主档**）· `micro` 120px/0.45 · `base` 320px/1（**当前无宿主使用**，
+    仅作「未给值的宿主」的兜底默认）·（`strong` 440px/1，保留未用）。
     档位口径＝**元素尺度 ＋ 是否已有自身反馈**（已有反馈的件取更低档，⛔ 避免与既有 affordance
     叠成双重信号）。⛔ 新增档须同步 `scripts/interaction-surfaces.json` 与探针白名单。
-  - **本轮作用面（§4-W1 表全量接入）**：`base`＝`.card` / `.figure` / `.chart__frame` / `.threads`；
-    `soft`＝`.metrics__item` / `.related__item`(+`.directory__item`) /
-    `.contact__link` / `.disclosure`；`micro`＝`li.chip` / `span.chip` / `.hero__eyebrow`。
+    ★ **批十九（用户裁决 V-A6＝soft）**：原 `base` 的 **6 处宿主全部降为 soft**
+    （`.card` / `.figure` ×2 / `.chart__frame` ×2 / `.threads` ×2）—— 裁决理由＝W1 高光偏强；
+    `soft` 是同一套 `--spotlight-*` 令牌的低强度档，⛔ 未新增令牌、⛔ 未改两道熔断。
+    ⛔ `base` 档**保留不删**：删掉会让「忘了给值的宿主」落到未定义的默认态（保留＝有兜底）。
+  - **作用面（批十九后）**：`soft`＝`.card` / `.figure` / `.chart__frame` / `.threads` /
+    `.metrics__item` / `.related__item`(+`.directory__item`) / `.contact__link` / `.disclosure`；
+    `micro`＝`li.chip` / `span.chip` / `.hero__eyebrow`。
     （★ 十七批把 `.hero__map` 从 `soft` 移出 —— 见下「排除项」③。）
   - ⛔ **排除项（三条，均有依据而非遗漏）**：
     ① **控件**（`.button` / `.theme-toggle` / `.motion-toggle` / `button.chip`）——V1 口径「控件非容器」；
@@ -449,6 +454,32 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   ⛔ 若为此加 inset，分隔线会**缩进**成「盒子里浮着一张表」，与**全站左对齐基线**也不再一致 ——
   ⇒ 属**改坏**，非改好。★ 先例：`low-contrast` 同样按「记录＋并陈，⛔ 不据此改」处置。
   ⚠ **未主张 detector 该条已消除**：复跑仍会报（第三方通道与本站判据**各有盲区**，须并置叙述）。
+- ★ **`.hero__eyebrow` 已「去壳」（批十九 · 用户裁决 V-A5＝B）**：原为「标题上方的小标签」——
+  `padding: 4px 12px` ＋ `background: var(--glass-bg)` ＋ `border: 1px solid` ＋ `border-radius: 999px`
+  ＋ `backdrop-filter: blur(8px)`。那是 AI 味清单里「标题上方的 badge/label」套路的**载体**
+  （有边／有底／有模糊／全圆角）。现**只留文字 ＋ 状态点**，退回一行**定位陈述**。
+  ⛔ **排版一律未动**（mono / 字号 / 字距 / 字重 / 颜色原样）—— 变体 B 的定义＝只去壳，
+  故本次**不掺入**任何排版取舍（那些不在本裁决范围内）。
+  ⚠ **代价如实登记**：① `--glass-bg` 在本件上不再使用（另有两处在用 ⇒ 令牌未成孤儿，已核）；
+  ② 本件与标题的左对齐基线变整齐（`padding` 归零，非缺陷）；③ 变体 C（完全移除）**未采纳**
+  —— 那会丢掉 `PROFILE_ROLE` 这段信息（信息落点问题，⛔ 不只是观感）。
+- ★ **`.card` 的并排/堆叠改由 container queries 决定（批十九 · 用户裁决 D3＝B）**：
+  改动前用**视口**媒体查询代理容器宽度（`.projects-grid--list .card{row}` ＋ `@media (max-width:640px){column}`），
+  两处失真：① `.projects-grid` 在 ≥640/≥1024px 是 2/3 列，**列宽只有 284–336px** 而视口已 ">640"
+  ⇒ 代理量≠目标量，靠「网格里不加 `--list` 类」的**约定耦合**绕开；
+  ② 容器本身有 `max-width`（1440px 视口下网格宽 1056px）⇒ 视口再宽卡片也不变宽，而 media query 仍在变。
+  现由 `.card-slot{container: card / inline-size}` ＋ `@container card (min-width: 640px)` 按**卡片自身宽度**裁决。
+  ⚠ **必须多一层 `.card-slot`**：容器查询只能作用于**容器的后代**，而这里要改的恰是 `.card` **自身**的方向。
+  ⛔ **已知取舍（实测）**：**列表模式 · 视口 641–687px** 由「并排」改为「堆叠」（卡宽 593–639px）。
+  该窗口**不可消除**——已用实测数据证明两条要求互斥：网格零差异需阈值 **>607px**（单列网格卡片最大宽 607），
+  列表零差异需阈值 **≤593px**，而 607>593 ⇒ **不存在**同时满足两者的阈值。取 **640px**（既有断点本身）
+  ⇒ **网格模式逐视口零差异**，代价＝上述 47px 窗口。详见 `batch19-evidence/d3-container-query-check.md`
+  （含前后对照表 ＋ 空跑与边界的实测命令）。⛔ 未取 593：「由当档 48px 内边距凑出」且该内边距随断点变
+  （48/64），作阈值**更**不稳定，并会**引入**一种全新的网格并排态。
+- ★ **D1（`corner-shape` 超椭圆圆角）与 D2（信息密度分层）＝用户裁决「不做」（批十九）**：
+  D1 仅 Chrome/Edge 139+，跨浏览器会**静默回退**为正圆 ⇒ 收益（更软的角）不足以换「同一站在不同浏览器里
+  角形不同」；D2 现状间距已到令牌上界，收紧/放宽各有取舍而**收益未证**。⇒ 二者**登记为已裁决＝不做**，
+  ⛔ 不留悬空项；如日后要动，D1 须先解决回退面、D2 须先给出可量的收益口径。
 - ★ **术语解释层面板曾被 `.mtable__scroll`（`overflow-x:auto`）裁剪 —— 第十六批 W4/C3 已修**（缺陷系第十五批
   实测发现、`batch14 W2-2` 起即存在）：`.term__def` 原为 `position:absolute`，宿主在滚动容器内
   ⇒ 被容器 padding box 裁剪（**实测**：表头最右列面板越容器**右缘 213px**、末行越**下缘 179px**）。
@@ -505,8 +536,10 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 - ⚠ **`[data-spotlight]` 已按 §4-W1 表全量接入**（`.card` / `.figure` / `.chart__frame` / `.threads` /
   `.hero__map` / `.metrics__item` / `.related__item` / `.directory__item` / `.contact__link` /
   `.disclosure` / `li.chip` / `span.chip` / `.hero__eyebrow`），排除项见上文「排除项（三条）」
-  （★ 十七批把 `.hero__map` 移出该清单 ⇒ 该清单已由 9 项变 8 项）。
-  ⛔ 但**「接入」≠「观感已裁决」** —— 高光强度是否合适仍未人看对比件（见下一条）。
+  （★ 十七批把 `.hero__map` 移出该清单 ⇒ 该清单已由 9 项变 8 项；★ 批十九把 6 处 `base` 宿主降为 `soft`，
+  ⇒ 档位分布见上文「元素级指针高光」条，**站内现只用 `soft` 与 `micro`**）。
+  ✅ **「高光强度是否合适」已裁决（批十九 · V-A6＝soft）** —— 对比件 `batch18-evidence/kicker-spotlight-preview.html`
+  （★ 含「锁定高光（全部常亮）」开关，五档可**同屏**比较），用户裁决取 `soft`。
 - ★ **修掉一处**新暴露的**既有**缺陷（批十三收口，非本功能引入）：echarts 构建期 SSR 会为系列生成
   `.zr0-cls-N:hover { cursor:pointer; fill:… }`，而本站是**纯静态导出、这些条没有任何动作**
   ⇒ 悬停 `cursor:pointer` ＋ 变色＝**假可供性**（本站自有判据明确禁止）。
