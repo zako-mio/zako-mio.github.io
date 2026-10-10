@@ -44,6 +44,11 @@ export function MotionRuntime() {
     let onTouchEnd: (() => void) | null = null;
     let onTermKeydown: ((event: KeyboardEvent) => void) | null = null;
     let onTermLeave: ((event: PointerEvent) => void) | null = null;
+    let onTermEnter: ((event: Event) => void) | null = null;
+    let onTermFocusOut: ((event: FocusEvent) => void) | null = null;
+    let onTermReposition: (() => void) | null = null;
+    // 当前被「抬到 fixed」的术语件（供滚动/缩放时重摆）。
+    let floatingTerm: { term: HTMLElement; trigger: HTMLElement; def: HTMLElement } | null = null;
 
     function removeListeners() {
       if (onPointerMove) window.removeEventListener('pointermove', onPointerMove);
@@ -57,6 +62,16 @@ export function MotionRuntime() {
       }
       if (onTermKeydown) window.removeEventListener('keydown', onTermKeydown);
       if (onTermLeave) window.removeEventListener('pointerout', onTermLeave);
+      if (onTermEnter) {
+        window.removeEventListener('pointerover', onTermEnter);
+        window.removeEventListener('focusin', onTermEnter);
+      }
+      if (onTermFocusOut) window.removeEventListener('focusout', onTermFocusOut);
+      if (onTermReposition) {
+        // ⚠ `scroll` 不冒泡 ⇒ 必须 `capture: true` 才能收到滚动容器内的滚动。
+        window.removeEventListener('scroll', onTermReposition, true);
+        window.removeEventListener('resize', onTermReposition);
+      }
     }
 
     // ── 术语解释层（第十四批 W2）：**只补 Esc 关闭**。
@@ -70,6 +85,7 @@ export function MotionRuntime() {
       const term = active?.closest?.('.term') as HTMLElement | null;
       if (!term) return;
       term.setAttribute('data-term-closed', '');
+      releaseFloat(term);
       active?.blur();
     };
     onTermLeave = (event: PointerEvent) => {
@@ -77,10 +93,74 @@ export function MotionRuntime() {
       const term = target?.closest?.('.term') as HTMLElement | null;
       if (term && !term.contains(event.relatedTarget as Node | null)) {
         term.removeAttribute('data-term-closed');
+        releaseFloat(term);
       }
     };
     window.addEventListener('keydown', onTermKeydown);
     window.addEventListener('pointerout', onTermLeave, { passive: true });
+
+    // ── 术语面板的**定位**增强（★ 批十六 W4/C3：面板在 `overflow` 容器内被裁）。
+    //   ★ 为什么在这里：现有 10 条探针/八闸**均不判浮层裁剪**（`term_layer_probe` 只判
+    //     `display`/尺寸；`surface_hit` 判热区）⇒ 属**判据空白面**（b127）。本段与其配套的
+    //     `term_layer_probe.T7` 一起把这个面补上。
+    //   ⛔ 仍**不写「展开」逻辑**（b95 的两条打架路径）：展开/收起**依旧全由 CSS**
+    //     （`:hover` / `:focus-within` / `[data-term-closed]`）裁决；本段只在**面板已展开**时
+    //     把它的 `position` 从 `absolute` 切成 `fixed`（CSS 规则见 globals.css
+    //     `.term[data-term-float]`），并用触发器 rect 算出视口坐标 ⇒ 逃出容器裁剪。
+    //   ⛔ 不逐件加监听器：与 Esc/离开共用**委托**（pointerover / focusin / focusout / 滚动）。
+    //   ★ 几何口径与原来一致（左对齐触发器 + 下方 `--space-2`(8px) 间距），仅当**贴近视口边缘**
+    //     时做钳制（右移/上翻）——所以常规情形**观感不变**。
+    const TERM_GAP = 8; // == var(--space-2)
+    const TERM_MARGIN = 8; // 距视口边缘的最小留白
+
+    function placeTerm(term: HTMLElement, trigger: HTMLElement, def: HTMLElement): void {
+      const w = def.offsetWidth;
+      const h = def.offsetHeight;
+      // 未展开（`display:none`，如 Esc 关闭态）⇒ 量为 0 ⇒ 不摆、也不落 flag（避免把隐藏件切成 fixed）。
+      if (w === 0 || h === 0) return;
+      const tr = trigger.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let x = tr.left;
+      let y = tr.bottom + TERM_GAP;
+      if (y + h > vh - TERM_MARGIN) {
+        const above = tr.top - h - TERM_GAP; // 下方不够 ⇒ 翻到触发器上方
+        y = above >= TERM_MARGIN ? above : Math.max(TERM_MARGIN, vh - h - TERM_MARGIN);
+      }
+      x = Math.min(Math.max(x, TERM_MARGIN), Math.max(TERM_MARGIN, vw - w - TERM_MARGIN));
+      def.style.setProperty('--term-x', `${Math.round(x)}px`);
+      def.style.setProperty('--term-y', `${Math.round(y)}px`);
+      term.setAttribute('data-term-float', '');
+    }
+
+    function releaseFloat(term: HTMLElement): void {
+      term.removeAttribute('data-term-float');
+      if (floatingTerm && floatingTerm.term === term) floatingTerm = null;
+    }
+
+    onTermEnter = (event: Event) => {
+      const target = event.target as Element | null;
+      const term = target?.closest?.('.term') as HTMLElement | null;
+      if (!term) return;
+      const trigger = term.querySelector<HTMLElement>('.term__trigger');
+      const def = term.querySelector<HTMLElement>('.term__def');
+      if (!trigger || !def) return;
+      floatingTerm = { term, trigger, def };
+      placeTerm(term, trigger, def);
+    };
+    onTermFocusOut = (event: FocusEvent) => {
+      const target = event.target as Element | null;
+      const term = target?.closest?.('.term') as HTMLElement | null;
+      if (term && !term.contains(event.relatedTarget as Node | null)) releaseFloat(term);
+    };
+    onTermReposition = () => {
+      if (floatingTerm) placeTerm(floatingTerm.term, floatingTerm.trigger, floatingTerm.def);
+    };
+    window.addEventListener('pointerover', onTermEnter, { passive: true });
+    window.addEventListener('focusin', onTermEnter, { passive: true });
+    window.addEventListener('focusout', onTermFocusOut, { passive: true });
+    window.addEventListener('scroll', onTermReposition, { passive: true, capture: true });
+    window.addEventListener('resize', onTermReposition, { passive: true });
 
     // ── 精确指针（桌面）：光斑跟随鼠标 ＋ 卡片光斑（--mx/--my）。
     if (finePointer && motionAllowed) {

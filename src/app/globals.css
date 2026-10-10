@@ -2589,6 +2589,25 @@ button.chip[disabled] {
   display: none;
 }
 
+/* ★ 批十六 W4/C3：把面板抬出 `overflow` 裁剪（只改**定位**，⛔ 不改呈现）。
+   缺陷：`.term__def` 是 `position:absolute`，宿主若在滚动容器
+   （`.mtable__scroll { overflow-x:auto }`，且 overflow-x 非 visible 会把 overflow-y 也算成 auto）
+   内 ⇒ 被容器 padding box 裁剪。**实测**（/stats）：表头最右列面板越容器右缘 213px、
+   末行面板越下缘 179px。
+   解法：`position:fixed` 的 containing block 是**视口** ⇒ 逃出裁剪；实测同时逃出**层叠**
+   （命中测试：fixed 面板越容器下缘仍命中自身，absolute 则命中下一 `.mtable__block`）。
+   ⛔ 不改「呈现」：展开/收起仍由上面的 `:hover` / `:focus-within` / `[data-term-closed]`
+   单独裁决（b95：⛔ 不开第二条互相打架的呈现路径）—— 本规则只覆盖 left/top/position。
+   ★ `data-term-float` 与 `--term-x/--term-y` **只由 JS**（`MotionRuntime` 的委托）落；
+   ⇒ 无 JS 时仍是原来的 `position:absolute`（**行为零回退**，定义文本照旧常驻 HTML 可读）。 */
+.term[data-term-float] .term__def {
+  position: fixed;
+  left: var(--term-x, 0);
+  top: var(--term-y, 0);
+  right: auto;
+  bottom: auto;
+}
+
 /* ── E 枢纽聚合仪表盘（2b-4）──────────────────────────────────────────── */
 .sr-only {
   position: absolute;

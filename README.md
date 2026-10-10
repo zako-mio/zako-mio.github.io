@@ -171,7 +171,7 @@ python3 scripts/gate_motion_budget.py --selftest
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 | `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
-| `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）（带 `--selftest`） | 是 |
+| `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）· `T7` **浮层不被 `overflow` 容器裁剪**（★ 十六批 W4/C3：**逐件**「面板内·裁剪框外·视口内」命中测试；`not-open` 亦计 FAIL，⛔ 不许静默跳过）（带 `--selftest`） | 是 |
 | `axe_a11y_probe.py` | **无障碍自动化审查**（第十五批 B2）：axe-core 4.14.0（vendored，`vendor/axe.min.js`）注入渲染页跑 `axe.run`；规则白名单＝WCAG 2.1/2.2 A/AA ＋ best-practice（含 `heading-order` 这类既有判据都没在看的类）；双主题 × 5 路由；豁免须**带理由且真命中**（⛔ 防静默过期）；`A4` 非空守卫；带 `--selftest`（对照臂＋负向臂） | 是 |
 | `acceptance_probe.py` | **页面分工结构类**（第三批）：`A1` 首页枚举数 ≤5 · `A2` 首页无索引控件 · `A3` 首页无他页专属区块 · `A4` 对照臂 · `A5` 联系区块唯一落点（结构类，须 **ALL PASS** 才 rc=0；带 `--selftest`） | 否 |
 | `dup_probe.py` | **页间内容重复度**（第三批）：块级重合矩阵 ＋ 关键元素跨页计数（数值/**报告类**，⛔ 不判 PASS/FAIL ⇒ 无 `--selftest`） | 否 |
@@ -413,12 +413,19 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 
 ## 已知取舍
 
-- ⚠ **术语解释层面板在 `.mtable__scroll`（`overflow-x:auto`）内会被容器裁剪**（第十五批实测发现；
-  ⚠ **batch14 W2-2 起即已存在**，非本批引入）：`.term__def` 是 `position:absolute` 且宿主在滚动容器内
-  ⇒ 被容器的 padding box 裁剪。**实测**：表头**最右列**术语（拓扑层/学习阶段）面板越容器**右缘 17–189px**；
-  末行触发器面板越**下缘 14–179px**（几何＋截图双证）。
-  ⚠ **未被任何既有判据覆盖**（`term_layer_probe` 只判 `display`/尺寸，`surface_hit` 判热区覆盖、都不算裁剪）。
-  ⇒ **修法方向**＝把浮层抬到**顶层**（Popover API / top-layer）以逃出 `overflow` 裁剪 —— 属 **W4 候选，⛔ 未做**。
+- ★ **术语解释层面板曾被 `.mtable__scroll`（`overflow-x:auto`）裁剪 —— 第十六批 W4/C3 已修**（缺陷系第十五批
+  实测发现、`batch14 W2-2` 起即存在）：`.term__def` 原为 `position:absolute`，宿主在滚动容器内
+  ⇒ 被容器 padding box 裁剪（**实测**：表头最右列面板越容器**右缘 213px**、末行越**下缘 179px**）。
+  **修法**＝`MotionRuntime` 的委托（与既有 Esc/离开同处）在面板**已展开**时落 `data-term-float`
+  ＋ 视口坐标，CSS 把面板切成 `position:fixed`（containing block ＝ **视口** ⇒ 逃裁剪；**实测亦逃层叠**：
+  fixed 面板越容器下缘仍命中自身，absolute 则命中下一 `.mtable__block`）。
+  ⚠ **展示仍全由 CSS 裁决**（`:hover` / `:focus-within` / `[data-term-closed]`），JS **只改定位**
+  —— ⛔ 不开第二条互相打架的呈现路径（b95）。判据：`term_layer_probe.T7`（逐件命中测试 ＋ `--selftest` 负向夹具）。
+  ⛔ 判据**不能**写成「面板 rect ⊆ 容器 rect」：已修形态的面板**本就**落在容器外，那种比较会把修好的判 FAIL。
+  ⚠ **代价（如实登记）**：**无 JS 时仍是原来的 `position:absolute`** ⇒ 该路径在滚动容器内**仍会被裁**
+  （定义文本照旧常驻 HTML、读屏与无 JS 取文本不受影响，仅视觉被裁）。⛔ 未采用 Popover API：
+  其声明式只支持**点按**触发，会打断 hover/focus 路径且与既有 CSS 呈现路径打架；亦未用纯 CSS
+  Anchor Positioning（需**每实例唯一 `anchor-name`**，而 `Term` 是 RSC 无 `useId`，且支持面 partial）。
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
