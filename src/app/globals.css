@@ -82,9 +82,9 @@
   --danger: #b3181f;
   --focus-ring: #2f4bd8;
 
-  /* --- 网格（工程感签名：1px 实线坐标基面；深浅共用一个令牌，仅透明度不同） --- */
-  --grid-line: rgba(16, 32, 64, 0.07);
-  --grid-size: 68px;
+  /* --- 网格令牌已删（批十七 AI 味裁决 V-A4＝B：细网格底整体移除）---
+     ⛔ 原 `--grid-line` / `--grid-size` 只服务 `.backdrop__grid` 一处 ⇒ 随该层一并删除，
+     不留无人消费的令牌（同批已在深浅两套主题里各删一份，⛔ 不留下半删状态）。 */
 
   /* --- 流星（仅夜间） --- */
   --meteor: rgba(226, 238, 255, 0.95);
@@ -217,7 +217,6 @@
     --warning: #fbbf24;
     --danger: #f87171;
     --focus-ring: #8fb4ff;
-    --grid-line: rgba(146, 176, 255, 0.055);
     --meteor: rgba(232, 242, 255, 1);
     /* 局部 scrim（批八裁决③）：深色档更强 */
     --scrim-1: 26%;
@@ -261,7 +260,6 @@
   --warning: #fbbf24;
   --danger: #f87171;
   --focus-ring: #8fb4ff;
-  --grid-line: rgba(146, 176, 255, 0.055);
   --meteor: rgba(232, 242, 255, 1);
   /* 局部 scrim（批八裁决③）：深色档更强 */
   --scrim-1: 26%;
@@ -451,7 +449,7 @@ section {
         起因：批十为消除手机卡顿关掉了星野 `grab`，触屏于是**没有任何触摸反馈**；用户裁决
         「换成更流畅的动画作为降级措施」—— 用**合成层**光斑替代 canvas 重绘。
         ⛔ 反转的只是「触屏不启用」这一条；下面两条护栏（②③）与两道熔断一字未改。
-     ② **幅度受限（结构性，不靠调参）**：本层夹在「照片之上、纱幕/网格/scrim 之下」
+     ② **幅度受限（结构性，不靠调参）**：本层夹在「照片之上、纱幕/scrim 之下」
         ⇒ 光斑永远不可能比照片本身更亮地照到文字层；正文带的合成对比度只会被它*压低*。
      ③ **不触发布局/重绘**：整层是一个 680×680 的固定件，靠 `transform: translate3d(...)`
         随指针移动（合成层）；⛔ 不用 `background-position` 或 `inset:0` 全屏重绘。
@@ -637,7 +635,7 @@ html[data-pointer] .backdrop__glow {
      （CSS 的 display:none 只是「不显示」，rAF 仍在算 —— 见 BackdropFx.tsx）。
    ★ 背景层是 `pointer-events:none` 且在 `z-index:-1`，画布收不到指针事件 ⇒
      交互由 tsparticles 的 `detectsOn:'window'` 承担，⛔ 不是给画布放行命中测试。
-   ★ 该层 DOM 位置在纱幕/网格**之后** ⇒ 粒子不被纱幕压暗。 */
+   ★ 该层 DOM 位置在纱幕**之后**（原网格层已于批十七 V-A4 移除）⇒ 粒子不被纱幕压暗。 */
 .backdrop__fx {
   position: absolute;
   inset: 0;
@@ -662,30 +660,24 @@ html[data-pointer] .backdrop__glow {
   height: 100%;
 }
 
-/* 细网格：给「工程感」一个可读的坐标基面，边缘用遮罩淡出。
-   ★ 1px 实线（非渐变），在任何 DPR 下都是硬边，不参与「发虚」问题。 */
-.backdrop__grid {
-  position: absolute;
-  inset: 0;
-  display: block;
-  background-image:
-    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size);
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 78%);
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 0%, transparent 78%);
-}
+/* ★ 批十七（AI 味裁决 V-A4＝B）：**细网格底已移除**。
+   原为 1px 实线网格（`--grid-line` ＋ `--grid-size`，带径向遮罩淡出），站内曾自称「工程感签名」。
+   裁决依据：impeccable `Decorative grid-line background`（Source 通道）＋ 对比件
+   `batch16-evidence/aiflavour-adjudication-preview.html` V-A4 一节（用户 2026-10-11 裁决 B＝去除）。
+   ⛔ 随之删去 `--grid-line` / `--grid-size` 两个**只服务本条**的令牌（⛔ 不留无人消费的令牌），
+   组件侧标记见 `src/components/Backdrop.tsx`（两处同批删除，否则属「样式删了标记还在」的反向死规则）。 */
 
 /* ★ 第八批（裁决③）：**背景分区分级** —— 只在非阅读带保留强细节，正文带用**局部 scrim**。
    ★ 为什么不是「横向分列」：本站阅读列 = 左栏 252px 之后的区域，`.container` 只有 1120px
      ⇒ 1440px 下两侧 gutter 各仅 ~34px（实测）——「两侧留细节」在几何上**没有可用的面**。
      故分区落在**真实存在**的两处非阅读带：① 页顶导航带（`--backdrop-reading-top`）；
      ② 左栏带（`--backdrop-reading-left`，仅 ≥1180px 存在）。
-   ★ 位置：在 `.backdrop__grid` **之后**、流星/粒子**之前** ——
-     ① 阅读带内的网格与照片高频细节被一并压住（这才是「强细节只在非阅读带」的实质）；
+   ★ 位置：在纱幕**之后**、流星/粒子**之前**（原 `.backdrop__grid` 一层已于批十七 V-A4 移除，
+     故本层现直接压在照片高频细节之上）——
+     ① 阅读带内的照片高频细节被压住（这才是「强细节只在非阅读带」的实质）；
      ② ⛔ 不压运动层 ——「减正文带运动层」是裁决里**未采纳**的独立提案。
    ★ 它是**加法层**：原 `.backdrop__veil` 一格不改 ⇒ 非阅读带细节原样保留、合成对比度只增不减。
-   ⛔ 本轮**不动**照片 `filter`、**不移动**网格遮罩峰值（同属「未采纳」，可作独立提案重提）。 */
+   ⛔ 不动照片 `filter`（属「未采纳」，可作独立提案重提）。 */
 .backdrop__scrim {
   position: absolute;
   top: var(--backdrop-reading-top);
@@ -1437,7 +1429,8 @@ button.chip[aria-pressed='true'] {
   height: 10px;
   border-radius: 50%;
   background: linear-gradient(180deg, var(--brand-bright), var(--brand-deep));
-  box-shadow: 0 0 0 3px var(--brand-soft);
+  /* ★ 批十七（V-A2＝B）：`0 0 0 3px var(--brand-soft)` 软环已去（impeccable `dark-glow`）。
+     ⛔ 焦点可见性**不依赖**此环：由全局 `:focus-visible { outline: 2px solid var(--focus-ring) }` 承担。 */
 }
 
 /* ★ 批九（缺陷修复）：标签宽度必须与「档位」和「是否已水合」**无关**。
@@ -1513,7 +1506,7 @@ button.chip[aria-pressed='true'] {
   height: 6px;
   border-radius: 50%;
   background: var(--brand-primary);
-  box-shadow: 0 0 0 3px var(--brand-soft);
+  /* ★ 批十七（V-A2＝B）：软环已去（impeccable `dark-glow`）。 */
 }
 
 .hero__title {
@@ -1603,6 +1596,45 @@ button.chip[aria-pressed='true'] {
   fill: none;
   stroke: var(--brand-tint);
   stroke-width: 1.5;
+}
+
+/* ─── ★ 批十七 W4-②：三个聚焦方向＝真链接 ────────────────────────────────────────
+   ⚠ `.hero__map__svg` 是 `pointer-events: none`（W1「不抢命中」的约定）⇒
+     必须在链接上**显式重新启用**，否则整块是**结构性哑火**（点不动，且 hero_hit 的 H1/H4 会抓到）。
+   ⛔ `<a>` 只包 chip（不包连接线）—— 见 `HeroPositionMap.tsx` 头注①：包线会让包围盒中心落到空隙。 */
+.hero__map .hm-node {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.hero__map .hm-node .hm-chip rect {
+  /* 「可点」的暗示靠描边色（既有令牌），⛔ 不新增色值；过渡时长走既有 --dur-1 */
+  transition:
+    stroke var(--dur-1) var(--ease-out),
+    fill var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .hero__map .hm-node:hover .hm-chip rect {
+    stroke: var(--brand-primary);
+    stroke-width: 2;
+    fill: var(--brand-soft);
+  }
+
+  /* 连接线的高亮由 JS 落 `data-hl`（MotionRuntime 委托）—— ⛔ 这条**不是** `:hover` 规则，
+     故不进 `interaction-surfaces.json` 的登记集合（理由见 HeroPositionMap 头注②）。
+     ⚠ 放在本 `@media (hover: hover)` 内：触屏没有 hover，⛔ 不应有 hover 专用呈现。 */
+  .hero__map .hm-edge path[data-hl] {
+    stroke: var(--brand-primary);
+    stroke-width: 2.4;
+  }
+}
+
+/* 键盘等价面（WCAG 1.4.13：有 hover 就必须有焦点等价）。⛔ 不进 hover 门控（`:focus-visible`）。 */
+.hero__map .hm-node:focus-visible .hm-chip rect {
+  stroke: var(--focus-ring);
+  stroke-width: 2;
+  fill: var(--brand-soft);
 }
 
 /* ★ 正文列必须给右区**让位**：否则标语首行会压到图件的 chip 上
@@ -2608,6 +2640,25 @@ button.chip[disabled] {
   bottom: auto;
 }
 
+/* ── ★ 批十七 W4-③：图表 ↔ 表格 联动高亮（JS 落 `data-hl`，CSS 上色）────────────
+   ⛔ 不用 CSS `:has()` 写：那要为**每个项目**各生成一对规则（两端都按 `data-project` 比值，
+     而 CSS 无法跨元素比较属性值），且项目集每日由数据管道变化 ⇒ 规则会腐化。
+   ⛔ 这两条**不是** `:hover` 规则 ⇒ 不进 `interaction-surfaces.json` 的登记集合
+     （与定位图连接线同一处置；理由：它们表达的是**联动**，不是「本件自身的悬停反馈」）。 */
+.mdash .chart__frame path[data-hl] {
+  stroke: var(--brand-primary);
+  stroke-width: 2.2;
+}
+
+.mdash .mtable tr[data-hl] > th,
+.mdash .mtable tr[data-hl] > td {
+  background: var(--brand-soft);
+}
+
+.mdash .mtable tr[data-hl] > th.mtable__project {
+  box-shadow: inset 3px 0 0 var(--brand-primary);
+}
+
 /* ── E 枢纽聚合仪表盘（2b-4）──────────────────────────────────────────── */
 .sr-only {
   position: absolute;
@@ -3037,7 +3088,8 @@ button.chip[disabled] {
   height: 10px;
   border-radius: 50%;
   background: var(--brand-primary);
-  box-shadow: 0 0 0 3px var(--brand-soft);
+  /* ★ 批十七（V-A2＝B ＋ 用户追加裁决「第 4 处同型宿主一并去」）：软环已去。
+     ⚠ 本处**未出现在**对比件里（detector 只报了 3 处）⇒ 属用户显式追加的范围，已单独确认。 */
 }
 
 .milestones__year {
@@ -3398,7 +3450,13 @@ html.js-motion [data-reveal].is-in {
   display: none;
 }
 
-/* Hero 滚动提示：一条短脊线 + 下移的光点（几何表达「下面还有内容」） */
+/* Hero 滚动提示：一条短脊线 + 一枚静止的光点（几何表达「下面还有内容」）。
+   ★ 批十七（AI 味裁决 V-A1＝B、V-A2＝B）：**去掉了两样东西**——
+     ① `animation: cue-drop … infinite` 的**无限脉动**（impeccable `pulsing-dot` warning）：
+        一颗永远在跳的点是「装饰性动效」而非承载信息的动效；
+     ② `box-shadow: 0 0 0 3px var(--brand-soft)` 的**软环**（impeccable `dark-glow` warning）。
+     判据侧证据：对比件 `batch16-evidence/aiflavour-adjudication-preview.html`（V-A1 / V-A2 两节），
+     用户 2026-10-11 裁决「全 B」。⛔ 脊线（`.hero__cue-rail`）保留 —— 它承担「纵向还有内容」的几何语义。 */
 .hero__cue {
   /* ⚠ 必须显式 `align-self: flex-start`：`.hero__inner` 是 flex 列，
      默认 `align-items: stretch` 会把这条窄提示拉满整行并在中间居中
@@ -3432,30 +3490,13 @@ html.js-motion [data-reveal].is-in {
   margin-left: -3px;
   border-radius: 50%;
   background: var(--brand-primary);
-  box-shadow: 0 0 0 3px var(--brand-soft);
-  animation: cue-drop 2.4s var(--ease-in-out) infinite;
+  /* ★ 批十七（V-A1/V-A2 裁决）：`box-shadow` 软环与 `animation: cue-drop` 均已移除，
+     原 `@keyframes cue-drop` 随之删除（⛔ 不留无人引用的关键帧）。 */
 }
 
 @media (hover: hover) {
   .hero__cue:hover {
     color: var(--state-hover-accent);
-  }
-}
-
-@keyframes cue-drop {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(26px);
-    opacity: 0;
   }
 }
 

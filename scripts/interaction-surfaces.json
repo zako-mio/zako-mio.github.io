@@ -147,6 +147,15 @@
       "reason": "页内锚点链接本体"
     },
     {
+      "selector": ".hero__map .hm-node:hover .hm-chip rect",
+      "kind": "descendant",
+      "hotspot": "a.hm-node",
+      "coverage_min": 0.98,
+      "focus_equivalent": ".hero__map .hm-node:focus-visible .hm-chip rect",
+      "status": "ok",
+      "reason": "★ 批十七 W4-②：定位图三个「聚焦方向」＝真链接（`<a class=\"hm-node\" href=\"/works?domain=…\">`）；被上色的 `rect` 是**该链接的后代**（链接的可见本体）⇒ 按 `descendant` 归口，覆盖率判据上溯最近交互祖先 `a.hm-node`（它由既有 `a:hover` 条目承接）。⛔ 不用 `self`：被上色元素自身不是交互目标。⛔ 连接线的高亮**不在此表**——它由 `MotionRuntime` 落 `data-hl`、CSS 属性选择器上色，不含 `:hover`（若写成 `:hover` 规则，其基元素是细斜线 `<path>`，按容器口径判覆盖率必为 0 ⇒ 假 FAIL；理由见 HeroPositionMap.tsx 头注②）。"
+    },
+    {
       "selector": ".nav__link:hover",
       "kind": "self",
       "hotspot": "a.nav__link",

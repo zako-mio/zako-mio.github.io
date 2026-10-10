@@ -47,8 +47,14 @@ export function MotionRuntime() {
     let onTermEnter: ((event: Event) => void) | null = null;
     let onTermFocusOut: ((event: FocusEvent) => void) | null = null;
     let onTermReposition: (() => void) | null = null;
+    let onMapHover: ((event: Event) => void) | null = null;
+    let onMapLeave: ((event: PointerEvent | FocusEvent) => void) | null = null;
+    let onLinkHover: ((event: Event) => void) | null = null;
+    let onLinkLeave: ((event: PointerEvent | FocusEvent) => void) | null = null;
     // 当前被「抬到 fixed」的术语件（供滚动/缩放时重摆）。
     let floatingTerm: { term: HTMLElement; trigger: HTMLElement; def: HTMLElement } | null = null;
+    // 当前被点亮的定位图连接线（W4-②；同一时刻至多一条）。
+    let litEdge: Element | null = null;
 
     function removeListeners() {
       if (onPointerMove) window.removeEventListener('pointermove', onPointerMove);
@@ -71,6 +77,22 @@ export function MotionRuntime() {
         // ⚠ `scroll` 不冒泡 ⇒ 必须 `capture: true` 才能收到滚动容器内的滚动。
         window.removeEventListener('scroll', onTermReposition, true);
         window.removeEventListener('resize', onTermReposition);
+      }
+      if (onMapHover) {
+        window.removeEventListener('pointerover', onMapHover);
+        window.removeEventListener('focusin', onMapHover);
+      }
+      if (onMapLeave) {
+        window.removeEventListener('pointerout', onMapLeave);
+        window.removeEventListener('focusout', onMapLeave);
+      }
+      if (onLinkHover) {
+        window.removeEventListener('pointerover', onLinkHover);
+        window.removeEventListener('focusin', onLinkHover);
+      }
+      if (onLinkLeave) {
+        window.removeEventListener('pointerout', onLinkLeave);
+        window.removeEventListener('focusout', onLinkLeave);
       }
     }
 
@@ -161,6 +183,82 @@ export function MotionRuntime() {
     window.addEventListener('focusout', onTermFocusOut, { passive: true });
     window.addEventListener('scroll', onTermReposition, { passive: true, capture: true });
     window.addEventListener('resize', onTermReposition, { passive: true });
+
+    // ── 定位图「节点 ↔ 连接线」联动高亮（★ 批十七 W4-②）。
+    //   ★ 为什么走 JS 落属性而不是 CSS `:hover`：线与节点分属两个 `<g>`，用 CSS 关联就得**逐条写
+    //     N 条规则**，而那些规则的选择器会落进 `interaction-surfaces.json` 的登记集合，并按
+    //     **容器口径**判覆盖率（细斜线 `<path>` 的命中率必为 0）⇒ 假 FAIL。改走「JS 落 `data-hl`、
+    //     CSS 属性选择器上色」，与既有的 `--mx/--my` / `html[data-pointer]` 模式**同构**
+    //     （JS 只写状态，呈现仍由 CSS 裁决）。
+    //   ⛔ 不新开第二条「谁被高亮」的裁决路径：本段只回答「当前指针/焦点在哪个节点」。
+    function unlit() {
+      litEdge?.removeAttribute('data-hl');
+      litEdge = null;
+    }
+
+    onMapHover = (event: Event) => {
+      const target = event.target as Element | null;
+      const node = target?.closest?.('.hm-node') as HTMLElement | null;
+      const key = node?.getAttribute('data-edge');
+      const next = key
+        ? (node?.closest('.hero__map')?.querySelector(`.hm-edge path[data-edge="${key}"]`) ?? null)
+        : null;
+      if (next === litEdge) return;
+      unlit();
+      if (next) {
+        litEdge = next;
+        next.setAttribute('data-hl', '');
+      }
+    };
+    onMapLeave = (event: PointerEvent | FocusEvent) => {
+      const target = event.target as Element | null;
+      if (!target?.closest?.('.hero__map')) return;
+      const to = event.relatedTarget as Node | null;
+      if (!to || !(target.closest('.hero__map') as Element).contains(to)) unlit();
+    };
+    window.addEventListener('pointerover', onMapHover, { passive: true });
+    window.addEventListener('focusin', onMapHover, { passive: true });
+    window.addEventListener('pointerout', onMapLeave, { passive: true });
+    window.addEventListener('focusout', onMapLeave, { passive: true });
+
+    // ── 图表 ↔ 表格 联动高亮（★ 批十七 W4-③）。
+    //   ★ 配对按**项目身份**：图表条与表行都带 `data-project`（构建期由 `annotateChartBars`
+    //     与 `SectionTable` 各写一份，**同键**）。⛔ **不按下标**：图按值升序、表按目录序，
+    //     两个集合同源却不同序 ⇒ 按下标会**静默错配**（实测图序 23/35/36/38/51/239/372）。
+    //   ⛔ 本段只写/清 `data-hl`，上色由 CSS 的属性选择器承担（同 `--mx/--my` 模式）。
+    let litProject: string | null = null;
+
+    function clearLinked(host: Element) {
+      host.querySelectorAll('[data-project][data-hl]').forEach((el) => el.removeAttribute('data-hl'));
+    }
+
+    onLinkHover = (event: Event) => {
+      const target = event.target as Element | null;
+      const host = target?.closest?.('.mdash') as HTMLElement | null;
+      if (!host) return;
+      const project = (target?.closest?.('[data-project]') as HTMLElement | null)?.getAttribute('data-project') ?? null;
+      if (project === litProject) return;
+      clearLinked(host);
+      litProject = project;
+      if (!project) return;
+      host
+        .querySelectorAll(`[data-project="${typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(project) : project}"]`)
+        .forEach((el) => el.setAttribute('data-hl', ''));
+    };
+    onLinkLeave = (event: PointerEvent | FocusEvent) => {
+      const target = event.target as Element | null;
+      const host = target?.closest?.('.mdash') as HTMLElement | null;
+      if (!host) return;
+      const to = event.relatedTarget as Node | null;
+      if (!to || !host.contains(to)) {
+        clearLinked(host);
+        litProject = null;
+      }
+    };
+    window.addEventListener('pointerover', onLinkHover, { passive: true });
+    window.addEventListener('focusin', onLinkHover, { passive: true });
+    window.addEventListener('pointerout', onLinkLeave, { passive: true });
+    window.addEventListener('focusout', onLinkLeave, { passive: true });
 
     // ── 精确指针（桌面）：光斑跟随鼠标 ＋ 卡片光斑（--mx/--my）。
     if (finePointer && motionAllowed) {

@@ -31,9 +31,10 @@ export function Backdrop() {
       <span className="backdrop__glow" />
       <span className="backdrop__veil backdrop__veil--day" />
       <span className="backdrop__veil backdrop__veil--night" />
-      <span className="backdrop__grid" />
+      {/* ★ 批十七（V-A4＝B）：原 `.backdrop__grid`（1px 细网格底）已**删除**（标记 ＋ CSS 同批，
+          否则留下「样式删了标记还在」的反向死规则）。裁决与证据见 globals.css 同条注释。 */}
       {/* ★ 批八（裁决③）：局部 scrim —— 只保护**阅读带**，非阅读带（页顶/左栏）保持照片原样。
-          位置在网格**之后**、运动层**之前**：既压住阅读带的网格与照片细节，又不压运动层
+          位置在纱幕**之后**、运动层**之前**：既压住阅读带的照片细节，又不压运动层
           （「减正文带运动层」属裁决里**未采纳**的独立提案）。 */}
       <span className="backdrop__scrim" />
       <span className="backdrop__meteors">

@@ -58,10 +58,15 @@ export function SiteBuildNotes() {
 
         <Disclosure summary="门控清单与能力层取用明细" hint="可展开">
           <h3 className="about__label">门控 · 读什么，怎么证明判据可判假</h3>
+          {/* ★ 批十七（AI 味裁决 V-A3＝B）：分隔符由 `——` 改为 `：`（impeccable `em-dash-overuse`）。
+              ⛔ 只改**分隔符**，两侧文字逐字不变（对比件 B 列即此形态）。
+              ⚠ 本条注释必须放在 `<ul>` **之外**：JSX 注释是**子节点构造**而非表达式，
+                放进 map 回调的箭头与它返回的单一表达式之间是**语法错误**（本轮构建即报 TS1005）。
+              ⚠ 且注释正文里**不得出现块注释的结束符本身**（会把注释提前终止、其后当代码解析）。 */}
           <ul className="notes">
             {manifest.gates.map((gate) => (
               <li key={gate.script}>
-                <code>{gate.script}</code> —— 读 {gate.reads}
+                <code>{gate.script}</code>：读 {gate.reads}
                 {gate.selftest ? ' · 含 --selftest 负向夹具' : null}
               </li>
             ))}
@@ -71,7 +76,8 @@ export function SiteBuildNotes() {
           <ul className="notes">
             {manifest.capability_uses.map((use) => (
               <li key={use.key}>
-                <code>{use.key}</code> → <code>{use.artifact}</code> —— {use.note}
+                {/* ★ 批十七（V-A3＝B）：同上，`——` → `：`（正是对比件里那 11 处的另一半）。 */}
+                <code>{use.key}</code> → <code>{use.artifact}</code>：{use.note}
               </li>
             ))}
           </ul>

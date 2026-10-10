@@ -15,6 +15,8 @@
  *    年份只到「年」，不写月份与具体日期，避免可反查。
  */
 
+import type { ProjectDomain } from '@/lib/schema';
+
 export interface ProfileGroup {
   key: string;
   label: string;
@@ -33,6 +35,28 @@ export const PROFILE_ROLE = '数据科学 × AI Agent 工程';
 
 /** 关注方向：左栏 masthead 的紧凑标签组（站点级标识，非 `/about` 专属区块）。 */
 export const PROFILE_FOCUS = ['AI Agent 工程', '机器学习建模', '运筹优化', '可视化叙事'];
+
+/**
+ * 「聚焦方向 → `/works` 筛选域」的**显式声明**（批十七 W4-②，用户 2026-10-11 裁决）。
+ *
+ * ⚠ **两个词表不是同一套**：`PROFILE_FOCUS` 是**画像用语**，`/works` 的 `domain` 是**作品分类**
+ *   ⇒ 二者的对应关系**不可推断**，只能**人工声明**。故本表逐条给 why：
+ *     · `AI Agent 工程 → agent-engineering`：字面对应（域名标签即「Agent 工程」）。
+ *     · `机器学习建模 → llm`：⚠ **本表最弱的一环** —— 靠「大模型是机器学习方向的当前落地形态」成立
+ *       （域名标签是「大模型」，与源标签不同字）；用户已知悉并选择「三方向全按 domain 映射」。
+ *     · `运筹优化 → algorithms`：优化/运筹归入算法域（域名标签「算法」）。
+ * ⛔ 实测过的两条否定：`q=机器学习` / `q=建模` / `q=优化` / `q=运筹` 在目录里命中 **0**
+ *   ⇒ 文本搜索接不上，只能用 domain 映射。
+ * ★ 映射结果会在目标页以**筛选 chip 显形**（`/works` 的筛选器会显示生效的域）
+ *   ⇒ 「所见符合所得」成立，⛔ 不做「看起来全都能对上」的伪装。
+ * ⚠ 键取自 `PROFILE_FOCUS` 的**标签原文**：该数组改词时本表查不到 ⇒ 该方向**自动退化为不可点**
+ *   （fail-soft：⛔ 不会指向错误筛选），届时须同步本表。
+ */
+export const PROFILE_FOCUS_FILTERS: Record<string, ProjectDomain> = {
+  'AI Agent 工程': 'agent-engineering',
+  '机器学习建模': 'llm',
+  '运筹优化': 'algorithms',
+};
 
 export const PROFILE_GROUPS: ProfileGroup[] = [
   {

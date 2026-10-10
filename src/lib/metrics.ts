@@ -167,6 +167,29 @@ export function loadCharts(): Chart[] {
   }
 }
 
+/**
+ * 给图表 SSR 产物里的每个数据条打上 `data-project`（批十七 W4-③ 图表 ↔ 表格联动）。
+ *
+ * ★ 依据：本站图表是 **echarts 构建期 SSR → SVG**，而它的 `<path>` **自带 `ecmeta_data_index`**
+ *   （系列内索引）⇒ 数据条可按索引定位，**⛔ 无需改生成器**（`build_charts.mjs` 不必知道
+ *   站点的链接语义）。⚠ 这是一条**实测更正**：早前「SSR 产物无任何标识」的印象源自 grep 把
+ *   前缀写成了 `data-`（真实前缀是 `ecmeta_`）—— 否证性断言要写到能证伪的宽度。
+ *
+ * ⚠ **必须按「项目身份」而不是「下标」配对**：图按**值升序**、`/stats` 的表按**目录序**
+ *   ⇒ 两个集合同源但**不同序**（实测图序 23/35/36/38/51/239/372 vs 表目录序），按下标会**静默错配**。
+ *   故这里映射到 `rows[i].full`（项目名），与表行的 `data-project` **同键**。
+ *
+ * ⛔ 只在渲染期加注解，**不改 `charts.json`**：产物与数据源仍是「生成器 ⇄ 单一真相源」的关系；
+ *   注解是**站点侧**的语义（图 ↔ 表关联），不属于数据产物本身。
+ */
+export function annotateChartBars(svg: string, rows: Chart['rows']): string {
+  return svg.replace(/<path\b[^>]*ecmeta_data_index="(\d+)"[^>]*>/g, (tag: string, indexText: string) => {
+    const row = rows[Number(indexText)];
+    if (!row || tag.includes('data-project=')) return tag;
+    return tag.replace(/>$/, ` data-project="${row.full}">`);
+  });
+}
+
 // ────────────────────────────── 拓扑实测产物 ──────────────────────────────
 
 const topologySchema = z.object({

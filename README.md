@@ -128,7 +128,8 @@ python3 scripts/gate_motion_budget.py --selftest
   `B2` 全量产物的 `.backdrop` 子树内不得含可聚焦元素；
   `B3` 动效熔断必须是**全局**（`reduced-motion` 与 `[data-motion='off']` 下各有 `*` 级 animation 压制）
   且不得被 `animation-duration: … !important` 绕过。
-- **报告项（⛔ 不判阈值）**：背景层数、运动层数、纱幕档位、网格遮罩峰值、照片 opacity/filter。
+- **报告项（⛔ 不判阈值）**：背景层数、运动层数、纱幕档位、照片 opacity/filter。
+  （★ 批十七：原「网格遮罩峰值」报告项随 `.backdrop__grid` 移除而删除。）
   ⇒ 依 `criterion-design-validation` 的口径：**代理指标不得接自动回写**；
   「背景是否抢焦点」的显著性尚未验证与目标同向，只出读数供人审阅。
 
@@ -170,7 +171,7 @@ python3 scripts/gate_motion_budget.py --selftest
 | `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
-| `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
+| `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中。★ 十七批（W4-②）两处**作用面收窄**（⛔ 不是放宽）：① `H1` 只判**已渲染**（零尺寸＝未渲染 ⇒ 跳过；`<1024px` 档图件 `display:none`，其内链接 rect 为 0×0，否则中心 (0,0) 会被误判遮挡）；② `H2` 不把**图件内部**的交互件算作「被图件压住」（判据面＝被判对象）——⛔ 二者都**净增**了被检对象（图内 3 个链接仍逐件受 H1 管）（带 `--selftest`） | 是 |
 | `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）· `T7` **浮层不被 `overflow` 容器裁剪**（★ 十六批 W4/C3：**逐件**「面板内·裁剪框外·视口内」命中测试；`not-open` 亦计 FAIL，⛔ 不许静默跳过）（带 `--selftest`） | 是 |
 | `axe_a11y_probe.py` | **无障碍自动化审查**（第十五批 B2）：axe-core 4.14.0（vendored，`vendor/axe.min.js`）注入渲染页跑 `axe.run`；规则白名单＝WCAG 2.1/2.2 A/AA ＋ best-practice（含 `heading-order` 这类既有判据都没在看的类）；双主题 × 5 路由；豁免须**带理由且真命中**（⛔ 防静默过期）；`A4` 非空守卫；带 `--selftest`（对照臂＋负向臂） | 是 |
 | `acceptance_probe.py` | **页面分工结构类**（第三批）：`A1` 首页枚举数 ≤5 · `A2` 首页无索引控件 · `A3` 首页无他页专属区块 · `A4` 对照臂 · `A5` 联系区块唯一落点（结构类，须 **ALL PASS** 才 rc=0；带 `--selftest`） | 否 |
@@ -270,7 +271,21 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   ③ `<1024px` 隐藏**不造成信息丢失**：同一份内容在同页 Hero 标语里以文字存在。
   ⚠ **正文列必须给右区让位**：`.hero__inner > *` 的 `max-inline-size` 由 `--hero-map-w`
   派生（同一令牌，⛔ 不写第二处魔法数字）—— 否则标语首行会压到图件 chip 上（实测 47–110px）。
-  ⚠ 标签用**带底色的 chip**：连接线画在其下层不穿字（判据 S1），且文字对比度 ≥15.9（不受背景细节影响）。
+   ⚠ 标签用**带底色的 chip**：连接线画在其下层不穿字（判据 S1），且文字对比度 ≥15.9（不受背景细节影响）。
+  ★ **十七批 W4-②（用户 2026-10-11 裁决「全 B」）：三个聚焦方向＝真链接** ——
+  点按到 `/works?domain=…` 按对应方向筛选（映射是**人工声明**在 `profile.ts` 的 `PROFILE_FOCUS_FILTERS`，
+  ⛔ 不是推断：`AI Agent 工程→agent-engineering` / `机器学习建模→llm` / `运筹优化→algorithms`；
+  ⚠ 第二个是本表**最弱的一环**，靠「大模型是机器学习方向的当前落地形态」成立，用户已知悉）。
+  · **`role="img"` → `role="group"`**：`role="img"` 会把子树**压平**，与「方向可点」结构上不相容；
+    改后内部文本自然可读，`<desc>` 只讲「怎么读/能做什么」（⛔ 不再复述节点文字）。
+  · **`<a>` 只包 chip、⛔ 不包连接线**：`hero_hit_probe` 的 `H1` 判「可交互件的**几何中心**必须命中回
+    自己或其后代」，而 `union(线, chip)` 的包围盒中心落在**空隙**里 ⇒ 包线会直接触发 H1 假 FAIL。
+  · **连接线高亮走委托 ＋ `data-hl`**（`MotionRuntime`），⛔ 不用 CSS `:hover` 规则：线与节点分属两个 `<g>`，
+    CSS 关联要**逐条写 N 条规则**，而那些选择器会落进 `interaction-surfaces.json` 并按**容器口径**判覆盖率
+    （细斜线命中率必为 0）⇒ 假 FAIL。
+  · **`<a>` 必须显式 `pointer-events: auto`**：`.hero__map__svg` 是 `pointer-events: none`（W1 约定），
+    不在链接上重新启用就是**结构性哑火**（点不动）。
+  · 同批**移除** wrapper 的 `data-spotlight="soft"` —— 理由见上文「排除项」③（判据判出的假可供性）。
 - **进场动效走独立 `translate` 属性（第八批 · 既有缺陷修复）**：`[data-reveal]` 的进场位移原本用
   `transform`，而 `[data-reveal].is-in { transform: none }` 的特异性 (0,3,1) 会连锁压过三处：
   ① `.card:hover { transform: translateY(-3px) }` ⇒ 首页精选卡**从不抬起**（`/works` 却抬起）；
@@ -329,12 +344,13 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
     （批五 `batch5-evidence/contrast_probe.py` 只覆盖浅色；**深浅双主题**版＝活件
     `scripts/probes/contrast_theme_probe.py`，归档件 `batch6-evidence/contrast_probe_theme.py`）。
 - **背景分区分级（第八批 · 裁决③）**：只在**非阅读带**保留强细节，正文带用**局部 scrim**
-  （`.backdrop__scrim`，夹在网格之后、运动层之前）。阅读带边界由**布局派生令牌**给出
+  （`.backdrop__scrim`，夹在纱幕之后、运动层之前；★ 批十七前它夹在网格之后，网格层已移除）。阅读带边界由**布局派生令牌**给出
   （`--backdrop-reading-top` / `--backdrop-reading-left`：窄屏上边界＝导航高、宽屏左边界＝`--rail-w`），
   ⛔ 不写死像素。★ 为什么不是「横向分列」：1440px 下两侧 gutter 各仅 ~34px（实测），
   「两侧留细节」**没有可用的面** ⇒ 分区只能落在真实存在的页顶带与左栏带。
   ⛔ 它是**加法层**：原 `.backdrop__veil` 一格不改 ⇒ 非阅读带细节原样保留、合成对比度只增不减。
-  ⛔ 本轮**不动**照片 `filter`、**不移**网格遮罩峰值（同属裁决里**未采纳**的独立提案，可重提）。
+  ⛔ 本轮**不动**照片 `filter`（属裁决里**未采纳**的独立提案，可重提）。
+  ★ 批十七：细网格底（原 `.backdrop__grid`）已按 AI 味裁决 V-A4 整体移除。
 - **指针光斑（第八批 · 裁决④ T1；★ 批十一 F-d1 反转输入面）**：`.backdrop__glow` —— **主题无关**的交互通道
   （现状粒子交互「仅夜间 ＋ 不可发现」，光斑补的是对称性与可发现性）。三条护栏：
   ① **输入面**：`(hover:hover) and (pointer:fine)` **或** `(pointer: coarse)` 下 `display:block`。
@@ -342,7 +358,7 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
      用户裁决「换成更流畅的动画」⇒ 触屏也用这层**合成层**光斑（⛔ 不回 canvas 重绘）。
      触屏坐标由 `MotionRuntime` 额外绑的 `touchstart`/`touchmove` 写入（`touchend`/`touchcancel` 移除
      `data-pointer` ⇒ 淡出）；⛔ 卡片光斑（`--mx/--my`）仍只在精确指针路径。
-  ② **幅度受限是结构性的**：本层夹在「照片之上、纱幕/网格/scrim 之下」
+  ② **幅度受限是结构性的**：本层夹在「照片之上、纱幕/scrim 之下」
      ⇒ 光斑永远不可能比照片更亮地照到文字层（实测对正文脚下亮度影响 ≤ ±3/255）。
   ③ 靠 `transform: translate3d()` 随指针移动（合成层，⛔ 不全屏重绘）；
      变量写在光斑元素自身（⛔ 不写 `:root`，那会让整棵树重算样式）。
@@ -357,13 +373,20 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
     档位口径＝**元素尺度 ＋ 是否已有自身反馈**（已有反馈的件取更低档，⛔ 避免与既有 affordance
     叠成双重信号）。⛔ 新增档须同步 `scripts/interaction-surfaces.json` 与探针白名单。
   - **本轮作用面（§4-W1 表全量接入）**：`base`＝`.card` / `.figure` / `.chart__frame` / `.threads`；
-    `soft`＝`.hero__map` / `.metrics__item` / `.related__item`(+`.directory__item`) /
+    `soft`＝`.metrics__item` / `.related__item`(+`.directory__item`) /
     `.contact__link` / `.disclosure`；`micro`＝`li.chip` / `span.chip` / `.hero__eyebrow`。
-  - ⛔ **排除项（两条，均有依据而非遗漏）**：
+    （★ 十七批把 `.hero__map` 从 `soft` 移出 —— 见下「排除项」③。）
+  - ⛔ **排除项（三条，均有依据而非遗漏）**：
     ① **控件**（`.button` / `.theme-toggle` / `.motion-toggle` / `button.chip`）——V1 口径「控件非容器」；
     ② **`.mtable__scroll`** —— 宽表内仅「来源」列有少量链接，`surface_hit_probe` 实测覆盖率
     **0.05（28/484）** ⇒ 按本站判据＝**错位（含死区）**，且按 **D2** 它不能走 `decor` 豁免
     ⇒ 规则一致的处置是**不挂**（⛔ 不是放宽 D2）。
+    ③ **`.hero__map`**（★ 十七批 W4-②，**同一处置的第二个实例**）—— 批十三 W1 曾为它专门加 HTML wrapper
+    承接整图高光；但十七批让它**部分可点**（三个聚焦方向＝链接）后，该高光的反馈面＝**整块图**
+    （boxArea 151200）而热区只有 3 个 chip ⇒ `surface_hit_probe` 实测覆盖率 **0.074（9/121）**
+    ⇒ 与 ② 完全同规：**不挂**（⛔ 不是放宽 D2，⛔ 不是给这一个实例开豁免）。
+    ⚠ 代价如实登记：**图件不再有指针跟随高光**（W1 那一项对它失效）；chip 自身仍有 hover/focus 反馈。
+    ⛔ 若要恢复整图高光，必须同时让**整块图**成为真交互面 —— 否则判据必再 FAIL。
   - **JS**：`MotionRuntime` 里**仍是同一个委托 listener**（`closest('[data-spotlight]')`、`passive: true`、
     ⛔ 不逐件加监听器）。`closest()` 能**上溯** ⇒ SVG 子形状作 `event.target` 时也能找到 HTML 宿主。
   - **CSS**：`[data-spotlight]::before` 通用规则。★ **层叠位置＝内容之下**（批十四 W1c 落地用户裁决 V7）：
@@ -434,6 +457,13 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   **已移除** `duplicate-id*` 规则族（故它不会报）。
   修法方向＝面板 `id` 每实例唯一；⚠ `Term` 是**服务端组件**（无 `useId`）⇒ 须由调用侧传唯一键，
   或把 `Term` 改为客户端组件（代价＝包体）。⛔ 未做，登记待裁决。
+- ★ **hero 定位图「聚焦方向 → `/works` 筛选域」的映射是人工声明，且其中一条不等值**（十七批 W4-②，
+  **用户裁决** 2026-10-11「三方向全按 domain 映射」）：`机器学习建模 → domain=llm`（域名标签是「大模型」，
+  与源标签**不同字**）⇒ 是全表**最弱的一环**；另两条字面/语义可辩护
+  （`AI Agent 工程→agent-engineering`、`运筹优化→algorithms`）。⚠ 两条**实测否定**：
+  `q=机器学习` / `q=建模` / `q=优化` / `q=运筹` 在目录里命中 **0** ⇒ 文本搜索接不上，只能走 domain。
+  ★ 缓解：链接 `aria-label` 与目标页的筛选 chip 都会**显形实际生效的域名** ⇒ 所见符合所得。
+  ⛔ 词表与目标域不适配属**口径问题**（不是数据问题）⇒ 由用户裁决，⛔ 执行方不擅扩表。
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
@@ -455,7 +485,8 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   ＋ `batch13-evidence/preview-shots/`。
 - ⚠ **`[data-spotlight]` 已按 §4-W1 表全量接入**（`.card` / `.figure` / `.chart__frame` / `.threads` /
   `.hero__map` / `.metrics__item` / `.related__item` / `.directory__item` / `.contact__link` /
-  `.disclosure` / `li.chip` / `span.chip` / `.hero__eyebrow`），排除项见上文「排除项（两条）」。
+  `.disclosure` / `li.chip` / `span.chip` / `.hero__eyebrow`），排除项见上文「排除项（三条）」
+  （★ 十七批把 `.hero__map` 移出该清单 ⇒ 该清单已由 9 项变 8 项）。
   ⛔ 但**「接入」≠「观感已裁决」** —— 高光强度是否合适仍未人看对比件（见下一条）。
 - ★ **修掉一处**新暴露的**既有**缺陷（批十三收口，非本功能引入）：echarts 构建期 SSR 会为系列生成
   `.zr0-cls-N:hover { cursor:pointer; fill:… }`，而本站是**纯静态导出、这些条没有任何动作**
@@ -463,8 +494,21 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   修法＝`scripts/build_charts.mjs` 里 `stripHoverRules()` **删掉 SSR 输出的 `:hover` 规则**
   （结构上让它不存在）。⛔ 不登记 `.zr0-cls-N`：其取值由 echarts 内部决定 ＝ 会腐化的字面常量。
   悬停反馈改由 `.chart__frame`（`decor` 高光）承担 —— 反馈落在**框**上而非数据条上，一致性更好。
-  ⚠ 该缺陷此前被「`surface_hit_probe` 的 `RUNS` 不含 `/stats/`」**静默掩盖**；本批把该路由纳入
-  同类项全集后才暴露（⇒ 新增作用面必须同步纳管其所在路由）。
+   ⚠ 该缺陷此前被「`surface_hit_probe` 的 `RUNS` 不含 `/stats/`」**静默掩盖**；本批把该路由纳入
+   同类项全集后才暴露（⇒ 新增作用面必须同步纳管其所在路由）。
+- ★ **十七批 W4-③：图表 ↔ 表格 联动高亮**（`/stats`）。悬停图表某条 ⇒ 高亮**对应项目**的整组表行；
+  悬停表行 ⇒ 反向高亮该条。三条要点：
+  ① **按「项目身份」配对，⛔ 不按下标**：两端都带 `data-project`。⭐ 这是一条**实测更正** ——
+     图表 SSR 的 `<path>` **自带 `ecmeta_data_index`**（echarts 元数据），早前「产物无任何标识」的印象
+     源自 grep 把前缀写成了 `data-`（真实是 `ecmeta_`）⇒ **无需改生成器**；
+     且图按**值升序**、表按**目录序**（实测图首项 `dsh-manager-analysis` ≠ 表首项 `12-factor-methodology-kg`）
+     ⇒ 按下标会**静默错配**。
+  ② **注解只在渲染期**（`lib/metrics.ts` 的 `annotateChartBars`）：`charts.json` 一字不改，
+     ⛔ 站点侧语义不进数据产物。
+  ③ **作用面只限「有图的项目」**（10 项里 7 项）：文档集群区/论文库区/未分区没有图，⛔ 不给它们打
+     `data-project` —— 否则会出现「悬停表格行却什么也不发生」＝ 看起来有联动其实没有（违反轴 B）。
+  ⚠ **与上一条的关系**：本联动**不**给数据条加 `:hover`、不改 `cursor`（批十三已删掉 SSR 的
+  `cursor:pointer`）⇒ 不重开「假可供性」；高亮是**联动态**（CSS 属性选择器 `[data-hl]`，JS 只落属性）。
 
 ## 留档
 

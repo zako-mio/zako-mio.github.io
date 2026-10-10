@@ -17,7 +17,7 @@
        且背景类规则里不得用 `animation-duration: … !important` 绕过熔断。
 
   【报告项：⛔ 不判阈值】
-    背景层数 / 运动层数 / 纱幕档位 / 网格遮罩峰值 / 照片 opacity 与 filter。
+    背景层数 / 运动层数 / 纱幕档位 / 照片 opacity 与 filter。
     ⇒ 依本项目既定口径（criterion-design-validation）：**代理指标不得接自动回写**；
       「背景是否抢焦点」的显著性（局部对比/高频能量）尚未验证与目标同向，
       故只输出读数供人审阅，**不据此判 PASS/FAIL**。
@@ -193,11 +193,8 @@ def run(css_path: Path, out_dir: Path) -> tuple[bool, list[str]]:
     for name, decl in veil:
         stops = re.findall(r"color-mix\(in srgb, var\(--surface-page\)\s*(\d+)%", decl)
         print(f"  · 纱幕 [{name}] 档位：{stops or '（未解析到档位）'}")
-    grid = block_of(css, ".backdrop__grid")
-    if grid:
-        m = re.search(r"radial-gradient\(([^)]*)\)", grid)
-        print(f"  · 网格遮罩：{m.group(1).strip() if m else '（未解析到）'} ← ⚠ 峰值位置决定它在正文处有多强")
-    # ★ 批八：局部 scrim ＋ 阅读带边界（裁决③ 分区）。报告项：⛔ 不判阈值。
+    # ★ 批十七（AI 味裁决 V-A4）：`.backdrop__grid`（细网格底）已移除 ⇒ 原「网格遮罩峰值」报告项
+    #   随之删除（⛔ 不留永远不打印的死报告项）。若该层将来恢复，报告项须一并恢复。    # ★ 批八：局部 scrim ＋ 阅读带边界（裁决③ 分区）。报告项：⛔ 不判阈值。
     scrim = block_of(css, ".backdrop__scrim")
     if scrim:
         stops = re.findall(r"var\(--scrim-(\d)\)", scrim)

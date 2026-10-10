@@ -5,6 +5,7 @@ import {
   METRIC_COLUMNS,
   SECTION_LABELS,
   SECTION_NOTES,
+  annotateChartBars,
   groupBySection,
   type Chart,
   type MetricEntry,
@@ -40,7 +41,16 @@ function ProjectCell({ entry, rowSpan }: { entry: MetricEntry; rowSpan: number }
   );
 }
 
-function SectionTable({ section, entries }: { section: keyof typeof SECTION_LABELS; entries: MetricEntry[] }) {
+function SectionTable({
+  section,
+  entries,
+  linked,
+}: {
+  section: keyof typeof SECTION_LABELS;
+  entries: MetricEntry[];
+  /** ★ 批十七 W4-③：本区里**有对应图表条**的项目名集合（`data-project` 只打在这些行上）。 */
+  linked: Set<string>;
+}) {
   return (
     <div className="mtable__block">
       <h3 className="mtable__title">{SECTION_LABELS[section]}</h3>
@@ -64,7 +74,10 @@ function SectionTable({ section, entries }: { section: keyof typeof SECTION_LABE
             {entries.flatMap((entry) => {
               if (entry.figures.length === 0) {
                 return [
-                  <tr key={`${entry.name}-empty`}>
+                  <tr
+                    key={`${entry.name}-empty`}
+                    data-project={linked.has(entry.name) ? entry.name : undefined}
+                  >
                     <ProjectCell entry={entry} rowSpan={1} />
                     <td colSpan={METRIC_COLUMNS.length + 1}>
                       <span className="mtable__na">
@@ -76,7 +89,10 @@ function SectionTable({ section, entries }: { section: keyof typeof SECTION_LABE
                 ];
               }
               return entry.figures.map((figure: MetricFigure, index: number) => (
-                <tr key={`${entry.name}-${figure.scope}`}>
+                <tr
+                  key={`${entry.name}-${figure.scope}`}
+                  data-project={linked.has(entry.name) ? entry.name : undefined}
+                >
                   {index === 0 ? <ProjectCell entry={entry} rowSpan={entry.figures.length} /> : null}
                   <td className="mtable__scope">{figure.scope}</td>
                   {METRIC_COLUMNS.map((column) => (
@@ -104,6 +120,10 @@ function SectionTable({ section, entries }: { section: keyof typeof SECTION_LABE
 
 /** 内联双模 SVG：浅/深各一份，由 CSS 按三态主题切换；深色版对读屏隐藏以防重复朗读。 */
 export function ChartFigure({ chart }: { chart: Chart }) {
+  // ★ 批十七 W4-③：每个数据条打上 `data-project`（按 `rows[i].full`，⛔ 不按下标——
+  //   图按值升序、表按目录序，两个集合同源但不同序）。注解只加在**渲染期**，⛔ `charts.json` 不变。
+  const light = annotateChartBars(chart.svg.light, chart.rows);
+  const dark = annotateChartBars(chart.svg.dark, chart.rows);
   return (
     <figure className="chart" id={`chart-${chart.key}`}>
       <figcaption className="chart__caption">{chart.title}</figcaption>
@@ -112,13 +132,13 @@ export function ChartFigure({ chart }: { chart: Chart }) {
         data-spotlight="base"
         role="img"
         aria-label={`${chart.title}。数值与口径见上表；图为量级概览，不作复杂度排序。`}
-        dangerouslySetInnerHTML={{ __html: chart.svg.light }}
+        dangerouslySetInnerHTML={{ __html: light }}
       />
       <div
         className="chart__frame chart__frame--dark"
         data-spotlight="base"
         aria-hidden="true"
-        dangerouslySetInnerHTML={{ __html: chart.svg.dark }}
+        dangerouslySetInnerHTML={{ __html: dark }}
       />
       <p className="chart__note">{chart.note}</p>
     </figure>
@@ -128,6 +148,10 @@ export function ChartFigure({ chart }: { chart: Chart }) {
 export function MetricsDashboard({ metrics, charts }: { metrics: Metrics; charts: Chart[] }) {
   const groups = groupBySection(metrics);
   const unavailable = metrics.projects.filter((entry) => entry.status !== 'ok');
+  // ★ 批十七 W4-③：图表 ↔ 表格联动的作用面 —— **有对应图表条**的项目才打 `data-project`。
+  //   ⛔ 不给全表打：文档集群区/论文库区/未分区没有图，打了就会出现「悬停表格行却什么也不发生」，
+  //      属「看起来有联动其实没有」⇒ 违反轴 B（所见符合所得）。
+  const linked = new Set(charts.flatMap((chart) => chart.rows.map((row) => row.full)));
 
   return (
     <div className="mdash">
@@ -141,7 +165,7 @@ export function MetricsDashboard({ metrics, charts }: { metrics: Metrics; charts
       ))}
 
       {groups.map((group) => (
-        <SectionTable entries={group.entries} key={group.section} section={group.section} />
+        <SectionTable entries={group.entries} key={group.section} linked={linked} section={group.section} />
       ))}
 
       <ul className="notes">

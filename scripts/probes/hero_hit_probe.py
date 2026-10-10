@@ -15,6 +15,10 @@
                    必须解析回它自身或其后代（⛔ 被遮挡即 FAIL）。
     H2 不叠热区：`.hero__map` 的 bounding rect **不得**包含任何可交互件的中心
                    （即图件不得压在可点目标上）。
+                   ★ 批十七（W4-②）**收窄了作用面**：图件**内部**的交互件（定位图的三个
+                   方向链接）**不算**「被图件压住」—— 它们就是图件的一部分；判据面必须＝被判对象。
+                   ⛔ 收窄**不是**放行：那三件仍逐件受 H1 管（中心必须命中回自己），
+                   这正是本批新增交互的唯一保护，故本次改动净增了被检对象。
     H3 断点一致：视口 < 1024px ⇒ `.hero__map` 必须不可见（零尺寸或 display:none）；
                    ≥ 1024px ⇒ 必须可见。（断点口径与 globals.css 的 `max-width: 1023px` 同源）
     H4 可被命中：图件可见时，其自身中心必须能被命中到**它自己**（否则 W1 的
@@ -81,6 +85,16 @@ AUDIT_JS = r"""
       hitBy: hit ? hit.tagName.toLowerCase() + '.' + cls(hit) : null,
       ok: !!hit && (hit === el || el.contains(hit)),
       insideMap,
+      // ★ 批十七 W4-②：图件**内部**的交互件（定位图的三个方向链接）。
+      //   ⛔ 它们不被 H2 判「被图件压住」—— 它们**就是**图件的一部分；
+      //   但 H1 仍逐件判它们能否被命中（那正是本批新加交互的**唯一**保护）。
+      isMapDescendant: !!(map && map.contains(el)),
+      // ★ 批十七 W4-②：**零尺寸＝未渲染**。本探针在 <1024px 档也要跑（H3 断点一致），
+      //   而该档 `.hero__map` 是 `display:none` ⇒ 图内链接 rect 为 0×0、中心落在 (0,0)，
+      //   会被 `elementFromPoint` 命中外层容器而误判「遮挡」。
+      //   ⇒ H1 只判**已渲染**的交互件（零尺寸者不是「被遮挡」，是**不存在**）。
+      //   ⚠ 与 `surface_hit_probe` 同口径（它同样 `width<1||height<1` 即跳过）。
+      zero: b.width < 1 || b.height < 1,
     };
   });
 
@@ -141,14 +155,20 @@ def judge(res: dict, expect_visible: bool) -> list[str]:
     if m is None:
         return ["找不到 `.hero__map`（W1 的宿主约定缺失）"]
 
-    # H1 逐目标命中
+    # H1 逐目标命中（★ 批十七：零尺寸＝未渲染 ⇒ 不进作用面；见 AUDIT_JS 的 `zero` 注释）
+    h1_skipped = 0
     for t in res["targets"]:
+        if t.get("zero"):
+            h1_skipped += 1
+            continue
         if not t["ok"]:
             bad.append(f"H1 遮挡：`{t['tag']}.{t['cls']}`「{t['text']}」中心 {t['center']} "
                        f"被 `{t['hitBy']}` 命中")
-    # H2 不叠热区
+    if h1_skipped:
+        print(f"  ⓘ H1 跳过零尺寸（未渲染）可交互件 {h1_skipped} 个")
+    # H2 不叠热区（★ 批十七收窄：⛔ 不把「图件内部的交互件」算作「被图件压住」）
     for t in res["targets"]:
-        if t["insideMap"]:
+        if t["insideMap"] and not t.get("isMapDescendant"):
             bad.append(f"H2 叠热区：`.hero__map` 覆盖了 `{t['tag']}.{t['cls']}`「{t['text']}」的中心")
     # H3 断点一致
     if m["visible"] != expect_visible:
@@ -246,7 +266,9 @@ def main() -> int:
                   f"display={m.get('display')} pointer-events={m.get('pointerEvents')} "
                   f"selfHit={m.get('selfHit')}")
             for t in res.get("targets", []):
-                flag = "OK " if t["ok"] else "⛔ "
+                # ★ 批十七：零尺寸（未渲染，如 <1024px 档被 display:none 的图内链接）标「· 」
+                #   —— ⛔ 不是「遮挡」，不该在报告里显示为失败标记（免得人误读）。
+                flag = "·  " if t.get("zero") else ("OK " if t["ok"] else "⛔ ")
                 print(f"   {flag}{t['tag']}.{t['cls']}「{t['text']}」size={t['size']} "
                       f"center={t['center']} ← {t['hitBy']}")
             for f in fails:
