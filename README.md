@@ -155,8 +155,9 @@ python3 scripts/gate_motion_budget.py --selftest
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
-上面那些门控都**只跑 python3**。有五类缺陷只有真浏览器能看见（图件几何、合成后对比度、
-悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**），长期是**提示词级**（写进文档、靠人记着跑）。
+上面那些门控都**只跑 python3**。有六类缺陷只有真浏览器能看见（图件几何、合成后对比度、
+悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、**术语解释层的 hover/focus/Esc**），
+长期是**提示词级**（写进文档、靠人记着跑）。
 现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
 
 | 探针 | 判据 | 需浏览器 |
@@ -168,16 +169,17 @@ python3 scripts/gate_motion_budget.py --selftest
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 | `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
+| `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）（带 `--selftest`） | 是 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
-- 六条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+- 七条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
   以 **rc=2** 退「用法错误」（⛔ 不读成判据 FAIL）。
 - ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
   归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
-  活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）与
-  `hero_hit_probe.py`（第十三批）是**仓库原生**。
+  活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）、
+  `hero_hit_probe.py`（第十三批）与 `term_layer_probe.py`（第十四批）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
   否则 fail-closed。（同目录另两个 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
@@ -404,7 +406,7 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
-  起静态服务 ＋ 跑六条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
+  起静态服务 ＋ 跑七条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
   换来的是「提示词级（可绕）」→「runtime 硬阻（结构上做不成）」（落地形态强度阶梯）。
 - **W1 的 `decor` 定性是「治理选择」而非「技术必然」**（第十三批，2026-10-10 用户裁决）：
   「所有带框容器统一加指针高光」（V1）与本站「悬停反馈面 ≡ 点击热区」判据**互锁**，

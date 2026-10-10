@@ -182,6 +182,17 @@ jobs:
           python3 scripts/probes/hero_hit_probe.py --out "$RUNNER_TEMP/hero-hit"
           echo "[artifact] $RUNNER_TEMP/hero-hit/hero-hit-report.md"
 
+      # 术语解释层（第十四批 W2）：解释性文字收敛到 `src/data/glossary.json` 单一真相源后，
+      # 呈现层必须**仍然可用且不靠 JS**。⛔ 不靠「能 hover 就行」的口头保证 ——
+      # T1 静止态 / T2 hover / T3 键盘 focus（WCAG 1.4.13）/ T4 Esc / T5 role+aria 关联 /
+      # T6 **无 JS 可读**（直读原始 HTML，不经浏览器）六条逐条实测。
+      - name: Term-layer probe (术语解释层) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/term_layer_probe.py --selftest
+          python3 scripts/probes/term_layer_probe.py
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5
