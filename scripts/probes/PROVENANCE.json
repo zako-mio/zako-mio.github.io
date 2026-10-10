@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "scripts/probes/ 下全部探针的登记表（单一真相源）。完整性由 scripts/probes/check_provenance.py 机检（漏登记 / 幽灵登记 fail-closed）。⛔ 本表不记录任何随上游漂移的状态快照，只记录「来源」与「漂移方向」。",
+  "note": "scripts/probes/ 下全部探针的登记表（单一真相源）。完整性由 scripts/probes/check_provenance.py 机检（漏登记 / 幽灵登记 fail-closed）。★ 本表与 CI workflow 的一致性由 scripts/check_ci_manifest.py 机检（E1：登记 ⇒ 必须进 CI，双向 fail-closed；⛔ 不设白名单）。⛔ 本表不记录任何随上游漂移的状态快照，只记录「来源」与「漂移方向」。",
   "archive_root": "~/opencode/archive/Mission-file",
   "origin_enum": {
     "archive-copy": "从 Mission 归档件复制而来（同一仪器两处副本 ⇒ 需声明漂移方向）",

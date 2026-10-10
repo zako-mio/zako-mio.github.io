@@ -111,6 +111,23 @@ jobs:
       - name: Probe provenance check
         run: python3 scripts/probes/check_provenance.py
 
+      # E1（CI↔登记一致性）：CI 步骤是**逐条手列**的，不会自动跟随任何 manifest
+      # ⇒「已登记」≠「已进 CI」。本机检把该静默缺口做成 fail-closed：门控/探针**双向**
+      # 校验（登记⇒必须进 CI；CI 里出现的 gate_*/smoke_*/*_probe.py⇒必须登记）。
+      # ⚠ 新增/移除门控或探针时：连同 update-hub.yml 本步骤一起改，否则本检即 FAIL。
+      - name: CI manifest consistency check (E1)
+        run: python3 scripts/check_ci_manifest.py
+
+      # 结构/报告类探针（**不依赖浏览器**，故不占浏览器段）：此前只在本地 reverify S5 跑，
+      # 已登记 PROVENANCE 却从未进 CI ⇒ 由上面 E1-3 兜底暴露并补齐（b15 E1 收口）。
+      # acceptance_probe：结构类，判据 ALL PASS 才 rc=0（rc≠0 即阻断）；带 --selftest 负向夹具。
+      # dup_probe：数值/报告类，只须可跑（重合度是报告项，⛔ 不判 PASS/FAIL ⇒ 无 selftest）。
+      - name: Acceptance & duplicate probes (结构/报告类) — selftest + 实测
+        run: |
+          python3 scripts/probes/acceptance_probe.py --selftest
+          python3 scripts/probes/acceptance_probe.py
+          python3 scripts/probes/dup_probe.py
+
       - name: Hover-gating probe (产物 CSS 静态解析，无需浏览器)
         run: |
           python3 scripts/probes/hover_gating_probe.py --selftest

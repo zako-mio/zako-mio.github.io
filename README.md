@@ -163,6 +163,7 @@ python3 scripts/gate_motion_budget.py --selftest
 | 探针 | 判据 | 需浏览器 |
 |---|---|---|
 | `check_provenance.py` | 探针登记完整性（漏登记 / 幽灵登记 / 空集 fail-closed，带 `--selftest`） | 否 |
+| `check_ci_manifest.py` | **CI 步骤 ↔ 登记集合一致性**（`E1`：门控/探针**双向** fail-closed —— 登记⇒必须进 CI，CI 里出现的 `gate_*`/`smoke_*`/`*_probe.py`⇒必须登记；⛔ 不设白名单，带 `--selftest`） | 否 |
 | `hover_gating_probe.py` | 产物 CSS 每条 `:hover` 都在 `@media (hover:hover)` 内 ＋ 源/产物集合一致（带 `--selftest`） | 否 |
 | `svg_layout_probe.py` | `S1` 文字压框/压字、`S2` 箭头落点（带 `--selftest` 负向夹具） | 是 |
 | `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
@@ -170,10 +171,14 @@ python3 scripts/gate_motion_budget.py --selftest
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 | `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
 | `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）（带 `--selftest`） | 是 |
+| `acceptance_probe.py` | **页面分工结构类**（第三批）：`A1` 首页枚举数 ≤5 · `A2` 首页无索引控件 · `A3` 首页无他页专属区块 · `A4` 对照臂 · `A5` 联系区块唯一落点（结构类，须 **ALL PASS** 才 rc=0；带 `--selftest`） | 否 |
+| `dup_probe.py` | **页间内容重复度**（第三批）：块级重合矩阵 ＋ 关键元素跨页计数（数值/**报告类**，⛔ 不判 PASS/FAIL ⇒ 无 `--selftest`） | 否 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
-- 七条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+- **九条探针**在 CI 里跑（七条浏览器层 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
+  除 `dup_probe`（报告类，无 `--selftest`）外均**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+  ⚠ `check_provenance.py` / `check_ci_manifest.py` 是**机检**（不进 `PROVENANCE.json` 的探针表，不在此计数）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
   以 **rc=2** 退「用法错误」（⛔ 不读成判据 FAIL）。
 - ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
@@ -181,10 +186,11 @@ python3 scripts/gate_motion_budget.py --selftest
   活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）、
   `hero_hit_probe.py`（第十三批）与 `term_layer_probe.py`（第十四批）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
-  否则 fail-closed。（同目录另两个 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
+  否则 fail-closed。（同目录 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
-  也就不会派生渲染进首页）；它们由 CI workflow 直接调用，⚠ **workflow 步骤是逐条列举的 ⇒
-  新探针必须同批改 `.github/workflows/update-hub.yml`**（「已登记」≠「已进 CI」）。
+  也就不会派生渲染进首页）；它们由 CI workflow 直接调用。⚠ **workflow 步骤是逐条列举的 ⇒
+  新探针必须同批改 `.github/workflows/update-hub.yml`**（「已登记」≠「已进 CI」）——
+  该义务**已由 `check_ci_manifest.py` 的 `E1` 做成 fail-closed**（登记 ⇒ 必须进 CI，双向；⛔ 不设白名单）。
 
 
 对项目公开的 `*-dag.json` 做**构建期 headless 拓扑复算**（cytoscape 只当内核，不做画布），
