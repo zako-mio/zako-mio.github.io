@@ -17,7 +17,7 @@ export default function WorksPage() {
     <section className="section">
       <div className="container">
         <header className="section__head">
-          <h2 className="section__title">作品</h2>
+          <h1 className="section__title">作品</h1>
           <p className="section__subtitle">
             全量索引 · 筛选与排序状态会写入地址栏，可直接分享
           </p>

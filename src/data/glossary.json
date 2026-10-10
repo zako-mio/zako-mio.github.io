@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "note": "术语/概念解释层的**单一真相源**（批十四 W2）。⛔ 站点任何解释性文本只能取自本件，⛔ 不得在组件里另写第二处解释（否则两处解释必然漂移）。字段：term=显示用术语（与站点上写法一致）；aliases=同一概念在站点上的其它写法（用于查表）；definition=一句人话；boundary=口径边界／易混点（⛔ 不省略：本站的数字纪律全靠它）；source=出处（规范章节／代码路径）；surfaces=该术语当前出现在哪些路由（供接入与探针覆盖面核对）。术语只收**读得见、看不懂**的行话；通用词（如「项目」）⛔ 不收。",
+  "as_of": "2026-10-10",
+  "terms": [
+    {
+      "id": "scope",
+      "term": "scope（图/视图）",
+      "aliases": ["scope", "图/视图"],
+      "definition": "一个项目页里被分别统计的一组数字所属的「那张图/那个视图」的名字。",
+      "boundary": "同一个项目可以有多张图（多 scope），各图数字⛔ 不可相加，也⛔ 不可互相比较；只有同 scope 对同 scope 才可比（E1）。",
+      "source": "specs/e-metrics-spec.md v1.0 §三·§五·5.1",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "entity-count",
+      "term": "实体",
+      "aliases": ["实体", "entity_count", "节点", "知识点", "插件节点", "方法节点", "功能节点", "包"],
+      "definition": "图中被计数的最小单位（顶点）。各项目对它的叫法不同：节点／知识点／插件节点／方法节点／功能节点／包。",
+      "boundary": "不同项目对「实体」的划分粒度不同 ⇒ 数字⛔ 不解读为难度或价值排序（同名不同词已归一并列，但不等于同质）。",
+      "source": "specs/e-metrics-spec.md v1.0 §三 归一表",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "group-count",
+      "term": "组",
+      "aliases": ["组", "分组", "知识组", "group_count"],
+      "definition": "实体的上层聚合单元（若干实体归成一组）。",
+      "boundary": "「组」的口径随项目而异（知识组/分组），⛔ 不跨项目直接比大小。",
+      "source": "specs/e-metrics-spec.md v1.0 §三",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "relation-count",
+      "term": "关系",
+      "aliases": ["关系", "边", "关系边", "条关系", "节点间依赖边", "seam 边", "relation_count"],
+      "definition": "实体之间的有向连接（边）：一个实体指向另一个实体的一条关系记 1 条。",
+      "boundary": "文档集群/论文库形态本就没有「关系边」⇒ 该列留空（—），⛔ 不写 0（E5）。",
+      "source": "specs/e-metrics-spec.md v1.0 §三",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "layer-count",
+      "term": "拓扑层",
+      "aliases": ["拓扑层", "层", "layer_count", "longest_path_layers", "最长路径分层"],
+      "definition": "把图按依赖关系一层层排开后，最长那条依赖链的层数（图论分层，取最长路径）。",
+      "boundary": "★ 拓扑层 ≠ 学习阶段：前者是图的无环结构属性，后者是教学分期；二者分列（E2）。含环的图算不出最长路径 ⇒ 显示「不可判定」，⛔ 不是 0。",
+      "source": "specs/e-metrics-spec.md v1.0 §三·§五 E2",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "stage-count",
+      "term": "学习阶段",
+      "aliases": ["学习阶段", "教学分期", "stage_count"],
+      "definition": "内容按学习难度分成的阶段数（教学分期，basic→advanced 一类）。",
+      "boundary": "★ 学习阶段 ≠ 拓扑层：它是编辑学属性而非图论属性；混列会让「层数多者更复杂」成为假结论（E2）。",
+      "source": "specs/e-metrics-spec.md v1.0 §三·§五 E2",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "dag",
+      "term": "DAG（有向无环图）",
+      "aliases": ["DAG", "有向无环图", "无环"],
+      "definition": "一种「箭头只朝一个方向、且不绕回自己」的图：沿箭头走永远回不到起点。",
+      "boundary": "本站对「无环」不采信项目自述，而是构建期独立复算后再并陈（一致/不一致都如实标出）。",
+      "source": "src/components/ProjectFigure.tsx（结构实测区块）",
+      "surfaces": ["/works/[name]"]
+    },
+    {
+      "id": "component-count",
+      "term": "连通分量",
+      "aliases": ["连通分量", "component_count"],
+      "definition": "图里彼此连得上的「块」的个数：把图拆成互不相连的若干堆，堆数就是这个值。值为 1 表示整张图是连通的。",
+      "boundary": "连通分量看的是「有没有断开」，与「分了几层」是两件事，读图时⛔ 不混看。",
+      "source": "src/components/ProjectFigure.tsx（结构实测·节点/边/连通分量）",
+      "surfaces": ["/works/[name]"]
+    },
+    {
+      "id": "degree",
+      "term": "度数（枢纽节点）",
+      "aliases": ["度数", "枢纽节点", "top_degree"],
+      "definition": "一个节点连出的关系条数；度数最高的几个就是这张图里的「枢纽节点」。",
+      "boundary": "度数高只说明「连接多」，⛔ 不代表更重要或质量更高——只作结构概览。",
+      "source": "src/components/ProjectFigure.tsx（结构实测）",
+      "surfaces": ["/works/[name]"]
+    },
+    {
+      "id": "betweenness",
+      "term": "介数中心性",
+      "aliases": ["介数中心性", "关键节点", "betweenness"],
+      "definition": "一个节点在多少条最短路径上「被经过」的度量：数值越高，越像是连接两大片区域的必经点。",
+      "boundary": "计算量大时会对部分节点跳过 ⇒ 若样本不全，这只是「已算节点的排序」，⛔ 不读成全图结论。",
+      "source": "src/components/ProjectFigure.tsx（结构实测）",
+      "surfaces": ["/works/[name]"]
+    },
+    {
+      "id": "recompute",
+      "term": "独立复算",
+      "aliases": ["独立复算", "构建期 headless 拓扑计算", "复算"],
+      "definition": "本站构建时，直接对项目公开的结构化数据自己跑一遍图算法，得到自己的读数——而不是照抄项目页面上的说法。",
+      "boundary": "复算结果与项目自述并陈；不一致时如实标注为「与本次独立复算不一致」，⛔ 本站不改上游数据，只并陈。",
+      "source": "src/components/ProjectFigure.tsx（结构实测区块说明）",
+      "surfaces": ["/works/[name]", "/about"]
+    },
+    {
+      "id": "collectability",
+      "term": "可采集性分级（A/B 级）",
+      "aliases": ["A 级", "B 级", "A", "B", "collectability", "可精确枚举", "经人工确认"],
+      "definition": "数字是从哪里取的：A 级＝页面暴露结构化 JSON，可精确计数；B 级＝页面上只有散文数字，须人工确认一次。",
+      "boundary": "B 级数字是「人工核对过的散文数字」，不是机器精确枚举 ⇒ 保真度低于 A 级；确认日期与页面文本指纹已登记，改版后可察觉（E4）。",
+      "source": "specs/e-metrics-spec.md v1.0 §二·§五 E4",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "prose-number",
+      "term": "散文数字",
+      "aliases": ["散文数字", "散文"],
+      "definition": "写在页面正文里、没有结构化数据支撑的数字（B 级来源）。",
+      "boundary": "散文数字须人工逐条确认一次并登记确认日期＋文本哈希（E4）；⛔ 不与 A 级 JSON 枚举混为一谈。",
+      "source": "specs/e-metrics-spec.md v1.0 §二",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "spec",
+      "term": "口径规范",
+      "aliases": ["口径规范", "specs/e-metrics-spec.md"],
+      "definition": "先定好「每个数字怎么数、单位是什么、能不能比」的规则，再按规则采集——本站的口径规范即 `specs/e-metrics-spec.md` v1.0。",
+      "boundary": "「先定口径再采数」是本站纪律：术语不一致时宁可留空，⛔ 不拼凑可比性。",
+      "source": "specs/e-metrics-spec.md v1.0 · README「设计系统」",
+      "surfaces": ["/stats", "/about"]
+    },
+    {
+      "id": "text-hash",
+      "term": "文本指纹",
+      "aliases": ["文本指纹", "text_sha256", "页面文本指纹"],
+      "definition": "采集时对页面文本算的一段哈希：页面一改版，这段指纹就变，用来察觉「当时的口径确认是否已过期」。",
+      "boundary": "指纹只证明「页面文本变了」，⛔ 不说明变的是不是与数字有关的部分。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E4",
+      "surfaces": ["/works/[name]"]
+    },
+    {
+      "id": "as-of",
+      "term": "采集时点（as_of）",
+      "aliases": ["as_of", "采集时点", "抓取于"],
+      "definition": "这批数字是哪一天从项目页采集的。",
+      "boundary": "上游页面随时可能改版 ⇒ 数字绑定到 as_of 这个时点，⛔ 不得把不同时点的读数混排。",
+      "source": "src/lib/metrics.ts",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "same-scope",
+      "term": "同 scope 对同 scope",
+      "aliases": ["同 scope 对同 scope"],
+      "definition": "要比较数字时，只能拿「同一个 scope（同一张图/视图）」的数字互相比较。",
+      "boundary": "跨 scope、跨分区的数字量纲不同，⛔ 不并比（E1/E3）。",
+      "source": "specs/e-metrics-spec.md v1.0 §五·5.1",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "section",
+      "term": "分区（形态分区）",
+      "aliases": ["DAG 图谱区", "文档集群区", "论文库区", "未分区", "分区"],
+      "definition": "按交付形态把项目分成几区（DAG 图谱 / 文档集群 / 论文库），各区各自成表。",
+      "boundary": "⛔ 不跨区并排比大小：三种形态的量纲不同（E3）。",
+      "source": "specs/e-metrics-spec.md v1.0 §四·§五 E3",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "missing",
+      "term": "「—」（缺失留空）",
+      "aliases": ["—", "缺失留空", "不等于 0", "unavailable"],
+      "definition": "表里的「—」表示「该 scope 没有这项指标」，不是 0。",
+      "boundary": "语义上「0」与「无」不同 ⇒ 空值一律留空并显式标注，⛔ 不写 0、不估算、不静默跳过（E5）。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E5",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "E1",
+      "term": "E1 · 多 scope 不单值化",
+      "aliases": ["E1"],
+      "definition": "一个项目有多张图时，并列展示全部图、各标 scope，⛔ 不强行合成一个数。",
+      "boundary": "取舍：聚合页无法直接按单值比大小（有意接受）。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E1",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "E2",
+      "term": "E2 · 拓扑层与学习阶段分列",
+      "aliases": ["E2"],
+      "definition": "「拓扑层」（图论分层）与「学习阶段」（教学分期）各自成列。",
+      "boundary": "混列会让「层数多者更复杂」成为假结论。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E2",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "E3",
+      "term": "E3 · 按形态分区",
+      "aliases": ["E3"],
+      "definition": "按交付形态分区（DAG 图谱 / 文档集群 / 论文库），各区自成表。",
+      "boundary": "⛔ 不跨区并排比大小。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E3",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "E4",
+      "term": "E4 · 散文数字人工确认一次",
+      "aliases": ["E4"],
+      "definition": "B 级散文数字须「提取值 vs 页面原文片段」逐条人工确认一次，并登记确认日期＋文本哈希。",
+      "boundary": "只确认一次；上游改版后须重新确认（由文本指纹察觉）。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E4",
+      "surfaces": ["/stats"]
+    },
+    {
+      "id": "E5",
+      "term": "E5 · 缺失留空不写 0",
+      "aliases": ["E5"],
+      "definition": "采集不到或本不适用的项，留空并标「不可采/无此项」，⛔ 不写 0、不估算。",
+      "boundary": "采集失败同样显式标注，⛔ 不静默跳过。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E5",
+      "surfaces": ["/stats", "/works/[name]"]
+    },
+    {
+      "id": "E6",
+      "term": "E6 · 版本漂移如实标注",
+      "aliases": ["E6"],
+      "definition": "采「项目自称版本」；与索引摘要不一致时显式标出。",
+      "boundary": "漂移本身作为可信度信号呈现，⛔ 不掩盖。",
+      "source": "specs/e-metrics-spec.md v1.0 §五 E6",
+      "surfaces": ["/about"]
+    },
+    {
+      "id": "no-js-readable",
+      "term": "无 JS 可读",
+      "aliases": ["无 JS 可读", "纯静态导出", "静态导出"],
+      "definition": "全部内容在构建期就渲染成静态文字/表格，不依赖画布或运行时请求也能读到。",
+      "boundary": "数据每日重采、指标构建期算完再导出；运行时不发数据请求。",
+      "source": "src/components/SiteBuildNotes.tsx · README「设计系统」",
+      "surfaces": ["/", "/about"]
+    }
+  ]
+}
