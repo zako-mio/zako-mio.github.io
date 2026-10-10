@@ -155,8 +155,9 @@ python3 scripts/gate_motion_budget.py --selftest
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
-上面那些门控都**只跑 python3**。有六类缺陷只有真浏览器能看见（图件几何、合成后对比度、
-悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、**术语解释层的 hover/focus/Esc**），
+上面那些门控都**只跑 python3**。有七类缺陷只有真浏览器能看见（图件几何、合成后对比度、
+悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、**术语解释层的 hover/focus/Esc**、
+**无障碍（axe-core：对比度/标题层级/名称/ARIA…）**），
 长期是**提示词级**（写进文档、靠人记着跑）。
 现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
 
@@ -171,12 +172,14 @@ python3 scripts/gate_motion_budget.py --selftest
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 | `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
 | `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）（带 `--selftest`） | 是 |
+| `axe_a11y_probe.py` | **无障碍自动化审查**（第十五批 B2）：axe-core 4.14.0（vendored，`vendor/axe.min.js`）注入渲染页跑 `axe.run`；规则白名单＝WCAG 2.1/2.2 A/AA ＋ best-practice（含 `heading-order` 这类既有判据都没在看的类）；双主题 × 5 路由；豁免须**带理由且真命中**（⛔ 防静默过期）；`A4` 非空守卫；带 `--selftest`（对照臂＋负向臂） | 是 |
 | `acceptance_probe.py` | **页面分工结构类**（第三批）：`A1` 首页枚举数 ≤5 · `A2` 首页无索引控件 · `A3` 首页无他页专属区块 · `A4` 对照臂 · `A5` 联系区块唯一落点（结构类，须 **ALL PASS** 才 rc=0；带 `--selftest`） | 否 |
 | `dup_probe.py` | **页间内容重复度**（第三批）：块级重合矩阵 ＋ 关键元素跨页计数（数值/**报告类**，⛔ 不判 PASS/FAIL ⇒ 无 `--selftest`） | 否 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
-- **九条探针**在 CI 里跑（七条浏览器层 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
+  ⚠ 探针层的**前端资产**（`axe-core`）另 pin 于 `scripts/probes/vendor/`（含版本/许可/sha256，见其 README）。
+- **十条探针**在 CI 里跑（7 条需静态服务/浏览器 ＋ `hover_gating` 静态解析 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
   除 `dup_probe`（报告类，无 `--selftest`）外均**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
   ⚠ `check_provenance.py` / `check_ci_manifest.py` 是**机检**（不进 `PROVENANCE.json` 的探针表，不在此计数）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
@@ -184,7 +187,8 @@ python3 scripts/gate_motion_budget.py --selftest
 - ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
   归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
   活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）、
-  `hero_hit_probe.py`（第十三批）与 `term_layer_probe.py`（第十四批）是**仓库原生**。
+  `hero_hit_probe.py`（第十三批）、`term_layer_probe.py`（第十四批）与
+  `axe_a11y_probe.py`（第十五批，另 vendor `axe-core@4.14.0` 于 `vendor/`）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
   否则 fail-closed。（同目录 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
@@ -412,7 +416,7 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
-  起静态服务 ＋ 跑七条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
+  起静态服务 ＋ 跑浏览器层探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
   换来的是「提示词级（可绕）」→「runtime 硬阻（结构上做不成）」（落地形态强度阶梯）。
 - **W1 的 `decor` 定性是「治理选择」而非「技术必然」**（第十三批，2026-10-10 用户裁决）：
   「所有带框容器统一加指针高光」（V1）与本站「悬停反馈面 ≡ 点击热区」判据**互锁**，

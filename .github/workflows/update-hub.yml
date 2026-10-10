@@ -210,6 +210,17 @@ jobs:
           python3 scripts/probes/term_layer_probe.py --selftest
           python3 scripts/probes/term_layer_probe.py
 
+      # 无障碍自动化审查（第十五批 B2）：axe-core（vendored 于 scripts/probes/vendor/）注入渲染页后
+      # 跑 axe.run，规则白名单＝WCAG 2.1/2.2 A/AA ＋ best-practice（含 heading-order 这类
+      # 本站既有对比度/几何/交互判据**都没在看**的类别；批十五实测即由它抓出一处 h1→h3 跳级）。
+      # ⚠ 必须在 [data-reveal] 过渡**落定后**再跑（未落定 ⇒ 部分不透明度 ⇒ 假 color-contrast FAIL）。
+      - name: a11y probe (axe-core, WCAG A/AA + best-practice) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/axe_a11y_probe.py --selftest
+          python3 scripts/probes/axe_a11y_probe.py
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5
