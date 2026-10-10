@@ -1071,6 +1071,10 @@ html[data-pointer] .backdrop__glow {
 /* ------------------------------------------------------------- 原子件 ----- */
 
 .chip {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block。
+     ⚠ 只有 **`li.chip`（标签，容器）** 挂 `data-spotlight`；`button.chip`（筛选控件）
+     按 V1 的「控件非容器」口径**排除**。 */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
@@ -1481,6 +1485,8 @@ button.chip[aria-pressed='true'] {
 }
 
 .hero__eyebrow {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -1498,8 +1504,11 @@ button.chip[aria-pressed='true'] {
   -webkit-backdrop-filter: blur(8px);
 }
 
-.hero__eyebrow::before {
+/* ⚠ 本件是 `[data-spotlight]` 宿主 ⇒ `::before` 已**让给高光层**（否则高光会吃掉这颗点）。
+   `order: -1` 把 `::after` 排回 flex 首位 ⇒ 视觉与原先的 `::before` 完全一致。判据见 C5。 */
+.hero__eyebrow::after {
   content: '';
+  order: -1;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -1762,6 +1771,8 @@ button.chip[aria-pressed='true'] {
 }
 
 .contact__link {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -2173,6 +2184,8 @@ button.chip[disabled] {
 }
 
 .metrics__item {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3);
@@ -2448,6 +2461,8 @@ button.chip[disabled] {
 
 /* 渐进披露 */
 .disclosure {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   margin-top: var(--space-3);
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
@@ -2590,6 +2605,11 @@ button.chip[disabled] {
 }
 
 .mtable__scroll {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block。
+     ⚠ 本件同时是 `overflow-x` 滚动容器 ⇒ 高光层是其子元素、会随内容**横向滚动**
+     （`inset:0` 相对 padding box）—— 已知的轻微副作用，宽表横向滚动时高光随之偏移；
+     ⛔ 不改结构（外层没有可承载的框），如实登记。 */
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
@@ -2800,6 +2820,8 @@ button.chip[disabled] {
 /* 「关键—值」条带：用一条贯穿的边框把若干条串成**同一个块**，
    ⛔ 不是若干并列的项目符号（并列=无关系，条带=同属一件事）。 */
 .threads {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   display: grid;
   margin-top: var(--space-4);
   border: 1px solid var(--border-card);
@@ -2834,12 +2856,14 @@ button.chip[disabled] {
   line-height: 1.7;
 }
 
-/* 带脊线的变体：一条强调轨把条目串成「同一时期、并行推进」的一条带 */
+/* 带脊线的变体：一条强调轨把条目串成「同一时期、并行推进」的一条带。
+   ⚠ 本件是 `[data-spotlight]` 宿主 ⇒ 脊线改用 `::after`（`::before` 已让给高光层）。
+   视觉不变：脊线仍是 `position:absolute` 且 `z-index:auto` ⇒ 仍在 `.threads__mark`（z-index:1）之下。 */
 .threads--rail {
   position: relative;
 }
 
-.threads--rail::before {
+.threads--rail::after {
   content: '';
   position: absolute;
   left: calc(var(--space-4) + 0.875rem);
@@ -3193,28 +3217,49 @@ html.js-motion [data-reveal].is-in {
      ⚠ 但**面内含交互目标者**（如 `.card` 经 `.card__title a::after` 拉伸层可点）
      判据回退按 `container` 口径判覆盖率（见 `surface_hit_probe.py` 的 decor 分支）
      ⇒ 统一选择器**不降低**既有件的严格度。
-   ⛔ 两道熔断（`prefers-reduced-motion` 与 `[data-motion='off']`）一字不改。 */
+   ⛔ 两道熔断（`prefers-reduced-motion` 与 `[data-motion='off']`）一字不改。
+
+   ★★ **宿主必须把 `::before` 让给高光层**（批十三收口实测到的结构冲突）：
+     `[data-spotlight]::before` 与「宿主自己的 `.<class>::before`」**特异性相同** ⇒ 后写的胜
+     ⇒ 宿主既有的装饰伪元素会被**静默吃掉**（实测：`.hero__eyebrow` 的状态点、`.threads--rail`
+     的强调轨）。⇒ 约定：**宿主的自有装饰一律用 `::after` 或子元素**。
+     ⚠ 这条由 `gate_interaction_surface.py` 的 **C5** 机检（宿主自带 `::before` 即 FAIL），
+     ⛔ 不靠注释靠人记。 */
 [data-spotlight] {
+  /* ★ 批十四 W1c（V7 裁决落地，2026-10-10）：宿主成为**独立层叠上下文**，
+     使下方 `::before { z-index: -1 }` 的高光被关进宿主内部
+     （排到「宿主背景之上、内容之下」）—— 否则负 z 会逃到祖先背景之后而看不见。
+     ⚠ `isolation` 不改变宿主自身的层叠级别，只关住宿主的负 z 后代。 */
+  isolation: isolate;
   --spotlight-radius: 320px;
   --spotlight-opacity: 1;
 }
 
-/* 强度分层（半径 / 不透明度）。⛔ 只有这三档；新增档须同步改
-   `scripts/interaction-surfaces.json` 与探针白名单，避免出现「无判据的档」。 */
+/* 强度分层（半径 / 不透明度）。⛔ 只有这四档（`base` 即无值的默认档）；
+   新增档须同步改 `scripts/interaction-surfaces.json` 的 note 与探针白名单，
+   避免出现「无判据的档」。档位口径＝**元素尺度 + 是否已有自身反馈**：
+   已有反馈的件取更低档（⛔ 避免与既有 affordance 叠加成双重信号）。 */
+[data-spotlight='strong'] {
+  --spotlight-radius: 440px;
+  --spotlight-opacity: 1;
+}
+
 [data-spotlight='soft'] {
   --spotlight-radius: 240px;
   --spotlight-opacity: 0.55;
 }
 
-[data-spotlight='strong'] {
-  --spotlight-radius: 440px;
-  --spotlight-opacity: 1;
+[data-spotlight='micro'] {
+  --spotlight-radius: 120px;
+  --spotlight-opacity: 0.45;
 }
 
 [data-spotlight]::before {
   content: '';
   position: absolute;
   inset: 0;
+  /* ★ 批十四 W1c（V7）：高光压到**内容之下**（宿主背景之上）。配合宿主 `isolation: isolate`。 */
+  z-index: -1;
   border-radius: inherit;
   background: radial-gradient(
     var(--spotlight-radius) circle at var(--mx, 50%) var(--my, 0%),

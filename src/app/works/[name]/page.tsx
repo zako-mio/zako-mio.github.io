@@ -89,13 +89,13 @@ export default async function ProjectPage({ params }: PageProps) {
         <article className="detail__main">
           <header className="detail__head">
             <ul className="taglist">
-              <li className="chip chip--type">{typeLabel}</li>
+              <li className="chip chip--type" data-spotlight="micro">{typeLabel}</li>
               {domainLabels.map((label) => (
-                <li className="chip" key={label}>
+                <li className="chip" data-spotlight="micro" key={label}>
                   {label}
                 </li>
               ))}
-              {!project.has_pages ? <li className="chip chip--warning">仅仓库</li> : null}
+              {!project.has_pages ? <li className="chip chip--warning" data-spotlight="micro">仅仓库</li> : null}
             </ul>
             <h1 className="detail__title">{project.title}</h1>
             <p className="detail__summary prose">{project.summary}</p>
@@ -105,7 +105,7 @@ export default async function ProjectPage({ params }: PageProps) {
             <h2 className="detail__section-title">概览</h2>
             <dl className="metrics">
               {metrics.map((metric) => (
-                <div className="metrics__item" key={metric.key}>
+                <div className="metrics__item" data-spotlight="soft" key={metric.key}>
                   <dt className="metrics__key">{metric.key}</dt>
                   <dd className="metrics__value">{metric.value}</dd>
                 </div>
@@ -134,7 +134,7 @@ export default async function ProjectPage({ params }: PageProps) {
               <p className="detail__lead">按共享领域数量排序。</p>
               <ul className="related__list">
                 {related.map(({ project: item, shared }) => (
-                  <li className="related__item" key={item.name}>
+                  <li className="related__item" data-spotlight="soft" key={item.name}>
                     <Link className="related__link" href={`/works/${item.name}`}>
                       {item.title}
                     </Link>
@@ -174,6 +174,7 @@ export default async function ProjectPage({ params }: PageProps) {
                 <li>
                   <a
                     className="contact__link"
+                    data-spotlight="soft"
                     href={project.entry_url}
                     rel="noopener noreferrer"
                     target="_blank"
@@ -186,6 +187,7 @@ export default async function ProjectPage({ params }: PageProps) {
               <li>
                 <a
                   className="contact__link"
+                  data-spotlight="soft"
                   href={project.repo_url}
                   rel="noopener noreferrer"
                   target="_blank"

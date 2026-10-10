@@ -90,7 +90,7 @@ export function SiteDirectory({ items, github }: SiteDirectoryProps) {
             );
 
             return (
-              <li className="related__item directory__item" key={row.href}>
+              <li className="related__item directory__item" data-spotlight="soft" key={row.href}>
                 {external ? (
                   <a className="related__link directory__head" href={row.href} rel="noopener noreferrer" target="_blank">
                     {inner}

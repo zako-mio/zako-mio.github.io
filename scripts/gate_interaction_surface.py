@@ -18,6 +18,13 @@
   C4 焦点等价：kind ∈ {self, container} 必须有焦点等价面（`focus_equivalent` 指向真实存在的焦点规则，
                 或显式 `:focus-visible` 全局环）；container 缺失且未登记 rework ⇒ FAIL
 
+  ★ 批十三新增 C5（装饰层的结构性前提）：
+    `[data-spotlight]` 宿主**不得**自带 `.x::before` 规则。
+    理由：`[data-spotlight]::before` 与 `.<class>::before` **特异性相同** ⇒ 后写的胜
+    ⇒ 宿主的自有装饰伪元素会被高光层**静默吃掉**（批十三收口实测：`.hero__eyebrow` 的状态点、
+    `.threads--rail` 的强调轨）。⇒ 约定＝宿主把 `::before` 让给高光层，自有装饰改用 `::after`/子元素。
+    ⛔ 本判据让这条约定**结构上可检**，不靠注释靠人记（落地形态强度阶梯）。
+
   ★ 批十三新增 kind=decor（装饰性反射面）：
     放宽（**用户裁决** 2026-10-10：V1「所有带边框/圆角容器统一加指针特效」与本站
     「悬停反馈面 ≡ 点击热区」判据互锁 ⇒ 裁决走「新增 kind ＋ 更严替代判据」）：
@@ -88,6 +95,38 @@ def hover_selectors(css: str) -> set[str]:
 
 def focus_selectors(css: str) -> set[str]:
     return {s for s in all_selectors(css) if ":focus" in s}
+
+
+SPOTLIGHT_ATTR = "[data-spotlight]"
+
+
+def has_anchor(compound: str) -> bool:
+    """复合选择器是否含**类或标签**锚点。
+
+    ⛔ `*`（以及 `[attr]`/只有属性的复合式）**不足以当「宿主」**：C5 的判定是
+    `compound + [data-spotlight]` 求交，若 compound 只是 `*`，交出来就是「**所有**带该属性的元素」
+    ⇒ 直接产出假阳性（实测：`*::before, *::after` 那条重置规则第一次就把 384 个元素全判成违规）。
+    ⇒ 无锚点的复合式一律跳过。
+    """
+    return bool(re.findall(r"^[a-zA-Z][\w-]*|\.[\w-]+", compound))
+
+
+def before_rule_hosts(css: str) -> set[str]:
+    """抽出「自带 `::before` 规则」的宿主复合选择器（⛔ 排除高光层自身那条）。
+
+    只取**最后一个复合选择器**（与 C2 同口径，不做 DOM 求值）；无类/标签锚点的
+    （`*::before`、`:root[…] *::before` 等）跳过（见 `has_anchor`）。
+    """
+    hosts: set[str] = set()
+    for sel in all_selectors(css):
+        if "::before" not in sel:
+            continue
+        if SPOTLIGHT_ATTR in sel:
+            continue                       # 高光层自身：`[data-spotlight]::before`
+        compound = last_compound(sel)
+        if compound and has_anchor(compound):
+            hosts.add(compound)
+    return hosts
 
 
 def base_selector(sel: str) -> str:
@@ -281,6 +320,24 @@ def run(css_path: Path, table_path: Path, out_dir: Path) -> tuple[bool, list[str
                     ok = False
                     findings.append(f"C4 `{sel}` 缺焦点等价")
 
+    # ---- C5 装饰层的结构性前提：`[data-spotlight]` 宿主不得自带 `::before`
+    #      （同特异性 ⇒ 高光层会静默吃掉宿主既有的装饰伪元素）
+    print("\n--- C5 高光宿主不得自带 `::before`（否则被高光层静默覆盖）---")
+    hosts = before_rule_hosts(css)
+    offenders: list[tuple[str, int]] = []
+    for compound in sorted(hosts):
+        n = compound_hits(elements, compound + SPOTLIGHT_ATTR)
+        if n:
+            offenders.append((compound, n))
+    if offenders:
+        for compound, n in offenders:
+            print(f"  [FAIL] 宿主 `{compound}` 既挂 `{SPOTLIGHT_ATTR}` 又自带 `::before`"
+                  f"（{n} 个元素）⇒ 其装饰会被高光层覆盖；改用 `::after` 或子元素")
+            findings.append(f"C5 `{compound}` 自带 ::before")
+        ok = False
+    else:
+        print(f"  [PASS] CSS 里 {len(hosts)} 条 `::before` 规则，无一落在 `{SPOTLIGHT_ATTR}` 宿主上")
+
     # ---- 汇总
     print("\n--- 汇总 ---")
     by_kind: dict[str, int] = {}
@@ -406,6 +463,25 @@ def selftest() -> int:
         j = _mk_fixture(tmp / "decor-ghost", FIXTURE_CSS_OK, [ok_entry, decor_entry], html_decor)
         ok, _ = run(*j)
         cases.append(("★批十三 负向夹具7：decor 幽灵登记（CSS 无对应规则）（期望 FAIL）", not ok))
+
+        # ★ 批十三 C5：`[data-spotlight]` 宿主不得自带 `::before`（否则被高光层静默覆盖）
+        k = _mk_fixture(tmp / "c5-ok", FIXTURE_CSS_OK + "\n.card::after { content: ''; }\n",
+                        [ok_entry], html_decor)
+        ok, _ = run(*k)
+        cases.append(("★批十三 对照臂 C5：宿主自带 `::after`（非 `::before`）⇒ PASS", ok))
+
+        m = _mk_fixture(tmp / "c5-bad", FIXTURE_CSS_OK + "\n.card::before { content: ''; }\n",
+                        [ok_entry], html_decor)
+        ok, _ = run(*m)
+        cases.append(("★批十三 负向夹具8 C5：宿主自带 `::before` ⇒ FAIL", not ok))
+
+        # ★ C5 的**假阳性守卫**：`*::before` 重置规则没有类/标签锚点，⛔ 不得判成「宿主违规」
+        #   （第一版判据正是这样把 384 个元素全判成 FAIL 的）
+        n = _mk_fixture(tmp / "c5-star",
+                        FIXTURE_CSS_OK + "\n*::before, *::after { box-sizing: border-box; }\n",
+                        [ok_entry], html_decor)
+        ok, _ = run(*n)
+        cases.append(("★批十三 对照臂 C5：`*::before` 重置规则（无锚点）不得判违规 ⇒ PASS", ok))
 
     print("\n== selftest ==")
     for name, passed in cases:

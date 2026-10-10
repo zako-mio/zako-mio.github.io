@@ -89,11 +89,39 @@ function readJson(path) {
   }
 }
 
+/**
+ * 剥掉 SSR 输出里的 `:hover` 规则（第十三批 W1 收口时**新暴露**的既有缺陷的修法）。
+ *
+ * 事实：echarts SVG-SSR 会为系列生成 `.zr0-cls-N:hover { cursor:pointer; fill:… }`
+ *   —— 那是给**交互式** canvas/svg 图表用的强调样式。本站是**构建期 SSR → 纯静态导出**，
+ *   这些「条」没有任何点击动作 ⇒ 悬停时 `cursor:pointer` + 变色＝**假可供性**
+ *   （本站自有判据「悬停反馈面 ≡ 点击热区」明确禁止；`surface_hit_probe` 会判「错位」）。
+ *
+ * 为什么**删规则**而不是登记：`.zr0-cls-N` 的取值由 echarts 内部决定
+ *   ⇒ 拿它当登记键＝会腐化的字面常量（图表一改就静默失效）。结构性做法是让它**不存在**。
+ *
+ * 悬停反馈由 `.chart__frame`（`data-spotlight="base"`，kind=decor）承担 —— 一致性也更好：
+ * 反馈落在**框**上，而不是落在数据条上。
+ *
+ * ⛔ 只删含 `:hover` 的规则块；`<style>` 里其余规则原样保留（布局/字体依赖它们）。
+ */
+function stripHoverRules(svg) {
+  let removed = 0;
+  const out = svg.replace(/[^{}<>]*:hover[^{}<>]*\{[^{}]*\}/g, () => {
+    removed += 1;
+    return '';
+  });
+  if (removed) {
+    process.stderr.write(`[charts] 剥离 SSR 生成的 :hover 规则 ${removed} 条（静态导出下无动作 ⇒ 假可供性）\n`);
+  }
+  return out;
+}
+
 /** 一次 SSR 渲染：三件套 init -> setOption -> renderToSVGString -> dispose。 */
 function renderSvg(option, width, height) {
   const chart = echarts.init(null, null, { renderer: 'svg', ssr: true, width, height });
   chart.setOption(option);
-  const svg = chart.renderToSVGString();
+  const svg = stripHoverRules(chart.renderToSVGString());
   chart.dispose(); // 必须：否则进程不退出
   return svg;
 }

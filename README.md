@@ -81,6 +81,7 @@ python3 scripts/gate_motion_budget.py --selftest
 | `C2` 空集守卫 | 每条登记的「去伪类基选择器」必须在 **out/ 全量产物**里命中 ≥1（防登记表静默腐化） |
 | `C3` 覆盖率契约 | `kind ∈ {self, container}` 必须声明 `coverage_min ≥ 0.98`；已知缺陷可登记为 `status: rework`（须带 `deadzone_note` + `expires_at`，只 WARN）。★ 批十三新增 `decor` ⇒ `C3`/`C4` **不适用**（见下） |
 | `C4` 焦点等价 | 有 hover 就必须有焦点等价面（WCAG 2.2 SC 1.4.13） |
+| `C5` 装饰层前提 | ★ 批十三：`data-spotlight` 宿主**不得自带** `.x::before`（与 `[data-spotlight]::before` 特异性相同 ⇒ 高光层会**静默吃掉**宿主的装饰伪元素）。⇒ 约定＝宿主把 `::before` 让给高光层，自有装饰改用 `::after`／子元素（落地：`.hero__eyebrow` 的状态点、`.threads--rail` 的强调轨）。⛔ `*::before` 这类无类/标签锚点的规则不判（第一版判据曾因此把 384 个元素全判 FAIL） |
 
 **对象必须分类**（第一版判据在此踩坑）：`self`（元素自身即交互目标）／
 `descendant`（某交互目标的后代装饰件，coverage=0 属正常，判据上溯最近交互祖先）／
@@ -338,14 +339,27 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   （前者以 `:not([data-motion='on'])` 限定 ⇒「动效开」可覆盖 OS）。
 - **元素级指针高光（第十三批 W1 · 统一约定 `[data-spotlight]`）**：批八起的「卡片指针跟随光斑」
   此前**写死** `.card::before` ＋ `closest('.card')`；批十三把它抽成**全站统一约定**：
-  - **宿主**：任何**已定位**（`position != static`）的 HTML 元素挂 `data-spotlight="base|soft|strong"`；
-    强度分层由 `--spotlight-radius` / `--spotlight-opacity` 承担
-    （`base` 320px/1 · `soft` 240px/0.55 · `strong` 440px/1）。
-    ⛔ 新增档须同步 `scripts/interaction-surfaces.json` 与探针白名单，否则会出现「无判据的档」。
+  - **宿主**：任何**已定位**（`position != static`）的 HTML 元素挂 `data-spotlight="base|soft|micro"`；
+    强度分层由 `--spotlight-radius` / `--spotlight-opacity` 承担（四档；`base` 即无值的默认档）：
+    `base` 320px/1 · `soft` 240px/0.55 · `micro` 120px/0.45 ·（`strong` 440px/1，保留未用）。
+    档位口径＝**元素尺度 ＋ 是否已有自身反馈**（已有反馈的件取更低档，⛔ 避免与既有 affordance
+    叠成双重信号）。⛔ 新增档须同步 `scripts/interaction-surfaces.json` 与探针白名单。
+  - **本轮作用面（§4-W1 表全量接入）**：`base`＝`.card` / `.figure` / `.chart__frame` / `.threads`；
+    `soft`＝`.hero__map` / `.metrics__item` / `.related__item`(+`.directory__item`) /
+    `.contact__link` / `.disclosure`；`micro`＝`li.chip` / `span.chip` / `.hero__eyebrow`。
+  - ⛔ **排除项（两条，均有依据而非遗漏）**：
+    ① **控件**（`.button` / `.theme-toggle` / `.motion-toggle` / `button.chip`）——V1 口径「控件非容器」；
+    ② **`.mtable__scroll`** —— 宽表内仅「来源」列有少量链接，`surface_hit_probe` 实测覆盖率
+    **0.05（28/484）** ⇒ 按本站判据＝**错位（含死区）**，且按 **D2** 它不能走 `decor` 豁免
+    ⇒ 规则一致的处置是**不挂**（⛔ 不是放宽 D2）。
   - **JS**：`MotionRuntime` 里**仍是同一个委托 listener**（`closest('[data-spotlight]')`、`passive: true`、
     ⛔ 不逐件加监听器）。`closest()` 能**上溯** ⇒ SVG 子形状作 `event.target` 时也能找到 HTML 宿主。
-  - **CSS**：`[data-spotlight]::before` 通用规则；`::before` 位于**内容之下**（与 `.card` 同口径）
-    ⇒ 在「框内含不透明 SVG」的件上只在图件透明区/周边可见，⚠ **观感待裁决**（见「已知取舍」）。
+  - **CSS**：`[data-spotlight]::before` 通用规则。★ **层叠位置＝内容之下**（批十四 W1c 落地用户裁决 V7）：
+    `[data-spotlight]{isolation:isolate}` ＋ `[data-spotlight]::before{z-index:-1}` —— 宿主成为独立层叠上下文，
+    高光排在「宿主背景之上、静态内容之下」。★ 层叠位置经**像素实测**确认（⛔ 不是靠绘制顺序推断，
+    第一版文档在这里写错过）：取图注文字条的**不透明字形核心像素**，字形 Δmean **0.015**
+    （裁决前「内容之上」为 **2.11** / maxΔ 9.3）、浅底 Δmean **5.47**（⇒ 背景仍有光）；
+    连跑 3 次逐位一致。⚠ `isolation:isolate` 不可省：否则 `z-index:-1` 会**逃到祖先背景之后**而不可见。
   - ★★ **三层独立阻断**（批十三源码级勘察）：`.hero__map` 一处就叠了三层 —— ① 原 `pointer-events: none`
     ⇒ 指针**根本命中不到**；② **SVG 元素不能承载 CSS 伪元素** ⇒ `svg::before` 结构上不存在，
     必须补 HTML wrapper；③ CSS/JS 的作用面 selector 写死 `.card`。
@@ -397,13 +411,27 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   解法的代价是**判据面变化** —— 多了一个 `kind: decor`，并让 `surface_hit_probe` /
   `gate_interaction_surface` 各带 `decor` 分支。两边**同批改**且都有 `--selftest` 负向夹具
   （含「decor 面内含交互目标必须回退判覆盖率」，⛔ 防它成为逃生门）。
-- ⚠ **指针高光在「框内含不透明 SVG」的件上部分被内容遮挡**（`.figure` / `.chart__frame`）：
-  `::before` 按站点既有口径置于**内容之下**（与 `.card` 一致），故只在图件透明区/周边可见。
-  ⛔ **观感类未代决** —— 「是否改为置于内容之上（像一层玻璃反光）」须**先出对比预览件**再裁决。
-- ⚠ **既有 `[data-spotlight]` 作用面本轮只做 3 件试点**（`.figure` / `.chart__frame` / `.hero__map`
-  ＋ `.card` 迁移）。§4-W1 表里的其余件（`.mtable__scroll` / `.metrics__item` /
-  `.contact__link` / `.threads` / `.disclosure` / `.chip` / `.hero__eyebrow` / `.related__item`
-  / `.directory__item`）**尚未接入** ⇒ 现在**不是**「全站统一」，别按已完成读。
+- **高光层的层叠位置＝内容之下**（批十四 W1c 落地用户裁决 V7，2026-10-10）：
+  `[data-spotlight]{isolation:isolate}` ＋ `[data-spotlight]::before{z-index:-1}` ⇒ `::before` 排在
+  「宿主背景之上、静态内容之下」，悬停时文字/SVG **不再**被镀 tint。
+  ★ 像素实测（图注文字条的不透明字形核心像素）：字形 Δmean **0.015**（裁决前「内容之上」为 **2.11** / maxΔ 9.3）；
+  浅底 Δmean **5.47** ⇒ 背景仍有光。连跑 3 次逐位一致（量测稳定性判据，见 §7 b136）。
+  ⚠ `.card` 自第八批起原是「内容之上」；本次**统一为「内容之下」**，属**用户裁决的观感变更**（V7）。
+  对比预览件 `batch13-evidence/decor-preview.html`（A＝旧「内容之上」 / B＝新「内容之下」，内置
+  **动效三态开关 ＋ 熔断诊断行** —— ⚠ 高光受两道熔断压制，OS 开「减少动画」时须先切「动效开」）
+  ＋ `batch13-evidence/preview-shots/`。
+- ⚠ **`[data-spotlight]` 已按 §4-W1 表全量接入**（`.card` / `.figure` / `.chart__frame` / `.threads` /
+  `.hero__map` / `.metrics__item` / `.related__item` / `.directory__item` / `.contact__link` /
+  `.disclosure` / `li.chip` / `span.chip` / `.hero__eyebrow`），排除项见上文「排除项（两条）」。
+  ⛔ 但**「接入」≠「观感已裁决」** —— 高光强度是否合适仍未人看对比件（见下一条）。
+- ★ **修掉一处**新暴露的**既有**缺陷（批十三收口，非本功能引入）：echarts 构建期 SSR 会为系列生成
+  `.zr0-cls-N:hover { cursor:pointer; fill:… }`，而本站是**纯静态导出、这些条没有任何动作**
+  ⇒ 悬停 `cursor:pointer` ＋ 变色＝**假可供性**（本站自有判据明确禁止）。
+  修法＝`scripts/build_charts.mjs` 里 `stripHoverRules()` **删掉 SSR 输出的 `:hover` 规则**
+  （结构上让它不存在）。⛔ 不登记 `.zr0-cls-N`：其取值由 echarts 内部决定 ＝ 会腐化的字面常量。
+  悬停反馈改由 `.chart__frame`（`decor` 高光）承担 —— 反馈落在**框**上而非数据条上，一致性更好。
+  ⚠ 该缺陷此前被「`surface_hit_probe` 的 `RUNS` 不含 `/stats/`」**静默掩盖**；本批把该路由纳入
+  同类项全集后才暴露（⇒ 新增作用面必须同步纳管其所在路由）。
 
 ## 留档
 

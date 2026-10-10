@@ -82,27 +82,27 @@ export default function StatsPage() {
           <section id="overview" className="detail__section">
             <h2 className="detail__section-title">总览</h2>
             <dl className="metrics">
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">项目总数</dt>
                 <dd className="metrics__value">{stats.projectCount}</dd>
               </div>
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">主线作品</dt>
                 <dd className="metrics__value">{stats.featuredCount}</dd>
               </div>
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">类型数</dt>
                 <dd className="metrics__value">{stats.typeCounts.length}</dd>
               </div>
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">领域数</dt>
                 <dd className="metrics__value">{stats.domainCounts.length}</dd>
               </div>
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">最近推送</dt>
                 <dd className="metrics__value">{stats.latestPush?.slice(0, 10) ?? '—'}</dd>
               </div>
-              <div className="metrics__item">
+              <div className="metrics__item" data-spotlight="soft">
                 <dt className="metrics__key">最早推送</dt>
                 <dd className="metrics__value">{stats.earliestPush?.slice(0, 10) ?? '—'}</dd>
               </div>

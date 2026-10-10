@@ -27,7 +27,7 @@ export function Hero({ displayName, tagline, hasFeatured = false }: HeroProps) {
     <section id="top" className="hero">
       <HeroPositionMap />
       <div className="container hero__inner">
-        <p className="hero__eyebrow">{PROFILE_ROLE}</p>
+        <p className="hero__eyebrow" data-spotlight="micro">{PROFILE_ROLE}</p>
         <h1 className="hero__title">{displayName}</h1>
         <p className="hero__tagline prose">{tagline}</p>
         <ul className="hero__actions">

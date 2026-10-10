@@ -50,7 +50,7 @@ export default function AboutPage() {
             <h2 className="detail__section-title">技术画像</h2>
             <p className="detail__lead prose">{PROFILE_LEAD}</p>
 
-            <ul className="threads">
+            <ul className="threads" data-spotlight="base">
               <li className="threads__item">
                 <span className="threads__key">定位</span>
                 <span className="threads__val">{PROFILE_ROLE}</span>
@@ -75,7 +75,7 @@ export default function AboutPage() {
             <h2 className="detail__section-title">近期在做</h2>
             {/* 图形化编排：左侧一条贯穿的强调轨把三条串成「并行推进中」的一条带，
                 ⛔ 不是三个并列的项目符号 —— 形状本身表达了「同一时期、三条线」。 */}
-            <ul className="threads threads--rail">
+            <ul className="threads threads--rail" data-spotlight="base">
               {PROFILE_WORKING_ON.map((item, index) => (
                 <li className="threads__item" key={item}>
                   <span className="threads__mark" aria-hidden="true">
@@ -95,7 +95,7 @@ export default function AboutPage() {
                   <h3 className="about__label">{group.label}</h3>
                   <ul className="taglist">
                     {group.items.map((item) => (
-                      <li className="chip" key={item}>
+                      <li className="chip" data-spotlight="micro" key={item}>
                         {item}
                       </li>
                     ))}
@@ -117,7 +117,7 @@ export default function AboutPage() {
                   <h3 className="about__label">{group.label}</h3>
                   <ul className="taglist">
                     {group.items.map((item) => (
-                      <li className="chip" key={item}>
+                      <li className="chip" data-spotlight="micro" key={item}>
                         {item}
                       </li>
                     ))}
@@ -192,13 +192,13 @@ export default function AboutPage() {
             <h2 className="detail__section-title">联系</h2>
             <ul className="contact__list">
               <li>
-                <a className="contact__link" href={`mailto:${siteConfig.contact_email}`}>
+                <a className="contact__link" data-spotlight="soft" href={`mailto:${siteConfig.contact_email}`}>
                   <span className="contact__k">邮箱</span>
                   <span className="contact__v">{siteConfig.contact_email}</span>
                 </a>
               </li>
               <li>
-                <a className="contact__link" href={github} rel="noopener noreferrer" target="_blank">
+                <a className="contact__link" data-spotlight="soft" href={github} rel="noopener noreferrer" target="_blank">
                   <span className="contact__k">GitHub</span>
                   <span className="contact__v">{github.replace(/^https?:\/\//, '')}</span>
                 </a>

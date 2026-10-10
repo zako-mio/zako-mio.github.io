@@ -72,9 +72,9 @@ export function ProjectCard({
     >
       <div className="card__body">
         <ul className="card__tags">
-          <li className="chip chip--type">{typeLabel}</li>
+          <li className="chip chip--type" data-spotlight="micro">{typeLabel}</li>
           {domainLabels.map((label) => (
-            <li className="chip" key={label}>
+            <li className="chip" data-spotlight="micro" key={label}>
               {label}
             </li>
           ))}
@@ -96,7 +96,7 @@ export function ProjectCard({
             <span aria-label={`${project.stars} stars`}>★ {project.stars}</span>
           ) : null}
           {!project.has_pages ? (
-            <span className="chip chip--warning" title="未启用 GitHub Pages，仅提供仓库入口">
+            <span className="chip chip--warning" data-spotlight="micro" title="未启用 GitHub Pages，仅提供仓库入口">
               仅仓库
             </span>
           ) : null}

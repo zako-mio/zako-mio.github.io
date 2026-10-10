@@ -16,7 +16,7 @@ export interface DisclosureProps {
  */
 export function Disclosure({ summary, children, defaultOpen = false, hint }: DisclosureProps) {
   return (
-    <details className="disclosure" open={defaultOpen}>
+    <details className="disclosure" data-spotlight="soft" open={defaultOpen}>
       <summary className="disclosure__summary">
         <span className="disclosure__title">{summary}</span>
         {hint ? <span className="disclosure__hint">{hint}</span> : null}

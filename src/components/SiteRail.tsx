@@ -100,7 +100,7 @@ export function SiteRail({ displayName, github }: SiteRailProps) {
         <p className="rail__label">关注方向</p>
         <ul className="rail__glossary">
           {PROFILE_FOCUS.map((item) => (
-            <li className="chip" key={item}>
+            <li className="chip" data-spotlight="micro" key={item}>
               {item}
             </li>
           ))}
