@@ -23,6 +23,12 @@ export default function WorksPage() {
           </p>
         </header>
 
+        {/* ★ 批十五 C1：A1 把本页标题由 h2 改为 h1 后，卡片标题仍是 h3 ⇒
+           h1→h3 **跳级**（缺 h2）。此处补一个**视觉隐藏**的 h2 作为作品集合的语义标题，
+           恢复 h1→h2→h3 的正确层级（`sr-only`：不改变观感，仅服务屏幕阅读器/辅助技术）。
+           ⛔ 不把 `ProjectCard` 的 h3 改成 h2 —— 它同时用于首页与详情页，那里 h2→h3 本就正确。 */}
+        <h2 className="sr-only">全部作品</h2>
+
         {ok && projects.length > 0 ? (
           <WorksExplorer projects={projects} range={recencyRangeOf(projects)} />
         ) : (
