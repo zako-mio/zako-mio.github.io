@@ -7,7 +7,10 @@
   S3  IA-3 五个路由的产物齐备（`/` `/works` `/stats` `/about` `/works/<name>`×N）
   S4  `projects.json` 里每个项目都有一个站内详情页产物（**计数 == 枚举**）
   S5  每页含 `<title>` 且非空
-  S6  **无 JS 可读**：剥掉 script/style 后，每页可见文字 ≥ 200 字符
+  S6  **无 JS 可读**：① 剥掉 script/style 后，每页可见文字 ≥ 200 字符；
+      ② ★（批十五 W2-②）**凡声明了术语解释层**（`.term__def`）的页面，其定义文本必须在
+      原始 HTML 里（⛔ 不靠 JS 注入）。②与 `term_layer_probe` 的 `T6` **共用同一实现**
+      （`scripts/probes/no_js_readable.py`，单一真相源）—— ⛔ 两处不各写一份。
   S7  **主题防闪烁脚本**内联在 HTML 中（每页 1 处）
   S8  **三态**选择器在 CSS 产物中存在（`[data-theme=dark]` 与 `[data-theme=light]` 分支）
   S9  卡片嵌套交互契约：整卡拉伸层（`.card__title a::after{inset}`）与「页脚外链抬升」
@@ -34,15 +37,12 @@ DATA = ROOT / "src/data/projects.json"
 OVERRIDES = ROOT / "src/data/overrides.json"
 CSS_NAME = "_next"
 
+# ★ 批十五 W2-②：「无 JS 可读」的实现只留一份（单一真相源），门控与探针共用。
+sys.path.insert(0, str(Path(__file__).resolve().parent / "probes"))
+from no_js_readable import term_panels_no_js_problems, visible_chars  # noqa: E402
+
 REQUIRED_FILES = [".nojekyll", "404.html", "favicon.svg", "robots.txt"]
 VISIBLE_MIN = 200
-
-
-def strip_markup(html: str) -> str:
-    text = re.sub(r"<script.*?</script>", " ", html, flags=re.S | re.I)
-    text = re.sub(r"<style.*?</style>", " ", text, flags=re.S | re.I)
-    text = re.sub(r"<[^>]+>", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
 
 
 def collect(out_dir: Path) -> dict[str, str]:
@@ -100,14 +100,17 @@ def run(out_dir: Path = OUT) -> bool:
     bad_title = [name for name, html in pages.items() if not re.search(r"<title>[^<]+</title>", html)]
     check("S5", not bad_title, "每页均含非空 <title>" if not bad_title else f"缺标题: {bad_title}")
 
-    thin = {name: len(strip_markup(html)) for name, html in pages.items()}
+    thin = {name: visible_chars(html) for name, html in pages.items()}
     thin_pages = {name: size for name, size in thin.items() if size < VISIBLE_MIN}
     thinnest = min(thin.values()) if thin else 0
+    # ★ 批十五 W2-②：术语面板必须落在**原始 HTML**（与 term_layer_probe.T6 共用实现）。
+    term_problems = term_panels_no_js_problems(pages)
     check(
         "S6",
-        not thin_pages,
+        not thin_pages and not term_problems,
         f"无 JS 可见文字最少 {thinnest} 字符（阈值 {VISIBLE_MIN}）"
-        + (f" · 过薄: {thin_pages}" if thin_pages else ""),
+        + (f" · 过薄: {thin_pages}" if thin_pages else "")
+        + (f" · 术语面板未入原始 HTML: {term_problems}" if term_problems else ""),
     )
 
     no_script = [name for name, html in pages.items() if "ui-theme" not in html]
@@ -251,6 +254,26 @@ def selftest() -> int:
         print(f"    [{'PASS' if got == expect else 'FAIL'}] {name}（判据={got} 期望={expect}）")
 
     passed = real and not broken and all(s9_results)
+
+    # ★ S6 术语面板分支的定向夹具（与 term_layer_probe.T6 共用实现；逐臂对准）
+    print("\n  -- S6 无 JS 可读（术语面板分支）定向夹具 --")
+    s6_cases: list[tuple[str, dict[str, str], bool]] = [
+        ("基线：面板含非空定义 ⇒ 无问题",
+         {"a.html": '<span class="term__def"><span class="term__body">图论分层（最长路径）：把图按依赖关系一层层排开后，最长那条依赖链的层数。</span></span>'}, True),
+        ("负向夹具：面板定义为空 ⇒ 报问题",
+         {"a.html": '<span class="term__def"><span class="term__body"></span></span>'}, False),
+        ("负向夹具：声明了 .term__def 但无定义子节点 ⇒ 报问题",
+         {"a.html": '<span class="term__def" id="g1"></span>'}, False),
+        ("不适用：页面无术语面板 ⇒ 不报问题",
+         {"a.html": "<div>没有术语面板的普通页面</div>"}, True),
+    ]
+    s6_results: list[bool] = []
+    for name, pages_case, expect_clean in s6_cases:
+        got_clean = not term_panels_no_js_problems(pages_case)
+        s6_results.append(got_clean == expect_clean)
+        print(f"    [{'PASS' if got_clean == expect_clean else 'FAIL'}] {name}（无问题={got_clean} 期望={expect_clean}）")
+
+    passed = passed and all(s6_results)
     print("  SELFTEST:", "PASS" if passed else "FAIL")
     return 0 if passed else 1
 

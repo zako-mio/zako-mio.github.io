@@ -17,38 +17,20 @@
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 import urllib.request
+
+from no_js_readable import raw_html_has_definition  # 共享实现（单一真相源，见该模块 docstring）
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 FAILS: list[str] = []
-_TAG = re.compile(r"<[^>]+>")
 
 
 def chk(name: str, ok: bool, detail: str = "") -> None:
     print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" :: {detail}" if detail else ""))
     if not ok:
         FAILS.append(name)
-
-
-# ───────────────────────── T6：无 JS 可读（纯 HTTP，⛔ 不进浏览器） ─────────────────────────
-
-def raw_html_has_definition(html: str, min_len: int = 20) -> bool:
-    """原始 HTML 里是否存在**非空**的定义文本（`.term__body`，且其宿主面板 `.term__def` 也在）。
-
-    ⚠ 判据对象＝**产物真实书写形态**：面板出来是
-      `<span class="term__def" …><span class="term__name">…</span><span class="term__body">定义</span>…</span>`
-      ⇒ 直接锚 `term__body`（⛔ 不要按「几个连续 `</span>`」猜结尾 —— 第一版就这么写错了）。
-    ⛔ 不走浏览器：一旦由 JS 注入，禁用 JS 的读者就看不到 —— 本判据正是要证明「不靠 JS」。
-    """
-    if 'class="term__def"' not in html:
-        return False
-    for m in re.finditer(r'<span class="term__body">(.*?)</span>', html, re.S):
-        if len(_TAG.sub("", m.group(1)).strip()) >= min_len:
-            return True
-    return False
 
 
 # ───────────────────────── T1–T5：浏览器行为 ─────────────────────────
