@@ -66,6 +66,7 @@ export function ProjectCard({
   return (
     <article
       className="card"
+      data-spotlight="base"
       data-reveal={reveal ? '' : undefined}
       style={reveal ? ({ '--i': index } as CSSProperties) : undefined}
     >

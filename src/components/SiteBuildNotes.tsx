@@ -31,7 +31,7 @@ export function SiteBuildNotes() {
 
         {/* ★ 结构优先：这条链是「源 → 管道 → 产物 → 呈现」的有向链，
             链式结构的正确表达是图，⛔ 不是又一段分点文字。图只写角色与流向，不写计数。 */}
-        <figure className="figure">
+        <figure className="figure" data-spotlight="base">
           <div className="figure__frame">
             <StructureFigure />
           </div>

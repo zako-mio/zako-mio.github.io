@@ -13,10 +13,20 @@
   C2 空集守卫：每条登记的「去伪类基选择器」必须在该**全量产物**（out 下所有页面）里至少命中 1 个元素
                ⇒ 防登记表随改名/删除而**静默腐化**（⛔ 不得静默跳过）
   C3 覆盖率契约：kind ∈ {self, container} 必须声明 coverage_min ≥ 0.98；
-               若 status == "rework"（已知缺陷）则允许低于契约，但**必须**带 deadzone_note + expires_at，
-               且本条判 WARN（⛔ 到期未处理应升级为 FAIL；降级须预登记）
+                若 status == "rework"（已知缺陷）则允许低于契约，但**必须**带 deadzone_note + expires_at，
+                且本条判 WARN（⛔ 到期未处理应升级为 FAIL；降级须预登记）
   C4 焦点等价：kind ∈ {self, container} 必须有焦点等价面（`focus_equivalent` 指向真实存在的焦点规则，
-               或显式 `:focus-visible` 全局环）；container 缺失且未登记 rework ⇒ FAIL
+                或显式 `:focus-visible` 全局环）；container 缺失且未登记 rework ⇒ FAIL
+
+  ★ 批十三新增 kind=decor（装饰性反射面）：
+    放宽（**用户裁决** 2026-10-10：V1「所有带边框/圆角容器统一加指针特效」与本站
+    「悬停反馈面 ≡ 点击热区」判据互锁 ⇒ 裁决走「新增 kind ＋ 更严替代判据」）：
+      · C3 覆盖率契约**不适用**（装饰层不暗示可点击，无「反馈面 > 热区」的假可供性问题）；
+      · C4 焦点等价**不适用**（装饰层无「键盘用户看不到鼠标看到的反馈」这一信息等价问题）。
+    ⛔ 但**不**放宽：C1 双向闭合 / C2 空集守卫 照旧适用（装饰面同样不得漏登记、不得腐化）。
+    替代判据在浏览器层（`surface_hit_probe.py` 的 decor 分支）：D1 cursor 语义不得变为 pointer；
+    D2 面内**含交互目标** ⇒ 回退按 container 口径判覆盖率（⛔ 防「用 decor 盖章逃过覆盖率」）。
+
 
 判据自身的不覆盖面（⛔ 不得把「零命中」读成「无消费方」）：
   · 真实覆盖率（面积比）须浏览器实测 ⇒ 本门控只校验**契约是否被声明且未腐化**；
@@ -45,8 +55,11 @@ CSS_PATH = ROOT / "src/app/globals.css"
 TABLE_PATH = ROOT / "scripts/interaction-surfaces.json"
 OUT_DIR = ROOT / "out"
 
-VALID_KINDS = {"self", "descendant", "container"}
+VALID_KINDS = {"self", "descendant", "container", "decor"}
 VALID_STATUS = {"ok", "rework"}
+
+# C3/C4 只适用于「反馈面」类；decor 是装饰性反射面（批十三），两条均不适用。
+FEEDBACK_KINDS = {"self", "container"}
 
 
 # ───────────────────────────── 解析 ─────────────────────────────
@@ -97,11 +110,22 @@ def last_compound(sel: str) -> str:
 # ───────────────────────── 产物元素索引 ─────────────────────────
 
 TAG_RE = re.compile(r"<([a-zA-Z][\w-]*)\b([^>]*)>")
+ATTR_RE = re.compile(r"([a-zA-Z_:][\w:.-]*)(?:\s*=\s*(?:\"[^\"]*\"|'[^']*'|[^\s>]+))?")
 
 
-def out_elements(out_dir: Path) -> list[tuple[str, set[str]]]:
-    """扫**全量**产物页面（⛔ 不用委派清单，覆盖同类项全集），返回 [(tag, {class})]。"""
-    elements: list[tuple[str, set[str]]] = []
+def attr_names(attrs: str) -> set[str]:
+    """取该标签**出现过的属性名**集合（含无值属性）。
+
+    ★ 批十三：C2 的空集守卫原本只看 tag/class，于是 `[data-spotlight]`（属性选择器）
+      永远零命中 ⇒ 会产出**假 FAIL**。本函数把「属性存在性」纳入可判面，
+      与 compound_hits 的 `[attr]` 分支配套。
+    """
+    return {m.group(1).lower() for m in ATTR_RE.finditer(attrs)}
+
+
+def out_elements(out_dir: Path) -> list[tuple[str, set[str], set[str]]]:
+    """扫**全量**产物页面（⛔ 不用委派清单，覆盖同类项全集），返回 [(tag, {class}, {attr})]。"""
+    elements: list[tuple[str, set[str], set[str]]] = []
     if not out_dir.exists():
         return elements
     for page in sorted(out_dir.rglob("*.html")):
@@ -111,32 +135,39 @@ def out_elements(out_dir: Path) -> list[tuple[str, set[str]]]:
             attrs = match.group(2)
             cls = re.search(r'class="([^"]*)"', attrs)
             classes = set(cls.group(1).split()) if cls else set()
-            elements.append((tag, classes))
+            elements.append((tag, classes, attr_names(attrs)))
     return elements
 
 
-def compound_hits(elements: list[tuple[str, set[str]]], compound: str) -> int:
-    """统计复合选择器（tag + .class 串）在元素集合里的命中数。
+def compound_hits(elements: list[tuple[str, set[str], set[str]]], compound: str) -> int:
+    """统计复合选择器在元素集合里的命中数。
 
-    支持形式：`tag` / `.a` / `tag.a` / `.a.b`。⛔ 不支持属性/伪类/后代。
+    支持形式：`tag` / `.a` / `tag.a` / `.a.b` / `[attr]` / `tag[attr]`。
+    ⛔ 不支持伪类/伪元素/后代组合（本门控不做 DOM 求值）。
     """
     if not compound:
         return 0
     tag_part = ""
     classes: list[str] = []
-    for token in re.findall(r"^[a-zA-Z][\w-]*|\.[\w-]+", compound):
+    attrs: list[str] = []
+    for token in re.findall(r"^[a-zA-Z][\w-]*|\.[\w-]+|\[[\w:.-]+\]", compound):
         if token.startswith("."):
             classes.append(token[1:])
+        elif token.startswith("["):
+            attrs.append(token[1:-1].lower())
         else:
             tag_part = token.lower()
-    if not tag_part and not classes:
+    if not tag_part and not classes and not attrs:
         return 0
     hits = 0
-    for tag, cls in elements:
+    for tag, cls, attr in elements:
         if tag_part and tag != tag_part:
             continue
-        if all(c in cls for c in classes):
-            hits += 1
+        if not all(c in cls for c in classes):
+            continue
+        if not all(a in attr for a in attrs):
+            continue
+        hits += 1
     return hits
 
 
@@ -202,7 +233,12 @@ def run(css_path: Path, table_path: Path, out_dir: Path) -> tuple[bool, list[str
         # ---- C3 覆盖率契约
         # ⚠ 以 `status` 为**唯一裁决字段**（第一版以 coverage_min 触发，导致
         #   coverage_min=0.98 的 rework 条目被整段跳过、静默漏登记 ⇒ 已修）。
-        if kind in {"self", "container"}:
+        if kind == "decor":
+            # ★ 批十三：装饰性反射面 ⇒ C3/C4 不适用（放宽依据＝用户裁决，见模块 docstring）。
+            #   ⛔ 打印出来，避免「豁免」变成静默行为；替代判据 D1/D2 在浏览器层。
+            print(f"  [PASS] `{sel}` decor ⇒ C3 覆盖率 / C4 焦点等价**不适用**；"
+                  f"替代判据＝探针 D1(cursor) + D2(含交互目标者回退按 container 口径)")
+        elif kind in FEEDBACK_KINDS:
             cov = entry.get("coverage_min")
             if status == "rework":
                 has_meta = bool(entry.get("deadzone_note")) and bool(entry.get("expires_at"))
@@ -222,7 +258,7 @@ def run(css_path: Path, table_path: Path, out_dir: Path) -> tuple[bool, list[str
                 findings.append(f"C3 `{sel}` coverage_min 不合契约")
 
         # ---- C4 焦点等价
-        if kind in {"self", "container"}:
+        if kind in FEEDBACK_KINDS:
             fe = entry.get("focus_equivalent")
             if fe == ":focus-visible":
                 if ":focus-visible" not in css_focus:
@@ -346,6 +382,30 @@ def selftest() -> int:
                         [{**ok_entry, "focus_equivalent": None}], html)
         ok, _ = run(*g)
         cases.append(("负向夹具5：缺焦点等价面（期望 FAIL）", not ok))
+
+        # ★ 批十三 新增判据（decor kind ＋ 属性选择器 C2）的负向/对照夹具
+        decor_entry = {
+            "selector": "[data-spotlight]:hover::before", "kind": "decor",
+            "hotspot": "[data-spotlight]", "coverage_min": None,
+            "focus_equivalent": None, "status": "ok", "reason": "夹具",
+        }
+        css_decor = FIXTURE_CSS_OK + (
+            "\n@media (hover: hover) {\n  [data-spotlight]:hover::before { opacity: 1; }\n}\n")
+        html_decor = html + '<article class="card" data-spotlight="base"><a href="/z">x</a></article>'
+        h = _mk_fixture(tmp / "decor-ok", css_decor, [ok_entry, decor_entry], html_decor)
+        ok, _ = run(*h)
+        cases.append(("★批十三 对照臂：decor 豁免 C3/C4 ＋ 属性选择器 hotspot 可命中（期望 PASS）", ok))
+
+        # 负向夹具 6：登记了装饰面，但产物里**没有** `[data-spotlight]` 元素（登记表腐化）
+        #   ⇒ 判据须靠**属性存在性**抓住它（改前 compound_hits 不认属性 ⇒ 此处会假 PASS）
+        i = _mk_fixture(tmp / "decor-rot", css_decor, [ok_entry, decor_entry], html)
+        ok, _ = run(*i)
+        cases.append(("★批十三 负向夹具6：产物无 `[data-spotlight]` ⇒ 属性探针零命中（期望 FAIL）", not ok))
+
+        # 负向夹具 7：decor 无法成为「万能逃生门」—— 幽灵登记（CSS 里没有该装饰规则）仍须 FAIL
+        j = _mk_fixture(tmp / "decor-ghost", FIXTURE_CSS_OK, [ok_entry, decor_entry], html_decor)
+        ok, _ = run(*j)
+        cases.append(("★批十三 负向夹具7：decor 幽灵登记（CSS 无对应规则）（期望 FAIL）", not ok))
 
     print("\n== selftest ==")
     for name, passed in cases:

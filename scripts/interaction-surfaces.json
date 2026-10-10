@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "note": "交互作用面声明表（治理层·批七；批八按裁决①收口）。它是「悬停/焦点反馈面」与「点击热区」关系的**单一真相源**：globals.css 里每一条含 :hover / :focus-within 的选择器都必须在此登记（双向闭合，漏登记/幽灵登记 = FAIL）。kind 定义：self=元素自身即交互目标；descendant=某交互目标的后代装饰件（判据须上溯最近交互祖先）；container=非交互容器（其反馈面 > 热区即真缺陷）。status=ok 表示反馈面≡热区；status=rework 表示已知缺陷、已登记死区与到期条件，判据对本条只 WARN（⛔ 到期未处理须升级为 FAIL）。★ 第八批：全站 :hover 规则已统一包进 `@media (hover: hover)`（触屏不依赖 hover）；`:focus-within` / `:focus-visible` 等价面**不进**该门控。",
+  "note": "交互作用面声明表（治理层·批七；批八按裁决①收口；批十三新增 decor）。它是「悬停/焦点反馈面」与「点击热区」关系的**单一真相源**：globals.css 里每一条含 :hover / :focus-within 的选择器都必须在此登记（双向闭合，漏登记/幽灵登记 = FAIL）。kind 定义：self=元素自身即交互目标；descendant=某交互目标的后代装饰件（判据须上溯最近交互祖先）；container=非交互容器（其反馈面 > 热区即真缺陷）；★ 批十三新增 decor=**装饰性反射面**（指针跟随高光；它**不暗示可点击**，故不适用「反馈面≡热区」的覆盖率契约）。decor 的放宽是**用户裁决**（2026-10-10：V1「所有带边框/圆角容器统一」与本站「反馈面≡热区」判据互锁 → 裁决走「新增 kind ＋ 更严替代判据」），替代判据见 surface_hit_probe.py 的 decor 分支：D1 cursor 语义不得变为 pointer；D2 面内**含**交互目标 ⇒ 回退按 container 口径判覆盖率（⛔ 防用 decor 盖章逃过覆盖率）。status=ok 表示反馈面≡热区；status=rework 表示已知缺陷、已登记死区与到期条件，判据对本条只 WARN（⛔ 到期未处理须升级为 FAIL）。★ 第八批：全站 :hover 规则已统一包进 `@media (hover: hover)`（触屏不依赖 hover）；`:focus-within` / `:focus-visible` 等价面**不进**该门控。",
   "entries": [
     {
       "selector": "a:hover",
@@ -57,13 +57,13 @@
       "reason": "★ 第八批（裁决①）已修：主链接以 `.card__title a::after` 拉伸层铺满整卡 ⇒ 反馈面（整卡）≡ 热区；页脚外链（.card__links a，z-index:2）与拉伸层（z-index:1）同域抬升。批七实测 coverage 0.131 的假可供性已消除。"
     },
     {
-      "selector": ".card:hover::before",
-      "kind": "container",
-      "hotspot": ".card__title a",
-      "coverage_min": 0.98,
-      "focus_equivalent": ".card:focus-within::before",
+      "selector": "[data-spotlight]:hover::before",
+      "kind": "decor",
+      "hotspot": "[data-spotlight]",
+      "coverage_min": null,
+      "focus_equivalent": "[data-spotlight]:focus-within::before",
       "status": "ok",
-      "reason": "★ 第八批（裁决①）已修：指针跟随光斑的作用面=整卡，整卡现经拉伸层可点 ⇒ coverage ≡ 1。"
+      "reason": "★ 批十三（W1）新增：**指针跟随高光**（装饰性反射面），统一约定 `[data-spotlight]`，强度分层由 globals.css 的 `--spotlight-radius` / `--spotlight-opacity` 承担（base 320px/1 · soft 240px/0.55 · strong 440px/1）。它**取代**原 `.card:hover::before`（后者是本约定的首个实例，已并入本条）。kind=decor ⇒ 本层不暗示可点击 ⇒ 豁免 C3 覆盖率契约（放宽依据＝用户裁决 2026-10-10，见本表 note）；但**不放宽**：① 本条仍受 C1 双向闭合与 C2 空集守卫约束；② probe 的 D2 令**面内含交互目标者回退按 container 口径判覆盖率** —— `.card` 经 `.card__title a::after` 拉伸层可点，其覆盖率仍按 ≥0.98 判 ⇒ 统一选择器**不降低**既有件的严格度。"
     },
     {
       "selector": ".card:focus-within",
@@ -75,13 +75,13 @@
       "reason": "★ 第八批（裁决①）已修：键盘等价面与鼠标面同域，整卡可点后死区消除。"
     },
     {
-      "selector": ".card:focus-within::before",
-      "kind": "container",
-      "hotspot": ".card__title a",
-      "coverage_min": 0.98,
-      "focus_equivalent": ".card:focus-within::before",
+      "selector": "[data-spotlight]:focus-within::before",
+      "kind": "decor",
+      "hotspot": "[data-spotlight]",
+      "coverage_min": null,
+      "focus_equivalent": "[data-spotlight]:focus-within::before",
       "status": "ok",
-      "reason": "★ 第八批（裁决①）已修：光斑层的焦点等价面，同上。"
+      "reason": "★ 批十三（W1）：上条的**焦点等价面**（键盘用户与鼠标用户看到同一层高光，取同一组 `--spotlight-*` 令牌）。与 `:hover` 面**分列两条**是既有约定（第八批起：hover 面进 `@media (hover: hover)`，focus-within 面不进）。"
     },
     {
       "selector": ".card:hover .card__title a",
@@ -269,6 +269,8 @@
     "本表不判「可点目标是否**有** hover 反馈」（欠反馈方向）—— 该方向依赖对全部 <a>/<button> 的 DOM 关系求值，静态不可判，同样由 audit_site.py 的浏览器层承担。",
     "本表不判 `@media (hover: hover)` 门控是否**在触屏上真的生效** —— CI 无浏览器/触屏仿真，该面由 audit_site.py（提示词级）承担。",
     "本表不含 `.skip-link`：它是**键盘专用**的跳转链接（`:focus` 才显形）⇒ 有意不做 hover 反馈，不是欠反馈。",
-    "内置 :hover 的元素若未出现在 out/ 产物任何页面（如仅在他站使用的规则），其基选择器命中数可为 0 ⇒ 判据按「至少一个页面命中」判，不做全页面覆盖断言。"
+    "内置 :hover 的元素若未出现在 out/ 产物任何页面（如仅在他站使用的规则），其基选择器命中数可为 0 ⇒ 判据按「至少一个页面命中」判，不做全页面覆盖断言。",
+    "★ 批十三：新增的 `kind: \"decor\"`（装饰性反射面）只判 D1/D2 两条机检项（cursor 语义 / 含交互目标者回退判覆盖率）。其**观感**（高光强弱是否合适、在「框内含 SVG」的件上是否被内容挡住）**不由机检裁决** —— 属观感类，须人看对比件后裁决。",
+    "⚠ 本表的 `[data-spotlight]` 是一条**统一选择器覆盖多个实例**的登记：判据按 (selector) 聚合，故**同类项取最坏值**。这正是 D2（含交互目标者回退）存在的原因 —— 否则 `.figure` 的 0 覆盖会污染 `.card` 所在的整组。"
   ]
 }

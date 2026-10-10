@@ -170,6 +170,18 @@ jobs:
           python3 scripts/probes/reveal_nav_probe.py --selftest
           python3 scripts/probes/reveal_nav_probe.py
 
+      # Hero 交互保护（第十三批 W1）：`.hero__map` 由 `<svg>` 改为 HTML wrapper 后
+      # **参与命中测试**（原为 `pointer-events: none`）⇒ 结构上多了一个可能遮挡
+      # Hero 内可交互件（主 CTA / `#featured` 锚点）的大面。⛔ 不靠「预期安全」推断，
+      # 用 elementFromPoint 逐目标实测（H1 命中 / H2 不叠热区 / H3 断点 / H4 可被命中）。
+      - name: Hero hit-protection probe (W1 验收) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/hero_hit_probe.py --selftest --out "$RUNNER_TEMP/hero-hit"
+          python3 scripts/probes/hero_hit_probe.py --out "$RUNNER_TEMP/hero-hit"
+          echo "[artifact] $RUNNER_TEMP/hero-hit/hero-hit-report.md"
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5

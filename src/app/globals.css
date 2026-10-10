@@ -1545,6 +1545,19 @@ button.chip[aria-pressed='true'] {
      （实测：非 reduced-motion 下 top=239 而应为 59 —— 批八实测到的**既有**缺陷）。 */
   translate: 0 -50%;
   color: var(--text-secondary);
+  /* ★ 批十三 W1：本件已从 `<svg>` 改为 **HTML wrapper（div）**，故此处**不再**
+     `pointer-events: none` —— 指针必须命中到 wrapper，`closest('[data-spotlight]')` 才找得到它
+     （原值让指针根本命中不到，是三层阻断的第一层）。
+     ⚠ 代价：本层现在参与命中测试 ⇒ 必须实测「没有抢走其它交互」（Hero 有 CTA 与 `#featured` 锚点）。
+     实测项见本批验收：`batch13-evidence/` 的 hero-hit 取证。 */
+}
+
+/* 内部 SVG ⛔ 仍不吃指针：① 事件 target 恒为 wrapper（`closest()` 行为可预期）；
+   ② SVG 子形状（`<rect>`/`<text>`）不当成可选中/可命中的独立目标。 */
+.hero__map__svg {
+  display: block;
+  width: 100%;
+  height: auto;
   pointer-events: none;
 }
 
@@ -2508,6 +2521,9 @@ button.chip[disabled] {
 }
 
 .chart__frame {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block
+     （框在这一层，⛔ 不在 `.chart` 上 —— 见 §3.3-37） */
+  position: relative;
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
   padding: var(--space-3);
@@ -2742,6 +2758,8 @@ button.chip[disabled] {
    经 <title>/<desc> 拿到等价文本。 */
 
 .figure {
+  /* ★ 批十三 W1：作 `[data-spotlight]::before` 的 containing block */
+  position: relative;
   margin: 0;
   padding: var(--space-4);
   background: var(--surface-raised);
@@ -3164,16 +3182,42 @@ html.js-motion [data-reveal].is-in {
   }
 }
 
-/* 卡片指针跟随光斑：`--mx/--my` 由 MotionRuntime 的**单个**委托监听器写入。
-   ⛔ 只改 opacity 与一个背景位置；不进布局、不逐卡加监听器。
-   ⛔ 不引入任何新色值：高光用的就是品牌 tint 令牌。 */
-.card::before {
+/* ── 指针跟随高光（第十三批 W1）：统一约定 `[data-spotlight]` ＋ 强度分层 ──────
+   `--mx/--my` 由 MotionRuntime 的**单个**委托监听器写入（`closest('[data-spotlight]')`）。
+   ⛔ 只改 opacity 与一个背景位置；不进布局、⛔ 不逐件加监听器。
+   ⛔ 不引入任何新色值：高光用的就是品牌 tint 令牌（`--brand-tint`）。
+
+   ★ 定性（用户裁决 2026-10-10 · V1 ＋ 批十三治理裁决）：本层是**装饰性反射面**，
+     ⛔ 不是「悬停反馈面」——它不暗示可点击。故在 `scripts/interaction-surfaces.json`
+     里按新增的 `kind: "decor"` 登记（未登记即 FAIL，⛔ 无逃生门）。
+     ⚠ 但**面内含交互目标者**（如 `.card` 经 `.card__title a::after` 拉伸层可点）
+     判据回退按 `container` 口径判覆盖率（见 `surface_hit_probe.py` 的 decor 分支）
+     ⇒ 统一选择器**不降低**既有件的严格度。
+   ⛔ 两道熔断（`prefers-reduced-motion` 与 `[data-motion='off']`）一字不改。 */
+[data-spotlight] {
+  --spotlight-radius: 320px;
+  --spotlight-opacity: 1;
+}
+
+/* 强度分层（半径 / 不透明度）。⛔ 只有这三档；新增档须同步改
+   `scripts/interaction-surfaces.json` 与探针白名单，避免出现「无判据的档」。 */
+[data-spotlight='soft'] {
+  --spotlight-radius: 240px;
+  --spotlight-opacity: 0.55;
+}
+
+[data-spotlight='strong'] {
+  --spotlight-radius: 440px;
+  --spotlight-opacity: 1;
+}
+
+[data-spotlight]::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: radial-gradient(
-    320px circle at var(--mx, 50%) var(--my, 0%),
+    var(--spotlight-radius) circle at var(--mx, 50%) var(--my, 0%),
     var(--brand-tint),
     transparent 62%
   );
@@ -3182,23 +3226,23 @@ html.js-motion [data-reveal].is-in {
   pointer-events: none;
 }
 
-.card:focus-within::before {
-  opacity: 1;
+[data-spotlight]:focus-within::before {
+  opacity: var(--spotlight-opacity);
 }
 
 @media (hover: hover) {
-  .card:hover::before {
-    opacity: 1;
+  [data-spotlight]:hover::before {
+    opacity: var(--spotlight-opacity);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root:not([data-motion='on']) .card::before {
+  :root:not([data-motion='on']) [data-spotlight]::before {
     display: none;
   }
 }
 
-:root[data-motion='off'] .card::before {
+:root[data-motion='off'] [data-spotlight]::before {
   display: none;
 }
 

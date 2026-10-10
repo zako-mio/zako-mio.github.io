@@ -79,12 +79,30 @@ python3 scripts/gate_motion_budget.py --selftest
 |---|---|
 | `C1` 双向闭合 | `globals.css` 的 `:hover`/`:focus-within` 规则集合 ⟺ `scripts/interaction-surfaces.json`（漏登记 / 幽灵登记 ⇒ FAIL） |
 | `C2` 空集守卫 | 每条登记的「去伪类基选择器」必须在 **out/ 全量产物**里命中 ≥1（防登记表静默腐化） |
-| `C3` 覆盖率契约 | `kind ∈ {self, container}` 必须声明 `coverage_min ≥ 0.98`；已知缺陷可登记为 `status: rework`（须带 `deadzone_note` + `expires_at`，只 WARN） |
+| `C3` 覆盖率契约 | `kind ∈ {self, container}` 必须声明 `coverage_min ≥ 0.98`；已知缺陷可登记为 `status: rework`（须带 `deadzone_note` + `expires_at`，只 WARN）。★ 批十三新增 `decor` ⇒ `C3`/`C4` **不适用**（见下） |
 | `C4` 焦点等价 | 有 hover 就必须有焦点等价面（WCAG 2.2 SC 1.4.13） |
 
 **对象必须分类**（第一版判据在此踩坑）：`self`（元素自身即交互目标）／
 `descendant`（某交互目标的后代装饰件，coverage=0 属正常，判据上溯最近交互祖先）／
-`container`（非交互容器 —— **只有这一类**的「反馈面 > 热区」才是真缺陷）。
+`container`（非交互容器 —— **只有这一类**的「反馈面 > 热区」才是真缺陷）／
+★ `decor`（**装饰性反射面**，第十三批新增 —— 指针跟随高光；它**不暗示可点击**，
+故「反馈面 ≡ 热区」的覆盖率契约对它**不成立**）。
+
+> ★★ **`decor` 为什么必须新开一类**（第十三批 · **用户裁决** 2026-10-10）：
+> 用户裁决 V1 要求「所有带边框/圆角容器**统一**」加指针特效，而本站既有判据要求
+> `container` 的「反馈面 ≡ 热区」⇒ **两者对无热区的纯展示件（`.figure` / `.chart__frame` /
+> `.hero__map`）互锁**：按 V1 施工，那些件必然被判「假可供性」FAIL。
+> 裁决走「**新增 kind ＋ 更严替代判据**」（⛔ 不是放宽——放宽的唯一合法路径是用户裁决＋更严替代）：
+> - 豁免：`C3` 覆盖率、`C4` 焦点等价（装饰层无「键盘看不到鼠标看到的反馈」这一信息等价问题）；
+> - **不放宽**：`C1` 双向闭合 / `C2` 空集守卫照旧（装饰面同样不得漏登记、不得腐化）；
+> - **替代判据**（`scripts/probes/surface_hit_probe.py` 的 `decor` 分支）：
+>   `D1` `cursor` 不得为 `pointer`（装饰面 ⛔ 不得用光标暗示可点击）；
+>   `D2` 面内（或元素自身）**含交互目标** ⇒ **回退**按 `self`/`container` 口径判覆盖率。
+> ⇒ `D2` 是「decor 不得成为逃生门」的机检保证：统一选择器 `[data-spotlight]` 下
+> `.card`（经拉伸层可点）与 `.figure`（不可点）**按实例分别判**，前者仍须 ≥0.98
+> ⇒ **统一选择器不降低既有件的严格度**。
+> 两边判据（门控 ＋ 探针）**同批改**且各带 `--selftest` 负向夹具（含「decor 面内含交互目标
+> 必须回退」与「产物无 `[data-spotlight]` ⇒ 属性探针零命中」两条）。
 
 ⚠ **声明的不覆盖面**：真实覆盖率（面积比）须浏览器实测，本门控只校验**契约是否被声明且未腐化**；
 「每个可点目标是否都有 hover 反馈」（欠反馈方向）静态亦不可判。两者由**行为口径**探针承担：
@@ -148,15 +166,17 @@ python3 scripts/gate_motion_budget.py --selftest
 | `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
+| `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中（带 `--selftest`） | 是 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
-- 五条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
+- 六条浏览器探针在 CI 里**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
   以 **rc=2** 退「用法错误」（⛔ 不读成判据 FAIL）。
 - ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
   归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
-  活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）是**仓库原生**。
+  活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）与
+  `hero_hit_probe.py`（第十三批）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
   否则 fail-closed。（同目录另两个 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
@@ -316,6 +336,26 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
      `--pointer-x/--pointer-y` 由 `MotionRuntime` 的**同一个**委托 listener 写入（⛔ 不新增监听器）。
   熔断：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下 `display:none`
   （前者以 `:not([data-motion='on'])` 限定 ⇒「动效开」可覆盖 OS）。
+- **元素级指针高光（第十三批 W1 · 统一约定 `[data-spotlight]`）**：批八起的「卡片指针跟随光斑」
+  此前**写死** `.card::before` ＋ `closest('.card')`；批十三把它抽成**全站统一约定**：
+  - **宿主**：任何**已定位**（`position != static`）的 HTML 元素挂 `data-spotlight="base|soft|strong"`；
+    强度分层由 `--spotlight-radius` / `--spotlight-opacity` 承担
+    （`base` 320px/1 · `soft` 240px/0.55 · `strong` 440px/1）。
+    ⛔ 新增档须同步 `scripts/interaction-surfaces.json` 与探针白名单，否则会出现「无判据的档」。
+  - **JS**：`MotionRuntime` 里**仍是同一个委托 listener**（`closest('[data-spotlight]')`、`passive: true`、
+    ⛔ 不逐件加监听器）。`closest()` 能**上溯** ⇒ SVG 子形状作 `event.target` 时也能找到 HTML 宿主。
+  - **CSS**：`[data-spotlight]::before` 通用规则；`::before` 位于**内容之下**（与 `.card` 同口径）
+    ⇒ 在「框内含不透明 SVG」的件上只在图件透明区/周边可见，⚠ **观感待裁决**（见「已知取舍」）。
+  - ★★ **三层独立阻断**（批十三源码级勘察）：`.hero__map` 一处就叠了三层 —— ① 原 `pointer-events: none`
+    ⇒ 指针**根本命中不到**；② **SVG 元素不能承载 CSS 伪元素** ⇒ `svg::before` 结构上不存在，
+    必须补 HTML wrapper；③ CSS/JS 的作用面 selector 写死 `.card`。
+    ⇒ 纪律：报「某特效没生效」时**先列全部可能阻断层**（命中测试／宿主能力／作用面选择器／层叠与 z-index），
+    逐层实测哪层先断，**修好一层必须重测**（后面的层可能仍在断）。
+  - **定性**：本层是 `decor`（装饰性反射面）⇒ 见上文「对象必须分类」的 `decor` 条。
+    ⛔ 两道熔断（`prefers-reduced-motion`（以 `:not([data-motion='on'])` 限定）与 `[data-motion='off']`）不动。
+  - `.hero__map` 的 wrapper 由 `<svg>` 改为 HTML 元素后**参与命中测试** ⇒ 同批新增
+    `scripts/probes/hero_hit_probe.py`（CI runtime 硬阻）实测「未抢走 Hero 内主 CTA 与 `#featured` 锚点」，
+    ⛔ 不靠「预期安全」推断。
 - **夜间星野特效（tsparticles，MIT）**：`preset-stars` + 本站覆盖项，**叠加**在银河照片之上。  懒加载（`next/dynamic({ssr:false})`）⇒ ⛔ 不进首屏 JS（实测 `/` 仍 106 kB，粒子独立分块 105 KB）。
   两条熔断**必须保留**：`prefers-reduced-motion: reduce` 与 `[data-motion='off']` 下**卸载画布**
   （浅色档同理：`display:none` 只是「不显示」，rAF 仍在算）。判据见
@@ -350,8 +390,20 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 - 静态导出 + 客户端筛选 ⇒ 首屏共享 JS 约 102 KB（React 运行时基线）。相比 v1 的 Astro（零 JS 基线）
   是本次换栈明确接受的成本；换来的是完整 React 生态的交互上限。
 - **CI 时长**：把浏览器层判据升为 runtime 硬阻后，构建作业多出「装 playwright ＋ chromium ＋
-  起静态服务 ＋ 跑五条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
+  起静态服务 ＋ 跑六条探针」一段（浏览器二进制有缓存但仍需 apt 依赖）。这是**有意接受**的成本 ——
   换来的是「提示词级（可绕）」→「runtime 硬阻（结构上做不成）」（落地形态强度阶梯）。
+- **W1 的 `decor` 定性是「治理选择」而非「技术必然」**（第十三批，2026-10-10 用户裁决）：
+  「所有带框容器统一加指针高光」（V1）与本站「悬停反馈面 ≡ 点击热区」判据**互锁**，
+  解法的代价是**判据面变化** —— 多了一个 `kind: decor`，并让 `surface_hit_probe` /
+  `gate_interaction_surface` 各带 `decor` 分支。两边**同批改**且都有 `--selftest` 负向夹具
+  （含「decor 面内含交互目标必须回退判覆盖率」，⛔ 防它成为逃生门）。
+- ⚠ **指针高光在「框内含不透明 SVG」的件上部分被内容遮挡**（`.figure` / `.chart__frame`）：
+  `::before` 按站点既有口径置于**内容之下**（与 `.card` 一致），故只在图件透明区/周边可见。
+  ⛔ **观感类未代决** —— 「是否改为置于内容之上（像一层玻璃反光）」须**先出对比预览件**再裁决。
+- ⚠ **既有 `[data-spotlight]` 作用面本轮只做 3 件试点**（`.figure` / `.chart__frame` / `.hero__map`
+  ＋ `.card` 迁移）。§4-W1 表里的其余件（`.mtable__scroll` / `.metrics__item` /
+  `.contact__link` / `.threads` / `.disclosure` / `.chip` / `.hero__eyebrow` / `.related__item`
+  / `.directory__item`）**尚未接入** ⇒ 现在**不是**「全站统一」，别按已完成读。
 
 ## 留档
 

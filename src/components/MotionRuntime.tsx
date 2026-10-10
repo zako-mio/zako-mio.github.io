@@ -70,12 +70,15 @@ export function MotionRuntime() {
           }
         }
         const target = event.target as Element | null;
-        const card = target?.closest?.('.card') as HTMLElement | null;
-        if (card !== current) current = card;
-        if (!card) return;
-        const rect = card.getBoundingClientRect();
-        card.style.setProperty('--mx', `${event.clientX - rect.left}px`);
-        card.style.setProperty('--my', `${event.clientY - rect.top}px`);
+        // ★ 批十三 W1：作用面从写死的 `.card` 泛化为统一约定 `[data-spotlight]`
+        //   （三层阻断的第三层）。**仍是同一个委托 listener**，⛔ 未逐件加监听器。
+        //   ⚠ `closest()` 能上溯：SVG 子形状（`<rect>`/`<text>`）作 target 时也能找到 HTML 宿主。
+        const spot = target?.closest?.('[data-spotlight]') as HTMLElement | null;
+        if (spot !== current) current = spot;
+        if (!spot) return;
+        const rect = spot.getBoundingClientRect();
+        spot.style.setProperty('--mx', `${event.clientX - rect.left}px`);
+        spot.style.setProperty('--my', `${event.clientY - rect.top}px`);
       };
       window.addEventListener('pointermove', onPointerMove, { passive: true });
     }

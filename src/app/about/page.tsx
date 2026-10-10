@@ -132,7 +132,7 @@ export default function AboutPage() {
 
             {/* ★ 四条原则的真实关系是**闭环**（口径错了要回炉、复盘产出下一轮口径）。
                 并列列表会把「环」讲成「清单」，信息被抹平 ⇒ 这里先出图，文字作展开。 */}
-            <figure className="figure">
+            <figure className="figure" data-spotlight="base">
               <div className="figure__frame">
                 <PracticeCycleFigure />
               </div>

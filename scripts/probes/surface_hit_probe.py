@@ -32,6 +32,16 @@
     kind=self       元素自身即交互目标            ⇒ hit_coverage 应 ≥ 0.98
     kind=descendant 某交互目标的后代装饰件        ⇒ 不适用（判据上溯最近交互祖先）
     kind=container  非交互容器                    ⇒ hit_coverage 应 ≥ 0.98
+    ★ 批十三新增 kind=decor 装饰性反射面（指针跟随高光）：
+        ⇒ 覆盖率**不适用**（装饰层不暗示可点击，无「反馈面 > 热区」的假可供性问题）
+        ⇒ 换两条**替代判据**：
+            D1 `cursor` 不得为 `pointer`（装饰面 ⛔ 不得用光标暗示可点击）；
+            D2 面内（或元素自身）**含交互目标** ⇒ **回退**按 self/container 口径判覆盖率
+               （⛔ 防「用 decor 盖章逃过覆盖率」；这条保证 `.card` 这类件的严格度不降）。
+        ⚠ 依据＝用户裁决 2026-10-10（V1「所有带边框/圆角容器统一加指针特效」与本站
+          「悬停反馈面 ≡ 点击热区」判据**互锁** ⇒ 裁决走「新增 kind ＋ 更严替代判据」）。
+          ⛔ 这不是本仪器单方面的放宽：`surface_hit_probe` 与 `gate_interaction_surface.py`
+          同批改，且两边都带 `--selftest` 负向夹具。
 
 ⚠ 取样面：11×11 网格；跳出该元素子树的点（卡片间空隙、越界）**不计入**分母，如实报出。
 
@@ -73,6 +83,45 @@ RUNS: list[tuple[str, str, dict]] = [
 ]
 
 INTERACTIVE = 'a, button, [role="button"], summary, input, select, textarea'
+
+ROOT = Path(__file__).resolve().parents[2]
+SURFACES_PATH = ROOT / "scripts/interaction-surfaces.json"
+
+
+def declared_kinds(path: Path = SURFACES_PATH) -> dict[str, str]:
+    """登记表（单一真相源）的 selector → kind 映射。
+
+    ⛔ 映射**缺失**时不放行 decor：未登记的 selector 一律按 DOM 推断的 self/container 判覆盖率
+    ⇒ decor 豁免**只能**由「登记在案」获得，不构成逃生门。
+    """
+    try:
+        table = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return {e["selector"]: e.get("kind", "") for e in table.get("entries", [])}
+
+
+def apply_declared_kind(rows: list[dict], declared: dict[str, str]) -> list[dict]:
+    """把登记表声明的 `decor` 落到**每条实例**上（D2 回退就在此处实现）。
+
+    D2：面内（或元素自身）含交互目标 ⇒ 回退按 self/container 口径判覆盖率。
+        ⛔ 这条是「decor 不得成为逃生门」的机检保证 —— 它让统一选择器
+        `[data-spotlight]` 下 `.card`（可点）与 `.figure`（不可点）分开判，
+        前者仍按 ≥0.98 判，不被后者的 0 覆盖污染。
+    """
+    for row in rows:
+        if declared.get(row["selector"]) != "decor":
+            continue
+        if row["kind"] == "descendant":
+            continue                      # 后代装饰件：判据上溯交互祖先，与 decor 无关
+        row["declared"] = "decor"
+        if row["selfInteractive"]:
+            row["kind"] = "self"          # D2：(a) 自身即可交互
+        elif row["hasInteractiveInside"]:
+            row["kind"] = "container"     # D2：(b) 面内含交互目标
+        else:
+            row["kind"] = "decor"         # 纯装饰 ⇒ 豁免覆盖率，改判 D1
+    return rows
 
 # ---------------------------------------------------------------- 1) 枚举反馈面
 
@@ -133,6 +182,11 @@ ENUM_JS = r"""
         tag: el.tagName.toLowerCase(),
         cls: (typeof el.className === 'string' ? el.className : ''),
         boxArea: Math.round(b.width * b.height),
+        // ★ 批十三：装饰面（decor）判据 D1/D2 的输入（样式已在上面取过）
+        cursor: st.cursor,
+        selfInteractive: isInteractive,
+        hasInteractiveInside: isInteractive
+          || !!el.querySelector('a, button, [role="button"], summary, input, select, textarea'),
       });
     }
   }
@@ -220,7 +274,7 @@ def resolve_base(cli_base: str | None) -> str:
     return cli_base or os.environ.get("SITE_BASE") or DEFAULT_BASE
 
 
-def measure(page) -> dict:
+def measure(page, declared: dict[str, str] | None = None) -> dict:
     page.wait_for_load_state("networkidle")
     page.wait_for_timeout(300)  # 让 hydration 落定，避免枚举后被 React 替换掉元素
     audit = page.evaluate(ENUM_JS)
@@ -230,6 +284,8 @@ def measure(page) -> dict:
         if row["id"] not in cache:
             cache[row["id"]] = page.evaluate(SAMPLE_JS, [row["id"], GRID])
         rows.append({**row, **cache[row["id"]]})
+    # ★ 批十三：登记表声明的 decor ⇒ 逐实例落到 kind 上（D2 回退）
+    rows = apply_declared_kind(rows, declared or {})
     return {"hoverSelectorCount": audit["hoverSelectorCount"], "rows": rows, "targets": audit["targets"]}
 
 
@@ -240,11 +296,15 @@ def aggregate(rows: list[dict]) -> list[dict]:
         g = groups.setdefault(
             (row["selector"], row["kind"]),
             {"selector": row["selector"], "kind": row["kind"], "instances": 0,
-             "coverages": [], "hot": 0, "considered": 0, "worst": None},
+             "coverages": [], "hot": 0, "considered": 0, "worst": None,
+             "pointer_cursor": 0},
         )
         g["instances"] += 1
         g["hot"] += row.get("hot") or 0
         g["considered"] += row.get("considered") or 0
+        # ★ 批十三 D1 的输入：装饰面的实例里有没有「cursor=pointer」
+        if row.get("cursor") == "pointer":
+            g["pointer_cursor"] += 1
         if row.get("error") or row.get("coverage") is None:
             continue
         g["coverages"].append(row["coverage"])
@@ -259,6 +319,9 @@ def aggregate(rows: list[dict]) -> list[dict]:
 def verdict(row: dict) -> str:
     if row["kind"] == "descendant":
         return "不适用（后代装饰件）"
+    if row["kind"] == "decor":
+        # ★ 批十三：装饰面豁免覆盖率判据，改判 D1（cursor 语义）
+        return "装饰面·豁免覆盖率" + ("｜⛔D1 cursor=pointer" if row.get("pointer_cursor") else "")
     c = row.get("min_coverage", row.get("coverage"))
     if c is None:
         return "SKIPPED（不可量测：静止态不进视口，聚焦后亦无有效点）"
@@ -271,6 +334,14 @@ def failures(agg: list[dict], run_failures_guard: bool = True) -> list[str]:
     bad = []
     for g in agg:
         if g["kind"] == "descendant":
+            continue
+        if g["kind"] == "decor":
+            # ★ 批十三 D1：装饰性反射面 ⛔ 不得用 `cursor: pointer` 暗示可点击。
+            #   （覆盖率对它不适用；但豁免**不等于**免检 —— 见 D2 已把「含交互目标者」
+            #    回退成 self/container，故此处只剩纯装饰实例。）
+            if g.get("pointer_cursor"):
+                bad.append(f'{g["selector"]} → decor/D1：cursor=pointer'
+                           f'（{g["pointer_cursor"]}/{g["instances"]} 实例；装饰面不得暗示可点击）')
             continue
         c = g["min_coverage"]
         if c is None:
@@ -298,6 +369,12 @@ SELFTEST_SETUP = r"""
     .st-stretched a::after { content: ''; position: absolute; inset: 0; z-index: 1; }
     .st-self:hover { color: red; }
     .st-link:hover svg { opacity: 1; }
+    /* ★ 批十三 decor 夹具 */
+    .st-decor:hover { outline: 1px solid red; }
+    .st-decor-bad:hover { outline: 1px solid red; }
+    .st-decor-hot:hover { outline: 1px solid red; }
+    .st-decor-hot a { display: block; width: 60px; height: 20px; }
+    .st-decor-hot a::after { content: ''; position: absolute; inset: 0; z-index: 1; }
   `;
   document.head.appendChild(style);
 
@@ -330,14 +407,35 @@ SELFTEST_SETUP = r"""
   a3.className = 'st-self'; a3.href = '#st3'; a3.textContent = 'self';
   a3.style.cssText = 'position:fixed;left:0;top:230px;width:100px;height:30px;z-index:9999;background:#333;';
   document.body.appendChild(a3);
+
+  // ★ 批十三 decor 三夹具（配合 SELFTEST_DECLARED 把这三条声明为 decor）
+  //   5) 纯装饰：无可交互目标、cursor 默认 ⇒ 应判 decor 且 D1 通过
+  const d5 = mk('st-decor', 200, 100, 280);
+  d5.textContent = 'decor';
+  //   6) 装饰 + cursor:pointer ⇒ 应判 decor 但 **D1 违规**
+  const d6 = mk('st-decor-bad', 200, 100, 400);
+  d6.style.cursor = 'pointer';
+  d6.textContent = 'decor-bad';
+  //   7) 声明为 decor，但面内含 stretched 链接 ⇒ **D2 回退**按 container 口径判覆盖率
+  const d7 = mk('st-decor-hot', 200, 100, 520);
+  const l7 = document.createElement('a');
+  l7.href = '#st7'; l7.textContent = 'x';
+  d7.appendChild(l7);
 }
 """
+
+# ★ 批十三：夹具用的「声明表」替身（模拟 interaction-surfaces.json 的 kind 声明）
+SELFTEST_DECLARED: dict[str, str] = {
+    ".st-decor:hover": "decor",
+    ".st-decor-bad:hover": "decor",
+    ".st-decor-hot:hover": "decor",
+}
 
 
 def selftest(page) -> list[dict]:
     page.evaluate(SELFTEST_SETUP)
     page.wait_for_timeout(200)
-    measured = measure(page)
+    measured = measure(page, SELFTEST_DECLARED)
     by_sel: dict[str, dict] = {}
     for row in measured["rows"]:
         by_sel.setdefault(row["selector"], row)
@@ -360,6 +458,22 @@ def selftest(page) -> list[dict]:
 
     r4 = by_sel.get(".st-link:hover svg")
     add("对照臂：链接内部的后代装饰件", r4 and r4["kind"] == "descendant", r4, "应判不适用（descendant）")
+
+    # ★ 批十三 decor 判据（D1/D2）的负向与对照夹具
+    r5 = by_sel.get(".st-decor:hover")
+    add("★批十三 对照臂：纯装饰面（无可交互目标，cursor 默认）",
+        r5 and r5["kind"] == "decor" and r5.get("cursor") != "pointer", r5,
+        "应判 decor、豁免覆盖率、D1 通过")
+
+    r6 = by_sel.get(".st-decor-bad:hover")
+    add("★批十三 负向夹具：装饰面 cursor:pointer",
+        r6 and r6["kind"] == "decor" and r6.get("cursor") == "pointer", r6,
+        "应判 decor **且** D1 违规（装饰面不得暗示可点击）")
+
+    r7 = by_sel.get(".st-decor-hot:hover")
+    add("★批十三 负向夹具：声明 decor 但面内含可交互目标",
+        r7 and r7["kind"] == "container", r7,
+        "应 D2 回退成 container（⛔ 防用 decor 盖章逃过覆盖率）")
     return checks
 
 
@@ -372,6 +486,13 @@ def main() -> int:
     args = ap.parse_args()
     base = resolve_base(args.base)
     args.out.mkdir(parents=True, exist_ok=True)
+    # ★ 批十三：登记表是 decor 声明的**单一真相源**。缺表 ⇒ declared={} ⇒ 无 decor 豁免。
+    declared = declared_kinds()
+    if declared:
+        n_decor = sum(1 for k in declared.values() if k == "decor")
+        print(f"[登记表] {SURFACES_PATH.name}：{len(declared)} 条选择器，其中 decor {n_decor} 条")
+    else:
+        print(f"[登记表] ⚠ 未读到 {SURFACES_PATH} ⇒ 本次**无 decor 豁免**（一律按覆盖率判）")
 
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -395,7 +516,7 @@ def main() -> int:
             page.goto(base + path, wait_until="networkidle")
             page.evaluate("(t) => document.documentElement.setAttribute('data-theme', t)", theme)
             page.wait_for_timeout(250)
-            measured = measure(page)
+            measured = measure(page, declared)
             page.close()
             agg = aggregate(measured["rows"])
             label = f"{path} · {theme} · {viewport['width']}px"

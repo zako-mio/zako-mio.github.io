@@ -19,66 +19,76 @@ import { PROFILE_FOCUS } from '@/lib/profile';
  *   ⇒ 隐藏它不造成信息丢失（这正是「图形化」而非「新信息」的必然结果）。
  * ★ 标签用**带底色的 chip**：① 可读性（不受背景细节影响）；② 连接线画在 chip **下层**，
  *   不会穿字（判据侧见 `batch6-evidence/verify_svg_layout.py` 的 S1）。
+ *
+ * ★ 第十三批（W1）：外包一层 HTML wrapper 承接指针高光。缘由是**三层独立阻断**（坑手册 b119/b120）：
+ *   ① SVG 元素**不能承载 CSS 伪元素** ⇒ `svg::before` 结构上不可能存在，必须另找宿主；
+ *   ② 原 `.hero__map` 带 `pointer-events: none` ⇒ 指针**根本命中不到**（`closest()` 永远返回 null）；
+ *   ③ 伪元素宿主必须是**已定位**（`position != static`）的 HTML 元素，`.hero__map` 的绝对定位
+ *      随之移到 wrapper 上（⛔ wrapper 的居中仍用独立的 `translate` 属性，见下方 CSS 注释）。
+ *   ⚠ 让 wrapper 接pointer-events 会改变命中测试 ⇒ 必须实测「没有抢走其它交互」（Hero 有 CTA 与
+ *      `#featured` 锚点），⛔ 不靠推断 —— 该实测是本批的验收项之一。
  */
 const LEFT = ['电商管理', '数据科学'];
 
 export function HeroPositionMap() {
   return (
-    <svg
-      className="hero__map"
-      viewBox="0 0 420 360"
-      role="img"
-      aria-labelledby="hero-map-title"
-      aria-describedby="hero-map-desc"
-      focusable="false"
-    >
-      <title id="hero-map-title">定位图</title>
-      <desc id="hero-map-desc">
-        由「{LEFT.join(' × ')}」复合背景汇聚，落到核心动作「端到端决策落地」，
-        再展开为三个聚焦方向：{PROFILE_FOCUS.slice(0, 3).join('、')}。
-      </desc>
+    <div className="hero__map" data-spotlight="soft">
+      <svg
+        className="hero__map__svg"
+        viewBox="0 0 420 360"
+        role="img"
+        aria-labelledby="hero-map-title"
+        aria-describedby="hero-map-desc"
+        focusable="false"
+      >
+        <title id="hero-map-title">定位图</title>
+        <desc id="hero-map-desc">
+          由「{LEFT.join(' × ')}」复合背景汇聚，落到核心动作「端到端决策落地」，
+          再展开为三个聚焦方向：{PROFILE_FOCUS.slice(0, 3).join('、')}。
+        </desc>
 
-      {/* 连接线在下层：chip 有实底 ⇒ 不会出现线穿字 */}
-      <g className="hm-edge">
-        <path d="M114 140 L140 166" />
-        <path d="M114 220 L140 194" />
-        <path d="M260 166 L288 84" />
-        <path d="M260 180 L288 180" />
-        <path d="M260 194 L288 276" />
-      </g>
+        {/* 连接线在下层：chip 有实底 ⇒ 不会出现线穿字 */}
+        <g className="hm-edge">
+          <path d="M114 140 L140 166" />
+          <path d="M114 220 L140 194" />
+          <path d="M260 166 L288 84" />
+          <path d="M260 180 L288 180" />
+          <path d="M260 194 L288 276" />
+        </g>
 
-      <g className="hm-chip">
-        <rect x="4" y="125" width="110" height="30" rx="9" />
-        <text x="59" y="140">
-          {LEFT[0]}
-        </text>
-        <rect x="4" y="205" width="110" height="30" rx="9" />
-        <text x="59" y="220">
-          {LEFT[1]}
-        </text>
-      </g>
+        <g className="hm-chip">
+          <rect x="4" y="125" width="110" height="30" rx="9" />
+          <text x="59" y="140">
+            {LEFT[0]}
+          </text>
+          <rect x="4" y="205" width="110" height="30" rx="9" />
+          <text x="59" y="220">
+            {LEFT[1]}
+          </text>
+        </g>
 
-      <g className="hm-chip hm-chip--core">
-        <rect x="140" y="157" width="120" height="46" rx="11" />
-        <text x="200" y="180">
-          端到端决策落地
-        </text>
-      </g>
+        <g className="hm-chip hm-chip--core">
+          <rect x="140" y="157" width="120" height="46" rx="11" />
+          <text x="200" y="180">
+            端到端决策落地
+          </text>
+        </g>
 
-      <g className="hm-chip">
-        <rect x="288" y="69" width="126" height="30" rx="9" />
-        <text x="351" y="84">
-          {PROFILE_FOCUS[0]}
-        </text>
-        <rect x="288" y="165" width="126" height="30" rx="9" />
-        <text x="351" y="180">
-          {PROFILE_FOCUS[1]}
-        </text>
-        <rect x="288" y="261" width="126" height="30" rx="9" />
-        <text x="351" y="276">
-          {PROFILE_FOCUS[2]}
-        </text>
-      </g>
-    </svg>
+        <g className="hm-chip">
+          <rect x="288" y="69" width="126" height="30" rx="9" />
+          <text x="351" y="84">
+            {PROFILE_FOCUS[0]}
+          </text>
+          <rect x="288" y="165" width="126" height="30" rx="9" />
+          <text x="351" y="180">
+            {PROFILE_FOCUS[1]}
+          </text>
+          <rect x="288" y="261" width="126" height="30" rx="9" />
+          <text x="351" y="276">
+            {PROFILE_FOCUS[2]}
+          </text>
+        </g>
+      </svg>
+    </div>
   );
 }
