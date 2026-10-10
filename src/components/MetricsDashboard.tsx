@@ -14,10 +14,12 @@ import {
 
 function Value({ value }: { value: number | null | undefined }) {
   if (value === null || value === undefined) {
+    // ★ 批十五 W2-①：把 `title`（MDN 明列 a11y/触屏缺陷）换成术语解释层（button ＋ aria-describedby）。
+    //   `className` 保留原 `mtable__na` 配色 ⇒ 观感不变，只换语义通道。
     return (
-      <span className="mtable__na" title="该 scope 无此项（E5：缺失留空，不等于 0）">
+      <Term id="missing" className="mtable__na">
         —
-      </span>
+      </Term>
     );
   }
   return <>{value.toLocaleString('en-US')}</>;
@@ -28,9 +30,10 @@ function ProjectCell({ entry, rowSpan }: { entry: MetricEntry; rowSpan: number }
     <th className="mtable__project" scope="row" rowSpan={rowSpan}>
       <Link href={`/works/${entry.name}`}>{entry.title ?? entry.name}</Link>
       <span className="mtable__meta">
-        <span className={`badge badge--level`} title={entry.collectability === 'A' ? '页面暴露结构化 JSON，可精确枚举' : '仅页面散文数字，经人工确认'}>
+        {/* ★ 批十五 W2-①：可采集性分级（A/B）由 `title` 换成解释层；`badge badge--level` 保外观。 */}
+        <Term id="collectability" className="badge badge--level">
           {entry.collectability ?? '?'}
-        </span>
+        </Term>
         {entry.version_self ? <span className="mtable__version">自称 {entry.version_self}</span> : null}
       </span>
     </th>

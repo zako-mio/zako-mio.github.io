@@ -7,6 +7,12 @@ export interface TermProps {
   id: string;
   /** 显示文本；缺省用词条本身的 `term`。 */
   children?: ReactNode;
+  /**
+   * 附加到**触发器** `<button>` 上的类名（批十五 W2-①）。
+   * ★ 用途＝**保持接线前的既有外观**（如可采集性徽标的 `badge badge--level`、
+   *   缺失值的 `mtable__na`）——接线只换语义通道（`title` → 解释层），⛔ 不改观感。
+   */
+  className?: string;
 }
 
 /**
@@ -30,12 +36,13 @@ export interface TermProps {
  *   ⚠ 面板默认 `display:none`，但 `aria-describedby` 对**被直接引用**的隐藏节点仍参与
  *     可访问名称/描述计算 ⇒ 读屏依旧能念出解释（ARIA accname 规范行为）。
  */
-export function Term({ id, children }: TermProps) {
+export function Term({ id, children, className }: TermProps) {
   const entry = glossaryEntry(id);
   const tipId = `glossary-${entry.id}`;
+  const triggerClass = className ? `term__trigger ${className}` : 'term__trigger';
   return (
     <span className="term">
-      <button type="button" className="term__trigger" aria-describedby={tipId}>
+      <button type="button" className={triggerClass} aria-describedby={tipId}>
         {children ?? entry.term}
       </button>
       <span className="term__def" id={tipId} role="tooltip">
