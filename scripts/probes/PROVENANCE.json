@@ -94,6 +94,13 @@
       "requires": ["playwright"],
       "needs_server": true,
       "selftest": true
+    },
+    {
+      "repo": "scripts/probes/layout_stability_probe.py",
+      "origin": "repo-native",
+      "requires": ["playwright"],
+      "needs_server": true,
+      "selftest": true
     }
   ]
 }

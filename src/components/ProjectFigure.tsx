@@ -28,10 +28,13 @@ function num(value: number | null | undefined) {
   return value === null || value === undefined ? '—' : value.toLocaleString('en-US');
 }
 
-function ScopeTable({ entry }: { entry: MetricEntry }) {
+function ScopeTable({ entry, instanceKey }: { entry: MetricEntry; instanceKey: string }) {
   // ★ 必须套 `.mtable__scroll`（`overflow-x:auto`）：指标表列多、窄屏必然宽于视口，
   //   没有滚动容器时会把**整页**撑宽（实测 390px 下 403 vs 390，右侧被截断）。
   //   ⚠ 该 CSS 类此前只被 /stats 用上，本处漏了 —— 属「样式写了但标记没用」的死规则盲区。
+  // ★ 批十八 V12：`instanceKey` 透传到列术语（`Term`）—— 保证同页面板 `id` 唯一。
+  //   本页当前只渲染一张这样的表（列名本已唯一），透传是**面向将来**的显式声明：
+  //   若日后同页出现第二张，⛔ 不必再回头找漏传点（由 `term_layer_probe.T8` 兜底）。
   return (
     <div className="mtable__scroll">
       <table className="mtable">
@@ -41,7 +44,9 @@ function ScopeTable({ entry }: { entry: MetricEntry }) {
             <th scope="col">scope（图/视图）</th>
             {METRIC_COLUMNS.map((column) => (
               <th className="mtable__num" key={column.key} scope="col">
-                <Term id={column.key}>{column.label}</Term>
+                <Term id={column.key} instanceKey={instanceKey}>
+                  {column.label}
+                </Term>
               </th>
             ))}
           </tr>
@@ -148,7 +153,7 @@ export function ProjectFigure({ name }: { name: string }) {
             规模指标按 <strong>scope</strong> 分行（E1：多图项目不单值化）。「—」表示该 scope 无此项，
             ⛔ 不等于 0。
           </p>
-          <ScopeTable entry={entry} />
+          <ScopeTable entry={entry} instanceKey={name} />
         </>
       ) : (
         <p className="detail__note">

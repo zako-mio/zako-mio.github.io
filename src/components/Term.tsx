@@ -5,6 +5,23 @@ import { glossaryEntry } from '@/lib/glossary';
 export interface TermProps {
   /** `src/data/glossary.json` 里的 `id`（或任何已登记别名）。⛔ 取不到即构建期抛错。 */
   id: string;
+  /**
+   * ★ **每实例唯一键**（批十八 V12 落地；可选）。
+   *
+   * 为什么需要它：面板 `id` 原先只由词条 id 生成（`glossary-<词条>`），而同一词条在**同一页**
+   * 会多次出现（`/stats` 实测 **52 个面板仅 7 个唯一 id**：`glossary-missing` ×22、
+   * `glossary-collectability` ×10、各列术语 ×4）⇒ 违反 HTML `id` 唯一性。
+   *
+   * ⛔ **为什么不在这里内部生成唯一 id**：`Term` 是**服务端组件**（RSC **无** `useId`）；
+   *   而「把 `Term` 改成客户端组件」会把 `glossary.json`（13.6 kB）带进**客户端包** ——
+   *   本站**共享 JS 102 kB 是棘轮**，⛔ 不接受该代价。⇒ 取「**调用侧传唯一键**」这条路：
+   *   调用点把**已在作用域内**的判别键（如 `entry.name` / `section` / `column.key`）传下来。
+   *
+   * ⚠ **义务**：**每个调用点都必须传**（同一页两次渲染同一 `id` 且都不传键 ⇒ 重复回来）。
+   *   该义务由**判据 `term_layer_probe.py` 的 `T8`（同页面板 `id` 唯一，直读产物全量 HTML）**
+   *   机检，⛔ 不靠人记。取值须是合法 id 片段（⛔ 不含空白）。
+   */
+  instanceKey?: string;
   /** 显示文本；缺省用词条本身的 `term`。 */
   children?: ReactNode;
   /**
@@ -36,9 +53,12 @@ export interface TermProps {
  *   ⚠ 面板默认 `display:none`，但 `aria-describedby` 对**被直接引用**的隐藏节点仍参与
  *     可访问名称/描述计算 ⇒ 读屏依旧能念出解释（ARIA accname 规范行为）。
  */
-export function Term({ id, children, className }: TermProps) {
+export function Term({ id, instanceKey, children, className }: TermProps) {
   const entry = glossaryEntry(id);
-  const tipId = `glossary-${entry.id}`;
+  // ★ 批十八 V12：同页重复的修法＝**调用侧传唯一键**（见 `instanceKey` 的说明）。
+  //   ⛔ 不带键时保持旧行为（`glossary-<词条>`）——该分支只应在「该页该词条仅出现一次」时出现，
+  //   由判据 `T8` 兜底（出现两次即 FAIL）。
+  const tipId = instanceKey ? `glossary-${entry.id}-${instanceKey}` : `glossary-${entry.id}`;
   const triggerClass = className ? `term__trigger ${className}` : 'term__trigger';
   return (
     <span className="term">

@@ -13,12 +13,13 @@ import {
   type Metrics,
 } from '@/lib/metrics';
 
-function Value({ value }: { value: number | null | undefined }) {
+function Value({ value, instanceKey }: { value: number | null | undefined; instanceKey: string }) {
   if (value === null || value === undefined) {
     // ★ 批十五 W2-①：把 `title`（MDN 明列 a11y/触屏缺陷）换成术语解释层（button ＋ aria-describedby）。
     //   `className` 保留原 `mtable__na` 配色 ⇒ 观感不变，只换语义通道。
+    // ★ 批十八 V12：`instanceKey` 保证**同页唯一**（`/stats` 上此分支最多渲染 22 次）。
     return (
-      <Term id="missing" className="mtable__na">
+      <Term id="missing" instanceKey={instanceKey} className="mtable__na">
         —
       </Term>
     );
@@ -31,8 +32,9 @@ function ProjectCell({ entry, rowSpan }: { entry: MetricEntry; rowSpan: number }
     <th className="mtable__project" scope="row" rowSpan={rowSpan}>
       <Link href={`/works/${entry.name}`}>{entry.title ?? entry.name}</Link>
       <span className="mtable__meta">
-        {/* ★ 批十五 W2-①：可采集性分级（A/B）由 `title` 换成解释层；`badge badge--level` 保外观。 */}
-        <Term id="collectability" className="badge badge--level">
+        {/* ★ 批十五 W2-①：可采集性分级（A/B）由 `title` 换成解释层；`badge badge--level` 保外观。
+            ★ 批十八 V12：`instanceKey` ＝ 项目名 ⇒ 同页唯一（`/stats` 上渲染 10 次）。 */}
+        <Term id="collectability" instanceKey={entry.name} className="badge badge--level">
           {entry.collectability ?? '?'}
         </Term>
         {entry.version_self ? <span className="mtable__version">自称 {entry.version_self}</span> : null}
@@ -64,7 +66,10 @@ function SectionTable({
               <th scope="col">scope（图/视图）</th>
               {METRIC_COLUMNS.map((column) => (
                 <th className="mtable__num" scope="col" key={column.key}>
-                  <Term id={column.key}>{column.label}</Term>
+                  {/* ★ 批十八 V12：分区作判别键 ⇒ 三张分区表的同名列术语不再撞 id。 */}
+                  <Term id={column.key} instanceKey={section}>
+                    {column.label}
+                  </Term>
                 </th>
               ))}
               <th scope="col">取值来源</th>
@@ -97,7 +102,10 @@ function SectionTable({
                   <td className="mtable__scope">{figure.scope}</td>
                   {METRIC_COLUMNS.map((column) => (
                     <td className="mtable__num" key={column.key}>
-                      <Value value={figure[column.key]} />
+                      <Value
+                        value={figure[column.key]}
+                        instanceKey={`${entry.name}-${figure.scope}-${column.key}`}
+                      />
                     </td>
                   ))}
                   {index === 0 ? (

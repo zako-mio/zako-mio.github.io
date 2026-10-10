@@ -156,9 +156,9 @@ python3 scripts/gate_motion_budget.py --selftest
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
-上面那些门控都**只跑 python3**。有七类缺陷只有真浏览器能看见（图件几何、合成后对比度、
+上面那些门控都**只跑 python3**。有八类缺陷只有真浏览器能看见（图件几何、合成后对比度、
 悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、**术语解释层的 hover/focus/Esc**、
-**无障碍（axe-core：对比度/标题层级/名称/ARIA…）**），
+**无障碍（axe-core：对比度/标题层级/名称/ARIA…）**、**布局稳定性（CLS ＋ 交互期几何零位移）**），
 长期是**提示词级**（写进文档、靠人记着跑）。
 现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
 
@@ -172,15 +172,16 @@ python3 scripts/gate_motion_budget.py --selftest
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
 | `hero_hit_probe.py` | **Hero 交互保护**（第十三批 W1）：`.hero` 内每个可交互件的中心命中不被打断 ＋ `.hero__map` 不叠热区 ＋ 断点一致 ＋ 图件自身可被命中。★ 十七批（W4-②）两处**作用面收窄**（⛔ 不是放宽）：① `H1` 只判**已渲染**（零尺寸＝未渲染 ⇒ 跳过；`<1024px` 档图件 `display:none`，其内链接 rect 为 0×0，否则中心 (0,0) 会被误判遮挡）；② `H2` 不把**图件内部**的交互件算作「被图件压住」（判据面＝被判对象）——⛔ 二者都**净增**了被检对象（图内 3 个链接仍逐件受 H1 管）（带 `--selftest`） | 是 |
-| `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）· `T7` **浮层不被 `overflow` 容器裁剪**（★ 十六批 W4/C3：**逐件**「面板内·裁剪框外·视口内」命中测试；`not-open` 亦计 FAIL，⛔ 不许静默跳过）（带 `--selftest`） | 是 |
+| `term_layer_probe.py` | **术语解释层**（第十四批 W2）：`T1` 静止态隐藏 · `T2` hover 展开 · `T3` 键盘 focus 展开（WCAG 1.4.13）· `T4` Esc 关闭 · `T5` `aria-describedby`→`role=tooltip` 关联可达 · `T6` **无 JS 可读**（直读原始 HTML，不经浏览器）· `T7` **浮层不被 `overflow` 容器裁剪**（★ 十六批 W4/C3：**逐件**「面板内·裁剪框外·视口内」命中测试；`not-open` 亦计 FAIL，⛔ 不许静默跳过）· `T8` **同页面板 `id` 唯一**（★ 十八批 V12：**直读 `out/**/*.html` 全量**，⛔ 不经浏览器；为什么必须自建——axe-core 4.14 **已移除** `duplicate-id*` 规则族 ⇒ 既有 a11y 探针**不报**；空集守卫：无产物 / 全站零面板 ⇒ FAIL）（带 `--selftest`） | 是 |
 | `axe_a11y_probe.py` | **无障碍自动化审查**（第十五批 B2）：axe-core 4.14.0（vendored，`vendor/axe.min.js`）注入渲染页跑 `axe.run`；规则白名单＝WCAG 2.1/2.2 A/AA ＋ best-practice（含 `heading-order` 这类既有判据都没在看的类）；双主题 × 5 路由；豁免须**带理由且真命中**（⛔ 防静默过期）；`A4` 非空守卫；带 `--selftest`（对照臂＋负向臂） | 是 |
+| `layout_stability_probe.py` | **布局稳定性**（第十八批 B1）：`L1/L2` 加载期/滚动期 **CLS**（上界 0.1＝Core Web Vitals「good」，预登记）· `L3/L4` **主题切换（light→dark）／动效开关（on→off）的几何零位移**（≤0.5px；量**布局位置**——快照期把 `[data-reveal]` 的进场 `translate` 归一化抵消，因它是合成层属性、不进布局；⛔ 排除 `.chart__frame` 双模帧的显隐互换，那归 `gate_theme_states`）· `L5` 非空守卫（追踪集 ≥20 ＋ CLS 观察器已挂载）；5 路由；带 `--selftest`（对照臂＋L1/L3/L5 三条负向夹具） | 是 |
 | `acceptance_probe.py` | **页面分工结构类**（第三批）：`A1` 首页枚举数 ≤5 · `A2` 首页无索引控件 · `A3` 首页无他页专属区块 · `A4` 对照臂 · `A5` 联系区块唯一落点（结构类，须 **ALL PASS** 才 rc=0；带 `--selftest`） | 否 |
 | `dup_probe.py` | **页间内容重复度**（第三批）：块级重合矩阵 ＋ 关键元素跨页计数（数值/**报告类**，⛔ 不判 PASS/FAIL ⇒ 无 `--selftest`） | 否 |
 
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
   ⚠ 探针层的**前端资产**（`axe-core`）另 pin 于 `scripts/probes/vendor/`（含版本/许可/sha256，见其 README）。
-- **十条探针**在 CI 里跑（7 条需静态服务/浏览器 ＋ `hover_gating` 静态解析 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
+- **十一条探针**在 CI 里跑（8 条需静态服务/浏览器 ＋ `hover_gating` 静态解析 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
   除 `dup_probe`（报告类，无 `--selftest`）外均**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
   ⚠ `check_provenance.py` / `check_ci_manifest.py` 是**机检**（不进 `PROVENANCE.json` 的探针表，不在此计数）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
@@ -188,8 +189,9 @@ python3 scripts/gate_motion_budget.py --selftest
 - ★ **来源登记**：`svg_layout` / `contrast_theme` / `surface_hit` / `hover_gating` 四个是 Mission
   归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
   活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）、
-  `hero_hit_probe.py`（第十三批）、`term_layer_probe.py`（第十四批）与
-  `axe_a11y_probe.py`（第十五批，另 vendor `axe-core@4.14.0` 于 `vendor/`）是**仓库原生**。
+  `hero_hit_probe.py`（第十三批）、`term_layer_probe.py`（第十四批）、
+  `axe_a11y_probe.py`（第十五批，另 vendor `axe-core@4.14.0` 于 `vendor/`）与
+  `layout_stability_probe.py`（第十八批 B1）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
   否则 fail-closed。（同目录 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
@@ -436,6 +438,17 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
 
 ## 已知取舍
 
+- ⚠ **`cramped-padding`（`.mtable__scroll` / `.timeline__row`）经实测判为「有意贴边」⇒ 登记豁免，⛔ 不改**
+  （第十八批 C2 分诊）。第三方 detector（`npx impeccable detect out/`，advisory/warning）在
+  `/stats` 与 10 个详情页报这两处「children flush against border+bg」。**实测分诊**：
+  ① `.mtable` 的单元格 `padding: 0.5rem 0.6rem`（**9.6px**）—— 已**超过 detector 自荐的 8px 下限**
+  ⇒ 「text 太贴边」这一形态**不成立**；
+  ② 残留的只是「容器有 border/背景、其子件（`<table>`）与其齐平」这一**结构**形态 ——
+  对**滚动容器里的表格**与**带分隔线的列表**而言，**整宽分隔线抵达容器边**正是惯用样式
+  （当前实测：容器 1px 边 ＋ 12px 圆角；单元格无越界，圆角处由 `overflow-x:auto` 隐式裁掉）。
+  ⛔ 若为此加 inset，分隔线会**缩进**成「盒子里浮着一张表」，与**全站左对齐基线**也不再一致 ——
+  ⇒ 属**改坏**，非改好。★ 先例：`low-contrast` 同样按「记录＋并陈，⛔ 不据此改」处置。
+  ⚠ **未主张 detector 该条已消除**：复跑仍会报（第三方通道与本站判据**各有盲区**，须并置叙述）。
 - ★ **术语解释层面板曾被 `.mtable__scroll`（`overflow-x:auto`）裁剪 —— 第十六批 W4/C3 已修**（缺陷系第十五批
   实测发现、`batch14 W2-2` 起即存在）：`.term__def` 原为 `position:absolute`，宿主在滚动容器内
   ⇒ 被容器 padding box 裁剪（**实测**：表头最右列面板越容器**右缘 213px**、末行越**下缘 179px**）。
@@ -449,14 +462,20 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   （定义文本照旧常驻 HTML、读屏与无 JS 取文本不受影响，仅视觉被裁）。⛔ 未采用 Popover API：
   其声明式只支持**点按**触发，会打断 hover/focus 路径且与既有 CSS 呈现路径打架；亦未用纯 CSS
   Anchor Positioning（需**每实例唯一 `anchor-name`**，而 `Term` 是 RSC 无 `useId`，且支持面 partial）。
-- ⚠ **术语面板的 `id` 在同一页内重复**（第十六批 W4/C3 期间发现，⛔ **未修**）：`Term` 用
-  `glossary-<词条 id>` 作面板 `id`，而同一词条在同页会多次出现（`/stats` 实测 **`glossary-missing` ×22 ·
-  `glossary-collectability` ×10**，计数类词条各 ×4）⇒ 违反 HTML `id` 唯一性。
-  功能上 `aria-describedby` 解析到**首个**同名面板（内容逐字相同 ⇒ 读屏不受实质影响）
-  ⇒ 属**规范/有效性**缺陷，非功能性缺陷。⚠ **既有判据不覆盖**：`axe_a11y_probe` 用的 axe-core 4.14
-  **已移除** `duplicate-id*` 规则族（故它不会报）。
-  修法方向＝面板 `id` 每实例唯一；⚠ `Term` 是**服务端组件**（无 `useId`）⇒ 须由调用侧传唯一键，
-  或把 `Term` 改为客户端组件（代价＝包体）。⛔ 未做，登记待裁决。
+- ★ **术语面板的 `id` 在同一页内重复 —— 第十八批 V12 已修**（缺陷系第十六批 W4/C3 期间发现）：
+  原先 `Term` 用 `glossary-<词条 id>` 作面板 `id`，而同一词条在同页会多次出现
+  （`/stats` 实测 **52 个面板仅 7 个唯一 id**：`glossary-missing` ×22 · `glossary-collectability` ×10 ·
+  计数类词条各 ×4）⇒ 违反 HTML `id` 唯一性。功能上 `aria-describedby` 解析到**首个**同名面板
+  （内容逐字相同 ⇒ 读屏不受实质影响）⇒ 属**规范/有效性**缺陷，非功能性缺陷。
+  **修法（用户裁决 2026-10-11：「调用侧传唯一键」）**：`Term` 增可选 `instanceKey`，
+  `id = glossary-<词条>-<instanceKey>`；**4 处调用点**把**已在作用域内**的判别键传下去
+  （`entry.name` / `section` / `${entry.name}-${figure.scope}-${column.key}`）。
+  ⛔ **未采用「`Term` 改客户端组件 ＋ `useId`」**：那会把 `glossary.json`（13.6 kB）带进**客户端包**，
+  而本站**共享 JS 102 kB 是棘轮** ⇒ 该路大概率破棘轮。**实测代价**：改动后 共享 JS **仍 102 kB**。
+  **实测结果**：全站 16 页 · 97 个面板 ⇒ **有重复的页 0**（`/stats` 52 面板 **52 唯一**）。
+  ★ **判据同批落地**：`term_layer_probe.py` 新增 **`T8`（同页面板 `id` 唯一，直读 `out/**/*.html` 全量）**
+  —— ⚠ `axe_a11y_probe` 用的 axe-core 4.14 **已移除** `duplicate-id*` 规则族（故它**不会报**），
+  本缺陷原先**落在判据覆盖之外**；⇒ 修法与判据**必须同批**，否则改完无人守。
 - ★ **hero 定位图「聚焦方向 → `/works` 筛选域」的映射是人工声明，且其中一条不等值**（十七批 W4-②，
   **用户裁决** 2026-10-11「三方向全按 domain 映射」）：`机器学习建模 → domain=llm`（域名标签是「大模型」，
   与源标签**不同字**）⇒ 是全表**最弱的一环**；另两条字面/语义可辩护

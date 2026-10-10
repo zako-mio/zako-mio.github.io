@@ -221,6 +221,15 @@ jobs:
           python3 scripts/probes/axe_a11y_probe.py --selftest
           python3 scripts/probes/axe_a11y_probe.py
 
+      # 布局稳定性（第十八批 B1）：`L1/L2` CLS（加载期/滚动期）＋ `L3/L4` 主题切换与动效开关的
+      # **几何零位移** ＋ `L5` 非空守卫。★ 量的是**布局位置**（进场位移在快照期归一化抵消 ——
+      # `translate` 是合成层属性、不进布局）；⛔ 与 `gate_motion_budget` 不重叠（后者管动效预算，
+      # ⛔ 不量位移）；⛔ 与 `svg_layout_probe` 不重叠（后者只判图件内部几何）。
+      - name: Layout stability probe (CLS + 交互期零位移) — selftest + 实测
+        run: |
+          python3 scripts/probes/layout_stability_probe.py --selftest
+          python3 scripts/probes/layout_stability_probe.py --out "$RUNNER_TEMP/layout-stability"
+
       - uses: actions/configure-pages@v6
 
       - uses: actions/upload-pages-artifact@v5

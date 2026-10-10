@@ -14,6 +14,11 @@
                           视口内」取探针点做**命中测试**（`elementFromPoint`）：命中面板＝未被裁；
                           命中它者＝被裁 ⇒ FAIL。⛔ 判据**不能**只看「面板 rect vs 容器 rect」
                           —— `position:fixed` 的面板本就落在容器外，那种比较会把**修好的**判 FAIL。
+    T8 同页面板 id 唯一     ★ 批十八 V12 新增：**全站产物**逐页判 `.term__def` 的 `id` 是否唯一
+                          （直读 `out/**/*.html`，⛔ 不经浏览器 —— 与 T6 同通道）。
+                          为什么必须自建：**axe-core 4.14 已移除 `duplicate-id*` 规则族** ⇒
+                          既有 a11y 探针**不报**；重复 id 使 `aria-describedby` 落到**首个**同名面板
+                          （内容通常逐字相同 ⇒ 读屏影响小）⇒ 属**规范/有效性**缺陷、**不会自行暴露**。
 
 用法：
     python3 term_layer_probe.py [--base http://127.0.0.1:4399] [--path /stats/]
@@ -22,13 +27,18 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
+import tempfile
 import urllib.request
+from collections import Counter
+from pathlib import Path
 
 from no_js_readable import raw_html_has_definition  # 共享实现（单一真相源，见该模块 docstring）
 
 sys.stdout.reconfigure(encoding="utf-8")
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
 FAILS: list[str] = []
 
 
@@ -191,6 +201,48 @@ def probe_clip(pg) -> list[dict]:
              "ok": not fails and not unopened and len(opened) > 0, "detail": detail}]
 
 
+# ─────────────── T8：同页面板 id 唯一（直读产物；批十八 V12）───────────────
+# ⛔ 直读**原始产物 HTML**，不经浏览器：本判据与渲染无关，只判**产物标记**（与 T6 同通道）。
+# ⚠ 单一实现（本文件内一处），供主判据与 `--selftest` 共用 ⇒ 夹具测的是**同一条**逻辑。
+T8_NAME = "T8 同页面板 id 唯一（直读产物）"
+PANEL_TAG = re.compile(r'<span[^>]*\bclass="[^"]*\bterm__def\b[^"]*"[^>]*>')
+ID_ATTR = re.compile(r'\bid="([^"]+)"')
+
+
+def panel_ids(html: str) -> list[str]:
+    """抽出该页全部 `.term__def` 面板的 `id`（⛔ 不解析整份 DOM，只按标签取属性）。"""
+    return [m.group(1) for tag in PANEL_TAG.findall(html) for m in [ID_ATTR.search(tag)] if m]
+
+
+def duplicate_panel_ids(html: str) -> dict:
+    """返回该页里出现 >1 次的面板 id → 次数（空 dict ＝ 唯一）。"""
+    return {k: v for k, v in Counter(panel_ids(html)).items() if v > 1}
+
+
+def probe_unique_ids(out_root: Path) -> list[dict]:
+    """T8：**全站产物**逐页判「同页 `.term__def` 的 `id` 唯一」。
+
+    ⚠ fail-closed：`out/` 不存在 / 全站零面板 ⇒ FAIL（⛔ 不得静默通过 —— 空集不是达标）。
+    """
+    pages = sorted(out_root.rglob("*.html"))
+    if not pages:
+        return [{"name": T8_NAME, "ok": False,
+                 "detail": f"{out_root} 下无 HTML 产物（先跑 pnpm build）"}]
+    total, bad = 0, []
+    for page in pages:
+        html = page.read_text(encoding="utf-8", errors="replace")
+        ids = panel_ids(html)
+        total += len(ids)
+        dup = duplicate_panel_ids(html)
+        if dup:
+            bad.append(page.relative_to(out_root).as_posix()
+                       + " → " + ", ".join(f"{k}×{v}" for k, v in list(dup.items())[:3]))
+    detail = f"扫描 {len(pages)} 页 · 面板 {total} 个 · 有重复的页 {len(bad)}"
+    if bad:
+        detail += " · 例：" + "; ".join(bad[:3])
+    return [{"name": T8_NAME, "ok": not bad and total > 0, "detail": detail}]
+
+
 def run_site(base: str, path: str) -> int:
     from playwright.sync_api import sync_playwright
 
@@ -209,6 +261,10 @@ def run_site(base: str, path: str) -> int:
     html = urllib.request.urlopen(base + path, timeout=30).read().decode("utf-8", "replace")
     chk("T6 无 JS 可读（原始 HTML 已含定义）", raw_html_has_definition(html),
         f"含非空 .term__def 面板={raw_html_has_definition(html)}")
+
+    # ★ 批十八 V12：T8 判**全站产物**（⛔ 不只本路径）—— 重复 id 可能出现在任何页。
+    for r in probe_unique_ids(REPO_ROOT / "out"):
+        chk(r["name"], r["ok"], r["detail"])
 
     print("\nTERM-LAYER: " + ("ALL PASS" if not FAILS else f"FAIL {len(FAILS)} · {FAILS}"))
     return 1 if FAILS else 0
@@ -345,6 +401,22 @@ def selftest() -> int:
     ok &= pos is True and neg_empty is False and neg_missing is False
     print(f"  [{'PASS' if pos and not neg_empty and not neg_missing else 'FAIL'}] "
           "T6 三臂：非空定义 ⇒ PASS / 空定义 ⇒ FAIL / 无面板 ⇒ FAIL")
+
+    # ── T8 的两个臂（纯字符串，无浏览器）
+    dup_arm = duplicate_panel_ids(
+        '<span class="term__def" id="g1" role="tooltip">甲</span>'
+        '<span class="term__def" id="g1" role="tooltip">乙</span>')
+    uniq_arm = duplicate_panel_ids(
+        '<span class="term__def" id="g1" role="tooltip">甲</span>'
+        '<span class="term__def" id="g2" role="tooltip">乙</span>')
+    ok &= bool(dup_arm) and not uniq_arm
+    print(f"  [{'PASS' if dup_arm and not uniq_arm else 'FAIL'}] "
+          f"T8 两臂：同页重复 id ⇒ 抓到 {dict(dup_arm)} / 唯一 id ⇒ 不报 {dict(uniq_arm)}")
+    # 第三臂：空集守卫（无面板 ≠ 达标）
+    empty_guard = probe_unique_ids(Path(tempfile.gettempdir()) / "term-layer-t8-empty")
+    ok &= empty_guard[0]["ok"] is False
+    print(f"  [{'PASS' if empty_guard[0]['ok'] is False else 'FAIL'}] "
+          f"T8 空集守卫：无产物目录 ⇒ 判 FAIL（⛔ 空集不得静默通过）")
 
     print(f"\nSELFTEST: {'ALL PASS' if ok else 'HAS FAILURE'}")
     return 0 if ok else 1
