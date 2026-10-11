@@ -166,5 +166,184 @@
         }
       ]
     }
+  },
+  "hub_metadata": {
+    "_note": "W5 级联提醒基线（结构化字段快照）。由 scripts/metrics_confirm_table.py 的 derive_hub_metadata() 纯派生自 src/data/projects.json，⛔ 手工修改无效：scripts/gate_metrics.py 的 C1 会以 src/data/projects.json 重算比对。⛔ 本区不含任何采集/运行时钟（不引入第二处 as_of）；⚠ 区内的 pushed_at 是**被监测的上游数据字段**（信号本身），不是运行时钟。",
+    "projects": {
+      "12-factor-methodology-kg": {
+        "title": "12 Factor 方法论合并知识图谱",
+        "summary": "12 Factor App × 12 Factor Agent 合并方法论知识图谱：DAG 组织 + 桥接主题 + 双交付（HTML 交互图 + AI 友好 MD），cytoscape 在线预览",
+        "type": "knowledge-graph",
+        "domains": [
+          "agent-engineering",
+          "llm",
+          "software-engineering"
+        ],
+        "language": "HTML",
+        "stars": 1,
+        "pushed_at": "2026-08-23T16:10:29Z",
+        "entry_url": "https://zako-mio.github.io/12-factor-methodology-kg/",
+        "repo_url": "https://github.com/zako-mio/12-factor-methodology-kg",
+        "has_pages": true,
+        "featured": true,
+        "order": 1,
+        "section": null
+      },
+      "algorithm-knowledge-graph": {
+        "title": "算法知识图谱",
+        "summary": "ICPC/CCPC 算法知识图谱：372知识点/60组/318关系边/4学习阶段，Python 实现，what-why-how 高度可读 + 三级下钻交互 DAG",
+        "type": "knowledge-graph",
+        "domains": [
+          "algorithms"
+        ],
+        "language": "HTML",
+        "stars": 1,
+        "pushed_at": "2026-08-21T15:23:46Z",
+        "entry_url": "https://zako-mio.github.io/algorithm-knowledge-graph/",
+        "repo_url": "https://github.com/zako-mio/algorithm-knowledge-graph",
+        "has_pages": true,
+        "featured": true,
+        "order": 3,
+        "section": null
+      },
+      "control-theory-agent-kb": {
+        "title": "控制理论 ⊗ Agent 设计知识库",
+        "summary": "控制理论 ⊗ Agent 设计知识库 v1.1：五环框架 × 6 框架画像 × 14 款精装房产品全景（精装度 × 一手/二手实证）",
+        "type": "knowledge-base",
+        "domains": [
+          "agent-engineering",
+          "control-theory"
+        ],
+        "language": "HTML",
+        "stars": 0,
+        "pushed_at": "2026-09-11T15:17:34Z",
+        "entry_url": "https://zako-mio.github.io/control-theory-agent-kb/",
+        "repo_url": "https://github.com/zako-mio/control-theory-agent-kb",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "deepseek-harness-plugin-dag": {
+        "title": "DeepSeek Harness 插件级 DAG 依赖链分析",
+        "summary": "DeepSeek Harness 插件级 DAG 依赖链分析：173 插件 / 49 seam / 37 组 / 模块内部结构动态 DAG",
+        "type": "knowledge-graph",
+        "domains": [
+          "agent-engineering"
+        ],
+        "language": "TypeScript",
+        "stars": 4,
+        "pushed_at": "2026-09-26T19:43:11Z",
+        "entry_url": "https://zako-mio.github.io/deepseek-harness-plugin-dag/",
+        "repo_url": "https://github.com/zako-mio/deepseek-harness-plugin-dag",
+        "has_pages": true,
+        "featured": true,
+        "order": 2,
+        "section": null
+      },
+      "dsh-manager-analysis": {
+        "title": "dsh-manager 插件深度分析",
+        "summary": "dsh-manager 插件深度分析：E1/E2/E3 三硬依据依赖分析 + 交互式 DAG + 设计问题与建议",
+        "type": "knowledge-graph",
+        "domains": [
+          "agent-engineering"
+        ],
+        "language": "JavaScript",
+        "stars": 1,
+        "pushed_at": "2026-08-22T15:41:43Z",
+        "entry_url": "https://zako-mio.github.io/dsh-manager-analysis/",
+        "repo_url": "https://github.com/zako-mio/dsh-manager-analysis",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "github-dag-tutorial": {
+        "title": "GitHub 新手全功能 DAG 教程",
+        "summary": "GitHub 新手全功能 DAG 教程：面向零基础读者的交互式功能关系图谱（35 节点/41 边/7 组/9 层，含历史维度与可溯源来源）",
+        "type": "tutorial",
+        "domains": [
+          "github"
+        ],
+        "language": "HTML",
+        "stars": 1,
+        "pushed_at": "2026-08-17T06:09:24Z",
+        "entry_url": "https://zako-mio.github.io/github-dag-tutorial/",
+        "repo_url": "https://github.com/zako-mio/github-dag-tutorial",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "llm-papers-knowledge-base": {
+        "title": "LLM 关键节点论文全集（2017–2026）",
+        "summary": "LLM 关键节点论文全集（2017–2026）：133 篇关键论文，五个时代 + 优先级分级 + 推荐阅读路线 + 交互式时间线",
+        "type": "knowledge-base",
+        "domains": [
+          "llm"
+        ],
+        "language": "Python",
+        "stars": 1,
+        "pushed_at": "2026-08-29T16:35:32Z",
+        "entry_url": "https://zako-mio.github.io/llm-papers-knowledge-base/",
+        "repo_url": "https://github.com/zako-mio/llm-papers-knowledge-base",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "open-code-review-kg": {
+        "title": "Open Code Review 项目解析知识图谱",
+        "summary": "Open Code Review 项目解析知识图谱：知识+实践源码资产+AI可调用索引三合一（alibaba/open-code-review 全面解析）",
+        "type": "knowledge-graph",
+        "domains": [
+          "software-engineering"
+        ],
+        "language": "HTML",
+        "stars": 1,
+        "pushed_at": "2026-08-23T16:32:35Z",
+        "entry_url": "https://zako-mio.github.io/open-code-review-kg/",
+        "repo_url": "https://github.com/zako-mio/open-code-review-kg",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "opencode-dag-analysis": {
+        "title": "opencode DAG 依赖分析",
+        "summary": "opencode DAG dependency analysis: official vs modified comparison with 104 node pages (7-section why-how), interactive cytoscape views, 38 g",
+        "type": "knowledge-graph",
+        "domains": [
+          "agent-engineering"
+        ],
+        "language": "HTML",
+        "stars": 1,
+        "pushed_at": "2026-09-11T15:19:00Z",
+        "entry_url": "https://zako-mio.github.io/opencode-dag-analysis/",
+        "repo_url": "https://github.com/zako-mio/opencode-dag-analysis",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      },
+      "se-architecture-methodology-kg": {
+        "title": "软件工程 / 架构设计方法论知识图谱",
+        "summary": "软件工程 / 架构设计方法论知识图谱：167 节点 · 三层×生命周期×横切主题×案例 · 交互 DAG · 生成链与门控 L1–L8 · Agent 能力包",
+        "type": "knowledge-graph",
+        "domains": [
+          "agent-engineering",
+          "software-engineering"
+        ],
+        "language": "HTML",
+        "stars": 0,
+        "pushed_at": "2026-09-11T12:27:01Z",
+        "entry_url": "https://zako-mio.github.io/se-architecture-methodology-kg/",
+        "repo_url": "https://github.com/zako-mio/se-architecture-methodology-kg",
+        "has_pages": true,
+        "featured": false,
+        "order": 0,
+        "section": null
+      }
+    }
   }
 }

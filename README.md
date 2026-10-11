@@ -30,7 +30,7 @@ pnpm preview        # 起静态服务器预览 out/
 python3 scripts/validate_catalog.py src/data/projects.json src/data/projects.schema.json
 python3 scripts/gate_contrast.py          # 对比度：读 src/app/globals.css 的真实令牌
 python3 scripts/smoke_static.py           # 静态导出冒烟：读 out/ 的实产物
-python3 scripts/gate_metrics.py           # E 指标口径（G1–G10）：读 src/data/metrics.json ＋ E4 确认登记
+python3 scripts/gate_metrics.py           # E 指标口径（G1–G12 ＋ C1 级联提醒）：读 src/data/metrics.json ＋ projects.json ＋ E4 确认登记
 python3 scripts/gate_ia_division.py       # 页面分工：读 out/，判「每类内容唯一落点」
 python3 scripts/gate_theme_states.py      # 主题三态 × 双模图表同步（防新增主题档时静默失效）
 python3 scripts/gate_interaction_surface.py  # 交互作用面：悬停反馈面 ≡ 点击热区（关系型判据）
@@ -57,6 +57,26 @@ python3 scripts/gate_motion_budget.py --selftest
 > ★ **阈值型判据有结构性盲区**：「悬停有反馈但点击无响应」「背景抢焦点」这类缺陷是
 > **关系型 / 层级型**的，对比度、溢出、包体这类**阈值型**门控看不见它们。
 > ⇒ 第七批补的这两道门控专门管「关系」（作用面之间的对齐），⛔ 不要用调阈值的方式去凑。
+
+### `scripts/gate_metrics.py` 的 `C1`（W5 级联提醒 · 上游更新 → 主页信息）
+
+**目标**：降「逐项目页面」的派生成本 —— 项目仓库更新后，主页信息（作品名/摘要/星标/入口链接…）
+可能需要同步，故建立「更新 → 提醒」机制。
+
+- **基线载体＝`src/data/metrics-confirmed.json` 的 `hub_metadata` 区**（与 E4 指标冻结锚点**同一文件**）：
+  由 `scripts/metrics_confirm_table.py` 的 `derive_hub_metadata()` 纯派生自 `src/data/projects.json`。
+  ⛔ **不含任何运行时钟** —— 只存目录条目自身字段，**不引入第二处 `as_of`**。
+  ⚠ 独立重冻结（⛔ 不动 E4 指标确认区）：
+  `python3 scripts/metrics_confirm_table.py --patch-hub-metadata src/data/metrics-confirmed.json --write`（默认干跑）。
+- **信号源＝复用每日重采的 diff**：⛔ 不新增独立比对步 —— `C1` 就在既有 `Metrics gate` 步骤内，
+  与 `G10` 共用同一载体、同一出口（构建日志）。
+- **判据作用在「字段」上**（⛔ 不开子集白名单，取条目**全部**字段）：
+  只认结构化字段变化（stars / pushed_at / summary / entry_url / has_pages / domains …）；
+  ⛔ **不因 README/页面这类自由文本的抖动触发** —— 自由文本的变化只有**传导到某个字段**才计。
+- **只提醒，⛔ 不阻断**：`C1` 恒为 `WARN`，rc 不受影响；**⛔ 不做静默回写**（基线只由人在确认后重冻结）。
+  ⚠ 因此同一变化会在**每日重采中反复打印**，直到基线被更新（见「已知取舍」）。
+- 与 `G10` 的分工：`G10` 管**采集得到的指标值**（页面文本哈希 ＋ `figures`）漂移；
+  `C1` 管**目录条目的结构化字段**漂移。二者互补，⛔ 不合并成一条。
 
 ### `scripts/gate_theme_states.py`（`T1`–`T5`）
 
@@ -442,6 +462,18 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   误报为重叠）。改动图件后必须重跑该判据。
 
 ## 已知取舍
+
+- ★ **W5 级联提醒「只提醒 · 不阻断 · 会重复」是**有意取舍**（批二十 · 用户 2026-10-11 裁决）**：
+  三问裁决 ＝ ①信号源**复用每日重采的 diff**（⛔ 不新增独立比对步）· ②出口＝**构建日志**
+  （⛔ 不加站内 banner / 站外 Issue·飞书）· ③判据＝**仅结构化字段**（⛔ 不因 README 等自由文本抖动触发）；
+  两件事裁决 ＝ ①载体**扩展既有 E4 冻结锚点**（⛔ 不新增第二处冻结件、⛔ 不新增 `as_of`）·
+  ②**逐字段打印 ＋ 只提醒不阻断**。机制见上文 `gate_metrics` 的 `C1`。
+  ⚠ **代价如实登记**：① 同一变化会在**每次重采**（每日 03:17 UTC）**重复打印**，直到基线被人工重冻结
+  —— 因为「⛔ 不做静默回写」⇒ **不能**在 CI 里记「已提醒过」（那需要仓库写入，正是被否决的方案）；
+  ② 基线更新是**人工确认后重冻结**（`--patch-hub-metadata --write`）⇒ 若长期不更新，提醒会持续
+  （属**提醒**本职，⛔ 不视为缺陷）；③ `C1` **不阻断** ⇒ 项目更新后主页信息仍可能滞后，须人主动消费。
+- ⛔ **`C1` 的不主张**：它**不判**「该不该同步主页信息」（只把「哪些结构化字段变了」摆到构建日志）；
+  **不覆盖**指标值漂移（那是 `G10`）；**不判**「提醒已被处理」。
 
 - ⚠ **`cramped-padding`（`.mtable__scroll` / `.timeline__row`）经实测判为「有意贴边」⇒ 登记豁免，⛔ 不改**
   （第十八批 C2 分诊）。第三方 detector（`npx impeccable detect out/`，advisory/warning）在

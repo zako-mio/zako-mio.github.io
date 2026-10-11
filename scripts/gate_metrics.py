@@ -23,6 +23,12 @@
   G10 E4 冻结锚点：重采后页面文本哈希 / 已确认取值与登记不符 => WARN「确认已过期」
   G11 口径表自洽：分区表与采集定义表项目集相等（消费侧走同一真相源）
   G12 E2：同一 scope 内 layer_count 与 stage_count 不同时非空（分层 ≠ 分期）
+  C1  W5 级联提醒：目录结构化字段与冻结快照（``metrics-confirmed.json#hub_metadata``）
+      不符 => WARN（**只提醒，⛔ 不阻断**）。判据作用在**字段**上：⛔ 不因 README/页面这类
+      自由文本的抖动触发（自由文本的变化只有**传导到某个字段**才计）。
+      ⚠ 与 G10 的分工：G10 管**采集得到的指标值**（页面文本哈希 ＋ figures）漂移；
+      C1 管**目录条目的结构化字段**（stars / pushed_at / summary / entry_url / has_pages …）
+      —— 二者同一载体（E4 冻结锚点）、同一出口（本门控的构建日志），⛔ 不新增独立比对步。
 
 用法::
 
@@ -42,6 +48,7 @@ from typing import Any, Optional
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import collect_metrics as cm  # noqa: E402 - 口径表唯一真相源，消费侧走同一函数/表
+import metrics_confirm_table as mct  # noqa: E402 - W5 快照/比对唯一实现，⛔ 不在此重写一份
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -215,6 +222,20 @@ def run_checks(
     else:
         found.warn("G10", "metrics-confirmed.json", "确认登记不可用，E4 冻结锚点未生效")
 
+    # C1 W5 级联提醒（上游更新 → 主页信息）—— WARN 档，⛔ 只提醒、不阻断
+    # ⚠ 与 G10 共用同一载体与同一出口（本门控的构建日志）⇒ ⛔ 不新增独立比对步。
+    hub = ledger.get("hub_metadata") if isinstance(ledger, dict) else None
+    if isinstance(hub, dict) and isinstance(hub.get("projects"), dict):
+        if not isinstance(catalog, dict):
+            found.warn("C1", "projects.json", "项目目录不可用，W5 级联提醒未生效")
+        else:
+            current_hub = mct.derive_hub_metadata(catalog)["projects"]
+            for item in mct.diff_hub_metadata(hub["projects"], current_hub):
+                target = item["project"] if item["field"] == "*" else f"{item['project']}.{item['field']}"
+                found.warn("C1", target, mct.format_hub_diff(item))
+    else:
+        found.warn("C1", "metrics-confirmed.json", "无 hub_metadata 区（W5 级联基线未冻结）")
+
     return found
 
 
@@ -289,12 +310,31 @@ def _base_fixture() -> tuple[dict, dict, dict]:
             },
         ],
     }
-    catalog = {"projects": [{"name": e["name"]} for e in metrics["projects"]]}
+    catalog = {
+        "projects": [
+            {
+                "name": e["name"],
+                "title": f"标题-{e['name']}",
+                "summary": "摘要（结构化字段）",
+                "type": "knowledge-graph",
+                "domains": ["llm"],
+                "language": "HTML",
+                "stars": 1,
+                "pushed_at": "2026-08-01T00:00:00Z",
+                "entry_url": f"https://example.test/{e['name']}/",
+                "repo_url": f"https://github.com/example/{e['name']}",
+                "has_pages": True,
+            }
+            for e in metrics["projects"]
+        ]
+    }
     ledger = {"confirmed_at": "2026-10-08",
               "projects": {e["name"]: {"page_text_sha256": e["source"]["text_sha256"],
                                        "figures": [{k: v for k, v in f.items() if k != "provenance"}
                                                    for f in e["figures"]]}
-                           for e in metrics["projects"] if e["name"] in cm.PROJECT_DEFS}}
+                           for e in metrics["projects"] if e["name"] in cm.PROJECT_DEFS},
+              # W5 基线：由同一 catalog 派生 ⇒ 对照臂必须零 C1（判据不是恒真）
+              "hub_metadata": mct.derive_hub_metadata(catalog)}
     return metrics, catalog, ledger
 
 
@@ -349,6 +389,14 @@ def _mutations() -> list[tuple[str, str, Any]]:
         l["projects"][m["projects"][0]["name"]]["figures"][0]["entity_count"] = 111
         return m, c, l
 
+    def drift_hub_field(m, c, l):
+        c["projects"][0]["stars"] = 99
+        return m, c, l
+
+    def drift_hub_new_project(m, c, l):
+        c["projects"].append({"name": "brand-new-project", "title": "新项目", "stars": 0})
+        return m, c, l
+
     return [
         ("G4", "figure 值被改成 0（违反 E5）", set_zero),
         ("G6", "交叉校验被标 MISMATCH（上游不同步）", set_mismatch),
@@ -361,6 +409,8 @@ def _mutations() -> list[tuple[str, str, Any]]:
         ("G5", "status=ok 但全空", ok_without_values),
         ("G10", "确认登记哈希漂移（WARN 档）", drift_hash),
         ("G10", "确认取值漂移（WARN 档）", drift_value),
+        ("C1", "目录结构化字段漂移（WARN 档·只提醒）", drift_hub_field),
+        ("C1", "目录新增项目（WARN 档·只提醒）", drift_hub_new_project),
     ]
 
 
@@ -377,8 +427,15 @@ def selftest() -> int:
               f"{[f['check'] for f in baseline.failures]}")
     else:
         print("  [PASS] 对照臂：未变异样本零 FAIL（判据不是恒 FAIL）")
+    # 对照臂（提醒侧）：同源快照必须零 C1 —— 否则级联提醒每次重采都刷屏（恒真噪音）
+    baseline_c1 = [i for i in baseline.items if i["check"] == "C1"]
+    if baseline_c1:
+        ok = False
+        print(f"  [BROKEN] 对照臂本应零 C1，实际 {len(baseline_c1)} 条：{[i['target'] for i in baseline_c1]}")
+    else:
+        print("  [PASS] 对照臂：同源基线零 C1（级联提醒不是恒真噪音）")
 
-    level_of = {"G10": "WARN"}
+    level_of = {"G10": "WARN", "C1": "WARN"}
     for check, description, mutate in _mutations():
         m, c, l = _base_fixture()
         m, c, l = mutate(m, c, l)
@@ -437,10 +494,30 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  确认登记：{'已加载' if isinstance(ledger, dict) else '缺失'} "
               f"confirmed_at={(ledger or {}).get('confirmed_at')}")
     print()
-    for item in result.items:
+    others = [item for item in result.items if item["check"] != "C1"]
+    for item in others:
         print(f"  [{item['level']}] {item['check']} {item['target']} — {item['message']}")
-    if not result.items:
+    if not others:
         print("  （无发现）")
+
+    # C1 单独成块：它是**提醒**（出口＝构建日志），⛔ 不是阻断判据（b20 §4.1 用户裁决）
+    cascade = [item for item in result.items if item["check"] == "C1"]
+    state = [item for item in cascade if item["target"].endswith(".json")]
+    diffs = [item for item in cascade if not item["target"].endswith(".json")]
+    print()
+    print("== W5 级联提醒（上游更新 → 主页信息 · ⛔ 只提醒，不自动改写）==")
+    for item in state:
+        print(f"  [cascade] ⚠ {item['message']}")
+    if diffs:
+        for item in diffs:
+            print(f"  [cascade] {item['message']}")
+        touched = sorted({item["target"].split(".")[0] for item in diffs})
+        print(f"  [cascade] 汇总：{len(diffs)} 项结构化字段变化 / {len(touched)} 个项目"
+              f" · 基线 confirmed_at={(ledger or {}).get('confirmed_at') or '—'}")
+        print("  [cascade] 更新基线（人工确认后）："
+              "python3 scripts/metrics_confirm_table.py --patch-hub-metadata src/data/metrics-confirmed.json --write")
+    elif not state:
+        print("  （无：目录结构化字段与冻结基线一致）")
     print()
     if result.failures:
         print(f"METRICS GATE: FAIL（{len(result.failures)} 条 FAIL / {len(result.warnings)} 条 WARN）")
