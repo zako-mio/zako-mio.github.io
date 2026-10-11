@@ -61,6 +61,16 @@
   --border-card: #cfd8e8;
   --edge-highlight: rgba(255, 255, 255, 0.92);
 
+  /* 头像环（批二十点六）★ 为什么必须**随主题换极性**：
+     头像是**压在摄影照片上**的，而本站背景按主题分帧用**两张不同照片**
+     （浅＝极光天幕 / 深＝银河）⇒ 同一极性的环必在某一主题下消失。
+     实测（本批，合成后取最坏像素）：浅色头像脚下背景 L≈0.709（近 #dadbde），
+     深色 L≈0.014（近 #1e1f24）。浅色取暗环、深色取亮环，两侧各得一条可辨的边。
+     ⛔ 不写成「主题无关的内白＋外暗双环」：调研（`report-batch20.6.md` §调研）结论是
+     双环**无权威先例**，主流为单环；且本站既有令牌体系本就是「一个语义、两个主题值」
+     （`--border-*` / `--shadow-*` 同规）。 */
+  --avatar-ring: 0 0 0 1px rgba(0, 0, 0, 0.38);
+
   /* --- 文字 --- */
   --text-primary: #0e1729;
   --text-secondary: #46536b;
@@ -149,6 +159,11 @@
      定值 420px 后该件**恒按设计尺寸渲染**；正文列的让位取同一令牌（见 `.hero__inner > *`）
      ⇒ 不产生第二处魔法数字，布局自动跟随。 */
   --hero-map-w: 420px;
+  /* 首屏头像直径（批二十点六 · · 桌面档）。<1024px 在下方媒体查询里降到 84px。
+     ⚠ 三处同值：本令牌 ＋ `Hero.tsx` 的 `sizes="(min-width: 1024px) 112px, 84px"`
+     ＋ `public/avatar/` 的派生档位（由 `scripts/build_avatar_assets.py` 生成）。
+     ⛔ 改尺寸必须三处同改，否则 `srcset` 会取错档（浏览器按 `sizes` 算需求宽）。 */
+  --hero-avatar-w: 112px;
   --measure: 66ch;
   --radius: 12px;
   --radius-lg: 18px;
@@ -208,6 +223,7 @@
     --border-line: #8798b5;
     --border-card: #232e48;
     --edge-highlight: rgba(255, 255, 255, 0.06);
+    --avatar-ring: 0 0 0 1px rgba(255, 255, 255, 0.4);
     --text-primary: #e8edf7;
     --text-secondary: #a7b3c8;
     --text-tertiary: #8e9cb3;
@@ -251,6 +267,7 @@
   --border-line: #8798b5;
   --border-card: #232e48;
   --edge-highlight: rgba(255, 255, 255, 0.06);
+  --avatar-ring: 0 0 0 1px rgba(255, 255, 255, 0.4);
   --text-primary: #e8edf7;
   --text-secondary: #a7b3c8;
   --text-tertiary: #8e9cb3;
@@ -1488,6 +1505,44 @@ button.chip[aria-pressed='true'] {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* ─── ★ 批二十点六：「身份簇」＝头像 ＋ 定位陈述/名字/标语 ────────────────────────
+   头像在**文字列左侧**（⛔ 不在标题上方 —— 见 `Hero.tsx` 头注①与 AI 味清单
+   `Icon tile above heading` / `Badge above headline`）。两列用 `auto minmax(0,1fr)`：
+   右列必须能收缩（`minmax(0,1fr)`，⛔ 不是 `1fr`）—— 否则窄视口下自闭的 `min-width:auto`
+   会让它顶到内容最小宽（本站已在 `.detail__main` 上踩过同一个坑，见 README「已知取舍」）。 */
+.hero__lead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: var(--space-4);
+}
+
+.hero__lead-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* 正圆 ＋ 主题分帧单环。为何是正圆、为何要环、为何不羽化：见 `Hero.tsx` 头注②
+   与 `--avatar-ring` 令牌注。`object-fit: cover` 只是防御（派生档已是正方形等比）。 */
+.hero__avatar {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--hero-avatar-w);
+  height: var(--hero-avatar-w);
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: var(--avatar-ring);
+}
+
+/* 窄屏：头像降到 84px（⛔ 与 `Hero.tsx` 的 `sizes` 第二档同值） */
+@media (max-width: 1023px) {
+  :root {
+    --hero-avatar-w: 84px;
+  }
 }
 
 .hero__eyebrow {
@@ -3655,16 +3710,16 @@ html.js-motion .hero__inner > * {
   animation: rise-in var(--dur-4) var(--ease-out) both;
 }
 
+/* ⚠ 批二十点六：`.hero__inner` 的子元素由 4–5 个收缩为 3 个
+   （`.hero__lead` ／ `.hero__actions` ／ `.hero__cue`）。头像＋定位陈述＋名字＋标语
+   现在**同属一个 `.hero__lead`**，整簇一起上浮 —— 故档位重排如下。
+   ⛔ 原 `:nth-child(4)` 规则已随之删除（不留无人消费的死规则）。 */
 html.js-motion .hero__inner > *:nth-child(2) {
-  animation-delay: 0.06s;
+  animation-delay: 0.08s;
 }
 
 html.js-motion .hero__inner > *:nth-child(3) {
-  animation-delay: 0.12s;
-}
-
-html.js-motion .hero__inner > *:nth-child(4) {
-  animation-delay: 0.18s;
+  animation-delay: 0.16s;
 }
 
 html.js-motion .hero__map {
