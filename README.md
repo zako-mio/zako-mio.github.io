@@ -520,12 +520,22 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
     在视觉上诱导成「分类」，与图件自身 `note` 的「⛔ 不解读为复杂度排序」相抵（属**轴 B：所见符合所得**）。
     现全部柱用站点品牌令牌 `--brand-primary`（浅 `#2f4bd8` / 深 `#8fb4ff`，经同一份 `globals.css` 解析、
     ⛔ 不新增色值），数值**只由长度编码**。对比件见 `batch20.5-evidence/f3-color-preview.html`。
-    ⚠ **连带的跨线变更（须通告）**：`scripts/build_charts.mjs` **退役**了
-    `d3-scale-chromatic-schemes` 的取用 ⇒ 已同步删除 `gate-manifest.json` 的该条取用
-    （清单只记**真实取用**）、`charts.json` 的 `capability_keys`、以及 `package.json` 的两个 d3 依赖。
-    前端能力线记录（`~/.config/opencode/lib/frontend-capability/records/`）中该能力的
-    「已被真实消费」状态读数因此**失效** —— ⛔ 本仓不改他线资产，通告随
-    `report-batch20.5.md` 登记。
+    ⚠ **连带的跨线核查（★ 事后逐件复核，更正了本批最初的表述）**：本批最初按「该线记录中
+    『已被真实消费』的状态读数因此失效」通告。**核过该线两处资产后，该表述不准确**，更正如下：
+    · 该线的**消费台账**（`ledger/consumption.jsonl`，append-only）里 2026-10-08 的 d3 那条是
+      **历史消费事实**（artifact ＝ `scripts/build_charts.mjs`），⛔ **不因本站退役而失效**；
+      且该线**无「调用方」归属粒度** —— 已登记调用方只有 `frontend-design-methodology` /
+      `design-material-library-line` / `self`，⛔ 不含本站 ⇒ 该线**结构上没有**「本站正在消费它」
+      这一位可翻转（记录契约还是**封闭白名单** `additionalProperties:false`，无生命周期字段位）。
+    · ⛔ **不追加「退役」行**：台账 `--report` 只输出 `triggers / last_ts / artifacts`
+      （**不输出 `note`**），而聚合口径是「行数」⇒ 追加会把它读成**第 2 次取用**、并把
+      `last_ts` 刷成退役时刻（语义被污染）。⇒ 该线**没有对得上号的动作**。
+    · **真正过期的是该线的安装面派生索引**（生成于 2026-10-07，早于 10-08 的台账写入）：
+      `unconsumed_count` 13 → **10**、d3 `has_consumption_evidence` false → **true**。
+      已按该线**官方变换**（`tools/install.py` 的 `render_call`，⛔ 非手改）刷新该一件，
+      并由该线自带 `reconcile.py` 复验；其 `gate_frontend_records` 三入口全 PASS。
+      ⇒ 详见 `report-batch20.5.md` §6。
+    ⇒ 本仓的**唯一必要更新**仍是本节上面那三处（manifest / `capability_keys` / 依赖）。
   · ⚠ **本批实测到的一处既有环境条件（非本批引入，现已解除）**：本批开工时 `pnpm reverify` 的
     `build_topology.mjs` 重建 FAIL（`opencode-dag-analysis/图3`：上游 `modified-dag` 现为 **133** 节点，
     而本地 `metrics.json`（`as_of 2026-10-08`）登记 **129**）。
