@@ -50,11 +50,6 @@
       "note": "构建期 SSR 出双模 SVG（明/暗各一份），逐字节跨进程确定"
     },
     {
-      "key": "d3-scale-chromatic-schemes",
-      "artifact": "scripts/build_charts.mjs",
-      "note": "配色从 globals.css 解析令牌，解析失败即 fail-closed（⛔ 无硬编码兜底）"
-    },
-    {
       "key": "cytoscape-js-graph-topology",
       "artifact": "src/data/topology.json",
       "note": "headless 拓扑计算（⛔ 非画布渲染，画布交互留给项目自身）"

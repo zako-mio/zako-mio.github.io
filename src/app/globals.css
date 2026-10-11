@@ -143,7 +143,12 @@
   /* --- 栅格与形状 --- */
   --container: 1120px;
   /* 首屏右区图件宽度：正文列的让位量由它派生（同一真相源） */
-  --hero-map-w: min(420px, 38vw);
+  /* ★ 批20.5：原为 `min(420px, 38vw)` —— 该件只在 `≥1024px` 显示（<1024 隐藏），
+     故流体上限**只在 1024–1105px 这一段**起作用，而它的唯一效果是把 420 单位的图件
+     缩到 1:1 以下（实测 1024px：389px/420 ＝ 缩放 0.926 ⇒ 11px 源文字渲染成 10.2px）。
+     定值 420px 后该件**恒按设计尺寸渲染**；正文列的让位取同一令牌（见 `.hero__inner > *`）
+     ⇒ 不产生第二处魔法数字，布局自动跟随。 */
+  --hero-map-w: 420px;
   --measure: 66ch;
   --radius: 12px;
   --radius-lg: 18px;
@@ -891,6 +896,10 @@ html[data-pointer] .backdrop__glow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  /* ★ 批20.5（F2 修复的配套）：左栏两枚开关带类型前缀，最长文案 =「动效：跟随系统」（7 字）
+     ⇒ 下限取 7.5em（留余量）。⛔ 与「是否已水合」无关：SSR 只渲染类型名，水合后才补档位名，
+     取最长文案作下限 ⇒ 两种状态同宽，CLS 仍为 0。 */
+  --toggle-label-min: 7.5em;
 }
 
 .rail__meta {
@@ -1442,7 +1451,11 @@ button.chip[aria-pressed='true'] {
    ⚠ `≤640px` 的图标态（`display:none`）在下方媒体查询里，源序更后 ⇒ 仍覆盖本规则。 */
 .theme-toggle__text {
   display: inline-block;
-  min-inline-size: 4em;
+  /* ★ 批20.5：宽度下限**令牌化**。原为写死的 `4em`（批九：宽度须与「档位」及「是否已水合」无关）。
+     左栏两个开关现在带**类型前缀**（「主题：跟随系统」/「动效：跟随系统」，见 F2 修复），
+     前缀版比裸标签宽 ⇒ 若仍写死 4em，水合瞬间文字变宽会造出 CLS。
+     `--toggle-label-min` 由宿主按**最长可能文案**给出（⛔ 仍不依赖运行期取值）。 */
+  min-inline-size: var(--toggle-label-min, 4em);
   text-align: start;
 }
 
@@ -2716,6 +2729,10 @@ button.chip[disabled] {
 
 .chart {
   margin: 0 0 var(--space-5);
+  /* ★ 批20.5：图的**形态切换容器**（容器查询；⛔ 不用视口媒体查询代理——
+     `.chart` 的可用宽在 ≥1180px 后随左栏出现而**回落**：实测 1024px 视口→958px、
+     1200px→882px、1440px→816px ⇒ 视口量在此**非单调**，拿它代理会判错档）。 */
+  container: chart / inline-size;
 }
 
 .chart__caption {
@@ -2775,6 +2792,82 @@ button.chip[disabled] {
   color: var(--text-secondary);
   font-size: var(--fs-label);
   line-height: 1.7;
+}
+
+/* ── ★ 批20.5：窄视口的图表形态 ＝ HTML/CSS 条形（流体，⛔ 不是「缩小的图」）─────────
+   缺陷（批20.5 独立复验）：图表是**构建期固定宽 760 的内联 SVG**，容器窄时只能等比缩小
+   ⇒ 390px 视口下缩放比 0.426、渲染后字号 4.7px（阈值「缩放比 ≥ 1」直接 FAIL）。
+   ⛔ 未采用「多宽度重渲染」：那要 340/500/760 三档 × 双主题 ＝ 6 份内联 SVG
+   （实测 /stats HTML 约 +60 KB，且 RSC 载荷会再镜像一份）—— 会加重已知的 F5 体积代价。
+   ✅ 本形态＝同一条形图的**语义化列表**表达：完全流体、**无缩放**（缩放比恒 = 1）、
+      标签可换行（⛔ 不必截断 ⇒ 同时消解「标签截断无恢复路径」）。
+   ⛔ 单一真相源仍是 `charts.json` 的 rows —— 两种形态读**同一份**数据，⛔ 不存在第二份数据。
+   ⛔ 两种形态在 DOM 中并存、由 CSS 切显隐（与 `chart__frame` / `--dark` 同一模式）。 */
+.chart__bars {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  gap: var(--space-2);
+}
+
+.chart__bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.2rem var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-stripe);
+}
+
+.chart__bar-label {
+  font-size: var(--fs-label);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.chart__bar-value {
+  font-size: var(--fs-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.chart__bar-track {
+  grid-column: 1 / -1;
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  overflow: hidden;
+}
+
+.chart__bar-fill {
+  display: block;
+  block-size: 100%;
+  inline-size: var(--bar-fill, 0%);
+  border-radius: 999px;
+  background: var(--brand-primary);
+}
+
+/* 图表 ↔ 表格联动高亮（与 `.mdash .chart__frame path[data-hl]` 同规；JS 只落属性，上色在 CSS）。
+   ⛔ 不新增色值：底色/描边都取既有语义令牌。 */
+.mdash .chart__bar[data-hl] {
+  border-color: var(--brand-primary);
+  background: var(--brand-soft);
+}
+
+/* 形态切换：可用宽 ≥ 760 ⇒ 宽版 SVG 恰好 1:1（760/760）⇒ 不缩、不滚；
+   < 760 ⇒ 切 HTML 条形（流体）。两档都满足「缩放比 ≥ 1」。 */
+@container chart (max-width: 759px) {
+  .chart__svgwrap {
+    display: none;
+  }
+
+  .chart__bars {
+    display: grid;
+  }
 }
 
 .mtable__block + .mtable__block {
@@ -2985,6 +3078,15 @@ button.chip[disabled] {
 .figure__svg {
   width: 100%;
   height: auto;
+  /* ★ 批20.5（缺陷修复）：内联 SVG **没有固有最小内容宽** ⇒ 外层
+     `.figure__frame { overflow-x: auto }` 结构上**永不滚动**（实测 scrollWidth == clientWidth
+     ⇒ canScroll 恒为 false）。后果：图件随容器等比缩小，390px 视口下渲染后文字仅 4px
+     （缩放比 0.367），图件信息不可读。
+     ⛔ 这与 DOM 表格不同：`<table>` 有固有最小宽 ⇒ `.mtable__scroll` 的滚动**有效**。
+     原 README 把两者写成同一条规则（「宽内容放进 overflow-x:auto 容器」）⇒ 对 SVG **不成立**。
+     本行给出 1:1 下限（`--svg-intrinsic-w` ＝ 组件 viewBox 宽，唯一真相源在组件，⛔ 不写第二处数字），
+     让「固定宽 SVG」这条机制与表格的固有最小宽**对齐**。⛔ 不是给整页加横滚。 */
+  min-width: var(--svg-intrinsic-w, 0);
 }
 
 .figure__caption {

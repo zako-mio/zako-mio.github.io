@@ -109,8 +109,10 @@ export function SiteRail({ displayName, github }: SiteRailProps) {
 
       <div className="rail__foot">
         <div className="rail__controls">
-          <ThemeToggle />
-          <MotionToggle />
+          {/* ★ 批20.5（F2 修复）：两枚开关**只在此处相邻** ⇒ 类型前缀只在此处传
+              （默认态两件可见文本原本逐字相同，都是「跟随系统」）。 */}
+          <ThemeToggle kindLabel="主题" />
+          <MotionToggle kindLabel="动效" />
         </div>
         <p className="rail__meta">
           <a href={github} rel="noopener noreferrer" target="_blank">

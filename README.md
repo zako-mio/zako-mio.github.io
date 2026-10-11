@@ -176,9 +176,11 @@ python3 scripts/gate_motion_budget.py --selftest
 
 ### `scripts/probes/`（浏览器层判据：CI 的 runtime 硬阻）
 
-上面那些门控都**只跑 python3**。有八类缺陷只有真浏览器能看见（图件几何、合成后对比度、
-悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、**术语解释层的 hover/focus/Esc**、
-**无障碍（axe-core：对比度/标题层级/名称/ARIA…）**、**布局稳定性（CLS ＋ 交互期几何零位移）**），
+上面那些门控都**只跑 python3**。有九类缺陷只有真浏览器能看见（图件几何、**图件渲染后缩放**
+（★ 批二十点五：`S1/S2` 判的是**源几何**，而等比缩小**不改源几何** ⇒ 图件缩到 4px 时它照样全绿）、
+合成后对比度、悬停反馈面 ≡ 热区、`:hover` 门控、**进场可见性 × 进入路径**、
+**术语解释层的 hover/focus/Esc**、**无障碍（axe-core：对比度/标题层级/名称/ARIA…）**、
+**布局稳定性（CLS ＋ 交互期几何零位移）**），
 长期是**提示词级**（写进文档、靠人记着跑）。
 现把活件收进 `scripts/probes/`，CI 里装 playwright ＋ 起一次静态服务后**逐条硬阻**（失败即阻断部署）：
 
@@ -188,6 +190,7 @@ python3 scripts/gate_motion_budget.py --selftest
 | `check_ci_manifest.py` | **CI 步骤 ↔ 登记集合一致性**（`E1`：门控/探针**双向** fail-closed —— 登记⇒必须进 CI，CI 里出现的 `gate_*`/`smoke_*`/`*_probe.py`⇒必须登记；⛔ 不设白名单，带 `--selftest`） | 否 |
 | `hover_gating_probe.py` | 产物 CSS 每条 `:hover` 都在 `@media (hover:hover)` 内 ＋ 源/产物集合一致（带 `--selftest`） | 否 |
 | `svg_layout_probe.py` | `S1` 文字压框/压字、`S2` 箭头落点（带 `--selftest` 负向夹具） | 是 |
+| `svg_text_scale_probe.py` | ★ **批二十点五新增**。`R1` **渲染缩放比 ≥ 1**（含 `<text>` 且可见的内联 SVG：`渲染宽 / viewBox 宽`；口径＝**图件不得渲染到其设计尺寸以下**，依据是自洽的、⛔ 不引外部字号标准）· `R2` **⛔ 无整页横滚**（宽内容必须落在自己的滚动容器里）· `R3` 非空守卫（一条都没扫到 ⇒ rc=2，⛔ 不静默通过）；5 路由 × 4 宽度；带 `--selftest`（**两臂**：对照臂＝未改动须 PASS ＋ 负向臂＝把图件压到 120px 须被抓到；另 R2 单独一条负向臂）。⚠ 与 `svg_layout_probe` **不重叠**：后者判源几何，本检判**渲染后**缩放 —— 实测同一时刻「S1/S2 全绿」而图件在 390px 下渲染字号仅 4px | 是 |
 | `contrast_theme_probe.py` | 合成后对比度（深浅双主题 × 两宽度，取最坏像素；带 `--selftest`） | 是 |
 | `surface_hit_probe.py` | 行为口径「反馈面 ≡ 热区」覆盖率（对照臂 ＋ 逃亡门守卫；带 `--selftest`） | 是 |
 | `reveal_nav_probe.py` | **进入路径无关性**：同一路由的 `[data-reveal]` 可见终态，整页加载臂 ≡ 客户端 `<Link>` 导航臂（带 `--selftest`） | 是 |
@@ -201,7 +204,7 @@ python3 scripts/gate_motion_budget.py --selftest
 - 依赖声明在 `scripts/probes/requirements-probes.txt`（playwright 1.63.0 / pillow 12.3.0）；
   CI 的浏览器缓存键由 `hashFiles()` 从该文件派生，⛔ 不写第二处版本字面量。
   ⚠ 探针层的**前端资产**（`axe-core`）另 pin 于 `scripts/probes/vendor/`（含版本/许可/sha256，见其 README）。
-- **十一条探针**在 CI 里跑（8 条需静态服务/浏览器 ＋ `hover_gating` 静态解析 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
+- **十二条探针**在 CI 里跑（9 条需静态服务/浏览器 ＋ `hover_gating` 静态解析 ＋ `acceptance_probe` 结构类 ＋ `dup_probe` 报告类）；
   除 `dup_probe`（报告类，无 `--selftest`）外均**连 `--selftest` 一起跑**（判据必须能 FAIL，否则是哑火门控）。
   ⚠ `check_provenance.py` / `check_ci_manifest.py` 是**机检**（不进 `PROVENANCE.json` 的探针表，不在此计数）。
 - 基址由 `SITE_BASE` / `--base` 给出（缺省 `127.0.0.1:4399`）；缺 `out/` 时 `hover_gating_probe`
@@ -210,8 +213,9 @@ python3 scripts/gate_motion_budget.py --selftest
   归档件的**活件副本**（`PROVENANCE.json` 记 `archive_source` ＋ `source_sha256` ＋ 漂移方向：
   活件可演进、归档件冻结 ⛔ 不追改）；`reveal_nav_probe.py`（第十二批）、
   `hero_hit_probe.py`（第十三批）、`term_layer_probe.py`（第十四批）、
-  `axe_a11y_probe.py`（第十五批，另 vendor `axe-core@4.14.0` 于 `vendor/`）与
-  `layout_stability_probe.py`（第十八批 B1）是**仓库原生**。
+  `axe_a11y_probe.py`（第十五批，另 vendor `axe-core@4.14.0` 于 `vendor/`）、
+  `layout_stability_probe.py`（第十八批 B1）与
+  `svg_text_scale_probe.py`（**批二十点五**，新增判据，无归档副本）是**仓库原生**。
   `check_provenance.py` 保证「目录里的每个 `*_probe.py` 都已登记」—— ⛔ 新增探针必须**同批登记**，
   否则 fail-closed。（同目录 `acceptance_probe.py` / `dup_probe.py` 亦为 `origin: repo-native`。）
 - ⛔ 这些活件**不进 `gate-manifest.json`**（命名不为 `gate_`/`smoke_` 前缀 ⇒ 不触发 `A8` 登记义务，
@@ -452,16 +456,81 @@ IA-3 五路由，**每页只回答一个问题**，每类内容只有一个落�
   会挡在**页面标题之前**）；⛔ 也不要另造第二份移动端目录（DOM 重复 ⇒ 重复 landmark 与锚点）。
 - **网格/弹性子项必须显式收缩**：`grid-template-columns: 1fr` 与 flex 子项默认 `min-width: auto`
   ⇒ **不会收缩到内容最小宽度以下**。实测：`.detail__main` 漏了这一条，窄屏被构建期 ECharts SVG
-  与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器
-  （`.chart__frame` / `.mtable__scroll`）并给外层 `min-width: 0`。
+  与指标表撑到 653px（视口 390）整页截断。宽内容请放进带 `overflow-x:auto` 的容器并给外层 `min-width: 0`。
+  ★★ **批二十点五勘误：上句对两类「宽内容」并不都成立，必须分开写** ——
+  · **DOM 表格**（`.mtable__scroll`）：`<table>` 有**固有最小内容宽** ⇒ `overflow-x:auto` **真的会滚**（现状正确）。
+  · **固定宽内联 SVG**（`.figure__svg` / `.chart__frame svg`）：`width:100%` / `max-width:100%`
+    让子元素**永不溢出** ⇒ 该容器的 `overflow-x:auto` **结构性空转**
+    （实测：`scrollWidth == clientWidth`，所有视口 `canScroll` 恒为 false）。
+  ⇒ SVG 要能滚，必须**显式给下限**：`.figure__svg { min-width: var(--svg-intrinsic-w) }`，
+    该变量由组件以 **viewBox 宽**（唯一真相源）给出 —— 见下条。
+    ⛔ 只写 `overflow-x:auto` 就以为「宽内容已处理」，是本站踩过的坑（批二十点五实测）。
 - **内联 SVG 图件**（`src/components/figures/*`）为**手工定位**（无布局引擎）⇒
   几何缺陷不会自己暴露。判据＝活件 `scripts/probes/svg_layout_probe.py`（**CI runtime 硬阻**；
   归档件 `batch6-evidence/verify_svg_layout.py`）：
   `S1` 文字压框/压字、`S2` 箭头落点（矩形切边合法／圆形须留 ≥4px 净距），带 `--selftest` 负向夹具。
   ⚠ **声明的不覆盖面**：`circle`/`ellipse`/`path` 不判（圆的外接正方形会把「环内中央的文字」
   误报为重叠）。改动图件后必须重跑该判据。
+  ★★ **批二十点五：`S1/S2` 全绿 ≠ 图件可读**（判据作用面缺口，第三个已登记实例）——
+  `S1/S2` 判**源几何**，而 `width:100%` 的等比缩小**一字不改源几何** ⇒ 390px 视口下
+  首页结构图渲染后文字仅 **4px**、缩放比 0.367，而两道判据照旧 ALL PASS。
+  修法与判据**同批**落地：
+  · **1:1 下限**：`.figure__svg { min-width: var(--svg-intrinsic-w) }`，变量＝组件 `viewBox` 宽
+    （`VIEW_W`，⛔ 不在 CSS 写第二份数字）；窄视口因此改为**横向滚动**（信息零丢失）；
+  · **滚动区域须键盘可达**：`.figure__frame` 落 `tabindex=0` ＋ `role=group` ＋ 名称 ——
+    ⚠ 实测：**只加 `min-width` 而不落 `tabindex`** 时，axe 在同款规则集下新增
+    `scrollable-region-focusable`（WCAG 2.1.1）⇒ 本批踩到，a11y 门控直接 FAIL（⛔ 不是可选项）；
+  · **判据**：`scripts/probes/svg_text_scale_probe.py`（`R1` 缩放比 ≥ 1 · `R2` ⛔ 无整页横滚）。
+  ★ 配套：`.hero__map` 的 `--hero-map-w` 由 `min(420px, 38vw)` 改**定值 420px** ——
+  该件只在 `≥1024px` 显示，流体上限**只作用于 1024–1105px 这一段**，唯一效果是把 420 单位的
+  图件缩到 1:1 以下（实测 1024px：389/420 ＝ 0.926，11px 源文字渲染成 10.2px）。
+  正文列的让位取**同一令牌**（`.hero__inner > * { max-inline-size: calc(100% - var(--hero-map-w) - …) }`）
+  ⇒ 布局自动跟随，且实测 1024–1440px 零重叠、无整页横滚。
 
 ## 已知取舍
+
+- ★ **批二十点五（窄视口可读性修复）的取舍，逐条登记**（依据：第三方独立评审
+  `Mission-file/2026-10/1008-个人主页深化改革/dsh-uiux-review/` 的 F1/F2/F4 三条 ＋ 本批独立复验）：
+  · **图件在窄视口横向滚动**（首页结构图 840px / 390px 视口 ≈ 2.2 倍宽、`/about` 圆环图 420/308 ≈ 1.36 倍）
+    —— 这是「零信息丢失」的代价选择：替代方案（窄版重画）要重做三张手工定位图件并重过 `S1/S2`。
+    ⚠ **代价 2：可聚焦的滚动容器会给每处图件增加 1 个 tab stop**（宽视口下不滚动时也在 tab 序里）。
+    ⛔ 不可省：不落 `tabindex` 则 axe 报 `scrollable-region-focusable`（WCAG 2.1.1）⇒ a11y 门控 FAIL。
+    ✅ 已核：`layout_stability` 25/25（三连跑 CLS 恒 0，`--toggle-label-min` 与 1:1 下限都不引入位移）。
+  · **`/stats` 图表＝双形态并存**：可用宽 ≥ 760px 显示宽版 SVG（恰好 1:1 ⇒ 不缩不滚），
+    < 760px 改用 **HTML/CSS 条形**（流体 ⇒ 缩放比恒 1）。两形态**读同一份 `charts.json` 的 rows**
+    （⛔ 不存在第二份数据），在 DOM 中并存、由**容器查询**切显隐。
+    ⚠ 为什么不用「多宽度重渲染」：3 档 × 双主题 ＝ 6 份内联 SVG，实测 `/stats` HTML 约 **+60 KB**
+    （RSC 载荷还会再镜像一份），会加重下面那条已登记的体积代价。
+    ⚠ 形态切换用**容器查询**而非视口媒体查询：`.chart` 的可用宽在 ≥1180px 后**随左栏出现而回落**
+    （实测 1024px 视口 → 958px、1200px → 882px、1440px → 816px），视口量在此**非单调**，代理会判错档。
+  · **图表轴标签由「截断」改「换行」**（修「截断无恢复路径」）：长名完整显示，代价 ＝ 图表高度
+    **314 → 384px**、行高 38 → 48px。⚠ 必须同时给 `lineHeight: 20`：默认行高 ＝ 字号（12px），
+    而 12px 字形渲染框高约 14px ⇒ 相邻两行相交 14%，会被既有判据 `S1`（文字交叠）判 FAIL（实测踩到）。
+    ⛔ 原先的「数据侧 `truncate(title, 20)`」已删 —— 截断发生在本页任何地方都取不回。
+  · **左栏两枚开关带类型前缀**（「主题：跟随系统」/「动效：跟随系统」）：修「两件可见文本逐字相同」。
+    前缀**只传左栏**（该歧义只在两件相邻时存在；顶部导航只有一枚 ⇒ 不传，避免导航无谓增宽）。
+    配套 `--toggle-label-min: 7.5em`（最长文案下限）⇒ 水合前后同宽，⛔ 不引入 CLS。
+  · **⛔ 未主张**：① 「横向滚动」是这一维的最优解 —— 它只是**零信息丢失**的最省解，
+    观感上「窄版重画」可能更好（属用户裁决面，本批未取）；② 缩放比 ≥ 1 已使图件**不小于设计尺寸**，
+    但**设计尺寸本身**（`.dg-sub` 等 10px、`.card__figure` 声明 8px）是否足够大**不在本判据作用面内**；
+    ③ `/stats` 图表的**色相编码**已按用户裁决改为单色（见下条），
+    ⛔ 未主张「单色在观感上必然优于保留彩色」—— 那是用户裁决面。
+  · **★ `/stats` 条形图改为单色（F3 · 用户裁决 2026-10-11＝B）**：原实现按**行序**取色
+    （`palette[index % palette.length]`）＝彩虹条形图 —— 色相**不承载信息**，却把「单测度排序数据」
+    在视觉上诱导成「分类」，与图件自身 `note` 的「⛔ 不解读为复杂度排序」相抵（属**轴 B：所见符合所得**）。
+    现全部柱用站点品牌令牌 `--brand-primary`（浅 `#2f4bd8` / 深 `#8fb4ff`，经同一份 `globals.css` 解析、
+    ⛔ 不新增色值），数值**只由长度编码**。对比件见 `batch20.5-evidence/f3-color-preview.html`。
+    ⚠ **连带的跨线变更（须通告）**：`scripts/build_charts.mjs` **退役**了
+    `d3-scale-chromatic-schemes` 的取用 ⇒ 已同步删除 `gate-manifest.json` 的该条取用
+    （清单只记**真实取用**）、`charts.json` 的 `capability_keys`、以及 `package.json` 的两个 d3 依赖。
+    前端能力线记录（`~/.config/opencode/lib/frontend-capability/records/`）中该能力的
+    「已被真实消费」状态读数因此**失效** —— ⛔ 本仓不改他线资产，通告随
+    `report-batch20.5.md` 登记。
+  · ⚠ **本批实测到的既有环境条件（非本批引入）**：`pnpm reverify` 的
+    `build_topology.mjs` 重建 **FAIL**（`opencode-dag-analysis/图3`：上游 `modified-dag` 现为
+    **133** 节点，而本地 `metrics.json`（`as_of 2026-10-08`）登记 **129**）。
+    已用 **stash 基线对照**证实：在干净提交 `29892b8`（本批改动全部移除）上**报逐字相同**的错
+    ⇒ 属**上游数据漂移 / 本地 metrics 陈旧**，修复途径是走每日重采管道，⛔ 不属本批范围。
 
 - ★ **W5 级联提醒「只提醒 · 不阻断 · 会重复」是**有意取舍**（批二十 · 用户 2026-10-11 裁决）**：
   三问裁决 ＝ ①信号源**复用每日重采的 diff**（⛔ 不新增独立比对步）· ②出口＝**构建日志**

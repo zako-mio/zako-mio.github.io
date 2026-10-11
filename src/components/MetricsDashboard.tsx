@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 
 import { Term } from '@/components/Term';
@@ -132,22 +133,51 @@ export function ChartFigure({ chart }: { chart: Chart }) {
   //   图按值升序、表按目录序，两个集合同源但不同序）。注解只加在**渲染期**，⛔ `charts.json` 不变。
   const light = annotateChartBars(chart.svg.light, chart.rows);
   const dark = annotateChartBars(chart.svg.dark, chart.rows);
+  // ★ 批20.5：窄视口条形的长度基准（同一份 rows，⛔ 不引入第二份数据）。
+  const max = Math.max(1, ...chart.rows.map((row) => row.value));
   return (
     <figure className="chart" id={`chart-${chart.key}`}>
       <figcaption className="chart__caption">{chart.title}</figcaption>
-      <div
-        className="chart__frame"
-        data-spotlight="soft"
-        role="img"
-        aria-label={`${chart.title}。数值与口径见上表；图为量级概览，不作复杂度排序。`}
-        dangerouslySetInnerHTML={{ __html: light }}
-      />
-      <div
-        className="chart__frame chart__frame--dark"
-        data-spotlight="soft"
-        aria-hidden="true"
-        dangerouslySetInnerHTML={{ __html: dark }}
-      />
+      {/* ★ 批20.5：宽版 SVG 只在 `--可用宽 ≥ 760px` 时显示（此时恰好 1:1 ⇒ 不缩、不滚）。
+          加一层 `.chart__svgwrap` 是为了让**容器查询能一次隐藏浅/深两帧**——
+          若直接对 `.chart__frame` 写 `display:none`，会被主题规则的
+          `[data-theme='dark'] .chart__frame--dark{display:block}`（特异性更高）压过。 */}
+      <div className="chart__svgwrap">
+        <div
+          className="chart__frame"
+          data-spotlight="soft"
+          role="img"
+          aria-label={`${chart.title}。数值与口径见上表；图为量级概览，不作复杂度排序。`}
+          dangerouslySetInnerHTML={{ __html: light }}
+        />
+        <div
+          className="chart__frame chart__frame--dark"
+          data-spotlight="soft"
+          aria-hidden="true"
+          dangerouslySetInnerHTML={{ __html: dark }}
+        />
+      </div>
+      {/* ★ 批20.5：窄视口形态 —— 同一条形图的**语义化列表**表达。
+          流体（无固定宽）⇒ 渲染缩放比恒为 1；标签自然换行 ⇒ ⛔ 不再截断。
+          行按值**降序**（`rows` 原为值升序）：与宽版图的视觉次序一致（大值在上）。
+          `data-project` 与宽版同键 ⇒ 图表 ↔ 表格联动在两形态下都成立（JS 只落 `data-hl`）。 */}
+      <ul className="chart__bars">
+        {chart.rows
+          .slice()
+          .reverse()
+          .map((row) => (
+            <li className="chart__bar" data-project={row.full} key={row.full}>
+              <span className="chart__bar-label">{row.name}</span>
+              <span className="chart__bar-value">{row.value.toLocaleString('en-US')}</span>
+              <span className="chart__bar-track">
+                <span
+                  className="chart__bar-fill"
+                  style={{ '--bar-fill': `${((row.value / max) * 100).toFixed(2)}%` } as CSSProperties}
+                />
+              </span>
+            </li>
+          ))}
+      </ul>
       <p className="chart__note">{chart.note}</p>
     </figure>
   );

@@ -39,8 +39,10 @@ function applyMode(mode: MotionMode) {
  *   站点已有三态主题的交互契约与留痕，动效开关沿用它 ⇒ 用户不必学第二套。
  * ★ 「跟随系统」＝不落任何属性，由 CSS 的 `prefers-reduced-motion` 裁决；
  *   ⛔ 切换只改属性，不接管 CSS 真相源。
+ * ★ 批20.5（F2 修复）：可选 `kindLabel` ＝ 可见文本的**类型前缀**（见 `ThemeToggle` 同名参数）。
+ *   本件目前只在左栏使用，与主题开关相邻 ⇒ 默认缺省时也不产生歧义，但为两件同构仍按参数走。
  */
-export function MotionToggle() {
+export function MotionToggle({ kindLabel }: { kindLabel?: string } = {}) {
   const [mode, setMode] = useState<MotionMode>('system');
   const [mounted, setMounted] = useState(false);
 
@@ -82,7 +84,7 @@ export function MotionToggle() {
     >
       <span aria-hidden="true" className="theme-toggle__dot theme-toggle__dot--motion" />
       <span className="theme-toggle__text" suppressHydrationWarning>
-        {mounted ? label : '动效'}
+        {mounted ? (kindLabel ? `${kindLabel}：${label}` : label) : (kindLabel ?? '动效')}
       </span>
     </button>
   );

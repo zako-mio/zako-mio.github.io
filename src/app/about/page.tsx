@@ -133,7 +133,14 @@ export default function AboutPage() {
             {/* ★ 四条原则的真实关系是**闭环**（口径错了要回炉、复盘产出下一轮口径）。
                 并列列表会把「环」讲成「清单」，信息被抹平 ⇒ 这里先出图，文字作展开。 */}
             <figure className="figure" data-spotlight="soft">
-              <div className="figure__frame">
+              {/* ★ 批20.5：与首页结构图同规 —— 图件窄视口横向滚动 ⇒ 滚动区域须键盘可达
+                 （否则 axe 报 `scrollable-region-focusable` / WCAG 2.1.1）。 */}
+              <div
+                className="figure__frame"
+                tabIndex={0}
+                role="group"
+                aria-label="工作方式闭环图：窄视口下可横向滚动查看完整图件"
+              >
                 <PracticeCycleFigure />
               </div>
               <figcaption className="figure__caption">

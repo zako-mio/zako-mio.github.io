@@ -54,7 +54,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # 图表：能力层 echarts-declarative-chart-svg 的 Node SSR 路径，构建期出双模 SVG
-      # （须在 install 之后：依赖 echarts / d3-scale-chromatic 由 lockfile 提供）
+      # （须在 install 之后：依赖 echarts 由 lockfile 提供）
+      # ★ 批二十点五：条形填充色改用站点品牌令牌（单色，长度编码）⇒ 退役 d3-scale-chromatic 取用
       - name: Build charts (SSR -> SVG)
         run: node scripts/build_charts.mjs
 
@@ -161,6 +162,16 @@ jobs:
         run: |
           python3 scripts/probes/svg_layout_probe.py --selftest
           python3 scripts/probes/svg_layout_probe.py
+
+      # ★ 批20.5：与 `svg_layout_probe` **不重叠** —— 后者判**源几何**（S1 文字压框 / S2 箭头落点），
+      #   而图件经 `width:100%` 随容器等比缩小时**源几何一字未变** ⇒ 缩放到 4px 时它照样 ALL PASS。
+      #   本检判**渲染后缩放比**（R1 ≥ 1）＋ 整页无横滚（R2）。依据与不覆盖面见脚本头注。
+      - name: SVG text-scale probe (渲染后文字尺寸) — selftest + 实测
+        env:
+          SITE_BASE: http://127.0.0.1:4399
+        run: |
+          python3 scripts/probes/svg_text_scale_probe.py --selftest
+          python3 scripts/probes/svg_text_scale_probe.py
 
       - name: Composite contrast probe (双主题) — selftest + 实测
         env:

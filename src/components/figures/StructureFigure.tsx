@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 interface Node {
   col: number;
   y: number;
@@ -19,6 +21,14 @@ const H = 48;
 const COLS = [24, 232, 440, 648];
 // 图高：第 4 列末节点 226+48=274 ⇒ 留出 6px 余量（原 268 会切掉底部）
 const VIEW_H = 280;
+/**
+ * ★ 批20.5：`VIEW_W` 是**唯一真相源** —— 同时供 `viewBox` 与 CSS 的
+ *   `--svg-intrinsic-w`（`.figure__svg { min-width: … }` 的 1:1 下限）使用，
+ *   ⛔ 不在 CSS 里写第二份 840（那会与本文件漂移）。
+ *   依据：内联 SVG 无固有最小内容宽 ⇒ 外层 `overflow-x:auto` 永不滚动 ⇒ 图件被等比缩小
+ *   到不可读（390px 下实测渲染字号 4px）。给出 1:1 下限后，窄视口改为横向滚动（信息不丢）。
+ */
+const VIEW_W = 840;
 const HEADS = ['源', '管道', '产物', '呈现'];
 
 const NODES: Node[] = [
@@ -68,7 +78,8 @@ export function StructureFigure() {
   return (
     <svg
       className="figure__svg"
-      viewBox={`0 0 840 ${VIEW_H}`}
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      style={{ '--svg-intrinsic-w': `${VIEW_W}px` } as CSSProperties}
       role="img"
       aria-labelledby="struct-fig-title"
     >

@@ -32,7 +32,17 @@ export function SiteBuildNotes() {
         {/* ★ 结构优先：这条链是「源 → 管道 → 产物 → 呈现」的有向链，
             链式结构的正确表达是图，⛔ 不是又一段分点文字。图只写角色与流向，不写计数。 */}
         <figure className="figure" data-spotlight="soft">
-          <div className="figure__frame">
+          {/* ★ 批20.5：图件在窄视口**横向滚动**（1:1 下限）⇒ 该滚动区域必须**键盘可达**，
+             否则违反 WCAG 2.1.1。实测（批20.5）：只加 `min-width` 而不落 `tabindex` 时，
+             axe 在同款规则集下新增 `scrollable-region-focusable`（WCAG 2.1.1）——
+             站点自己的 a11y 门控会直接判 FAIL。故 `tabindex=0` ＋ `role=group` ＋ 名称
+             是这条修法的**必要配套**（⛔ 不是可选润色）。 */}
+          <div
+            className="figure__frame"
+            tabIndex={0}
+            role="group"
+            aria-label="本站做法结构图：窄视口下可横向滚动查看完整图件"
+          >
             <StructureFigure />
           </div>
           <figcaption className="figure__caption">

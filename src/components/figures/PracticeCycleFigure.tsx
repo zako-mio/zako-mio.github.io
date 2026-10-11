@@ -1,7 +1,17 @@
+import type { CSSProperties } from 'react';
+
 const CX = 210;
 const CY = 152;
 const R = 96;
 const NODE_R = 36;
+
+/**
+ * ★ 批20.5：`VIEW_W` 是**唯一真相源**（同时供 `viewBox` 与 CSS 的 `--svg-intrinsic-w`）。
+ *   内联 SVG 无固有最小内容宽 ⇒ 外层 `overflow-x:auto` 永不滚动 ⇒ 图件被等比缩小到不可读
+ *   （390px 视口实测渲染字号 7.3px，缩放比 0.733）。给出 1:1 下限后窄视口改为横向滚动。
+ */
+const VIEW_W = 420;
+const VIEW_H = 304;
 
 /** 顺时针：上 → 右 → 下 → 左。步骤名取自 `PROFILE_PRACTICE` 的四条原则，压缩成 2–3 字。 */
 const STEPS = [
@@ -27,7 +37,13 @@ function point(angleDeg: number, radius: number): { x: number; y: number } {
  */
 export function PracticeCycleFigure() {
   return (
-    <svg className="figure__svg" viewBox="0 0 420 304" role="img" aria-labelledby="practice-fig-title">
+    <svg
+      className="figure__svg"
+      viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+      style={{ '--svg-intrinsic-w': `${VIEW_W}px` } as CSSProperties}
+      role="img"
+      aria-labelledby="practice-fig-title"
+    >
       <title id="practice-fig-title">
         工作方式闭环图：先定口径，再采数，然后验证产物，最后复盘；复盘的结果回流成为下一轮的口径修正。
       </title>

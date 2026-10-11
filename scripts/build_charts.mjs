@@ -2,8 +2,15 @@
 /**
  * E 指标图表生成（2b-4）· 构建期 Node SSR → SVG。
  *
- * 能力层取用：`echarts-declarative-chart-svg` ＋ `d3-scale-chromatic-schemes`
+ * 能力层取用：`echarts-declarative-chart-svg`
  * （记录见 ~/.config/opencode/lib/frontend-capability/records/<key>.json；调用协议见 call.md）
+ * ★ 批二十点五（F3 裁决＝单色）：**退役** `d3-scale-chromatic-schemes` 取用 ——
+ *   原色板按**行序**取色（`palette[index % len]`）＝彩虹条形图，色相**不承载信息**，
+ *   却把「单测度排序数据」视觉上诱导成「分类」，与图件 note 的「不解读为复杂度排序」相抵。
+ *   现全部柱用**站点品牌令牌** `--brand-primary`（同一份 globals.css 解析，fail-closed）。
+ *   ⚠ **跨线通告**：这改变了前端能力线「d3-scale-chromatic-schemes 已被真实消费」的状态读数，
+ *   该记录在 `~/.config/opencode/lib/frontend-capability/records/`（**本仓 ⛔ 不改他线资产**），
+ *   通告随 `Mission-file/2026-10/1008-个人主页深化改革/report-batch20.5.md` 登记。
  *
  * ★ 严格遵循记录 usage.requires_config 的四条硬约束（省略任一条都会失败或失真）：
  *   1. 必须 `init(null, null, {renderer:'svg', ssr:true, width, height})`；
@@ -24,13 +31,9 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import * as echarts from 'echarts';
-import { schemeTableau10, schemeSet2 } from 'd3-scale-chromatic';
 
 const FONT =
   'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans SC", "PingFang SC", sans-serif';
-
-/** 双模色板（能力层 d3-scale-chromatic-schemes）：浅色底用 Tableau10，深色底用 Set2（更亮）。 */
-const PALETTE = { light: schemeTableau10, dark: schemeSet2 };
 
 const CSS_PATH = 'src/app/globals.css';
 
@@ -57,10 +60,13 @@ function readThemeTokens(cssPath) {
     light: {
       ink: pick(light, '--text-primary', '浅色'),
       grid: pick(light, '--border-subtle', '浅色'),
+      /// ★ 批二十点五：条形填充色＝品牌令牌（⛔ 不新增色值；条纹图**只由长度编码数值**）。
+      accent: pick(light, '--brand-primary', '浅色'),
     },
     dark: {
       ink: pick(dark, '--text-primary', '深色'),
       grid: pick(dark, '--border-subtle', '深色'),
+      accent: pick(dark, '--brand-primary', '深色'),
     },
   };
 }
@@ -126,10 +132,13 @@ function renderSvg(option, width, height) {
   return svg;
 }
 
-function truncate(text, max) {
-  const value = String(text ?? '');
-  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
-}
+/**
+ * ★ 批20.5：行标签 `name` 用**完整显示名**。
+ *   原实现是 `truncate(title, 20)` —— 截断后的名字在本页**取不回**（图内无 `<title>`，
+ *   轴标签又被 echarts 二次截断），属「截断即须可恢复」的反例。
+ *   现由**重排（换行）**承担长度：轴标签宽度不变、允许多行，⛔ 不在数据侧预先丢字。
+ *   ⇒ `truncate()` 随之无消费者，已删（⛔ 不留死代码）。
+ */
 
 /**
  * 图 1：DAG 图谱区「主入口图」实体数。
@@ -144,7 +153,7 @@ function mainEntryChart(metrics, catalog) {
       const value = figure?.entity_count;
       if (typeof value !== 'number' || value <= 0) return null;
       return {
-        name: truncate(titles.get(p.name) ?? p.name, 20),
+        name: titles.get(p.name) ?? p.name,
         full: p.name,
         value,
         scope: figure.scope,
@@ -154,11 +163,13 @@ function mainEntryChart(metrics, catalog) {
     .sort((a, b) => a.value - b.value);
 
   const width = 760;
-  const rowHeight = 38;
+  // ★ 批20.5：行高 38 → 48 —— 轴标签改「换行」后单行最多占 2 行（2 × 12px × 1.2 ≈ 29px），
+  //   38px 会与相邻行贴到判据 S1（文字交叠）的边界 ⇒ 留出净距。
+  const rowHeight = 48;
   const height = 48 + rows.length * rowHeight;
 
   const build = (theme) => {
-    const palette = PALETTE[theme];
+    const accent = TOKENS[theme].accent;
     const ink = TOKENS[theme].ink;
     const grid = TOKENS[theme].grid;
     const option = {
@@ -177,15 +188,22 @@ function mainEntryChart(metrics, catalog) {
         data: rows.map((row) => row.name),
         axisLine: { lineStyle: { color: grid } },
         axisTick: { show: false },
-        axisLabel: { color: ink, fontSize: 12, width: 150, overflow: 'truncate' },
+        // ★ 批20.5：`truncate` → `break`（换行）。原截断会让长名**不可恢复**（无 tooltip、
+        //   无 `<title>`）；换行则完整显示，宽度不变 ⇒ ⛔ 不改绘图区几何。
+        //   ⚠ 必须同时给 `lineHeight`：echarts 默认行高 = 字号（12px），而 12px 字形的渲染框
+        //   高约 14px ⇒ 相邻两行的框**相交 14%**，会被本站既有判据 S1（文字交叠）判 FAIL
+        //   （实测踩到）。行高 20px ⇒ 两行框之间有净距，S1 通过。
+        axisLabel: { color: ink, fontSize: 12, width: 150, overflow: 'break', lineHeight: 20 },
       },
       series: [
         {
           type: 'bar',
           barWidth: 16,
-          data: rows.map((row, index) => ({
+          data: rows.map((row) => ({
             value: row.value,
-            itemStyle: { color: palette[index % palette.length] },
+            // ★ 批二十点五（F3 裁决）：**单色**。⛔ 不再按行序取色（那会造出「看起来像分类」的
+            //   彩虹条，与图件 note 的「不解读为复杂度排序」相抵）。数值只由**长度**编码。
+            itemStyle: { color: accent },
           })),
           label: {
             show: true,
@@ -207,7 +225,11 @@ function mainEntryChart(metrics, catalog) {
     note:
       '口径：各项目「主入口图」的实体计数（主 scope := 该项目首个 scope）。' +
       '同名维度在各项目的实际用词不同（包 / 插件节点 / 知识点 / 方法节点…），' +
-      '故本图只作**同区、同类 scope** 的量级概览，⛔ 不跨区并比、不解读为复杂度排序。',
+      // ★ 批20.5（本批新暴露的**既有**缺陷）：原文此处写 `**同区、同类 scope**`，
+      //   而 `note` 是**纯文本**经 JSX 插入 `<p>`（⛔ 不经 Markdown 渲染）
+      //   ⇒ 星号**字面显示**在页面上（实测 `out/stats/index.html` 命中 2 处 + `index.txt` 1 处）。
+      //   修法＝去掉标记（⛔ 不改成 HTML 标签：JSX 会转义，反而又是一层看不出来的失败）。
+      '故本图只作同区、同类 scope 的量级概览，⛔ 不跨区并比、不解读为复杂度排序。',
     width,
     height,
     rows,
@@ -225,7 +247,7 @@ function main() {
   const payload = {
     schema_version: '1.0',
     generator: 'scripts/build_charts.mjs',
-    capability_keys: ['echarts-declarative-chart-svg', 'd3-scale-chromatic-schemes'],
+    capability_keys: ['echarts-declarative-chart-svg'],
     source: { metrics: args.metrics, metrics_as_of: metrics.as_of, catalog: args.catalog },
     charts,
   };
