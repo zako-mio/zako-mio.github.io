@@ -255,8 +255,19 @@ UNKNOWN_REASON = "未纳入 specs/e-metrics-spec.md v1.0 的 9 项目集（规�
 
 TAG_RE = re.compile(r"<script[^>]*>.*?</script>|<style[^>]*>.*?</style>", re.S | re.I)
 TAG_ANY = re.compile(r"<[^>]+>")
+# ⚠ E4 保真门控的**解析面**适配（2026-10-14 第 35 轮，用户裁定「人工确认 ＋ 适配 ＋ 重确认」）。
+#   背景：上游 `12-factor-methodology-kg` 于 2026-10-13 在 `<b>` 与 `<span>` **之间**插入了一枚
+#   **展示性**徽章 `<i class="stat-ok" role="img" aria-label="数据已校验">✓</i>`
+#   ⇒ 原正则要求二者**相邻** ⇒ **0 命中** ⇒ 该页被误判 `unavailable`（E5）⇒ G8/G9 FAIL。
+#   ★ 适配口径（**最小**）：只**容许可选的 `<i>` 展示元素**；★ **× 未放宽任何「值」的比对**
+#   —— 值是否变化仍由 `gate_metrics.py` 对 `metrics-confirmed.json` 如实报 FAIL。
+#   ★ 该动作的**前置条件**（承硬约束第 20 条「× 不得以放宽解析器自行消化上游改版」）：
+#   ① 用户已**人工核对**上游改动（逐值对照见 `第35轮-清残留/evidence/ROUND35-SCOPE.md §0.2 F3`：
+#      38 方法节点／16 分组／61 关系边／3 学习阶段，与冻结基线**逐值相同**）；
+#   ② 确认系**纯展示性**改版 ⇒ 方允许适配 ＋ 重确认新基线。
 STAT_RE = re.compile(
-    r'<div class="stat">\s*<b>(.*?)</b>\s*<span>(.*?)</span>(?:\s*<small>(.*?)</small>)?\s*</div>',
+    r'<div class="stat">\s*<b>(.*?)</b>(?:\s*<i[^>]*>.*?</i>)?\s*<span>(.*?)</span>'
+    r'(?:\s*<small>(.*?)</small>)?\s*</div>',
     re.S,
 )
 QUANT = "个|条|张|篇|门|种|组|层"
