@@ -256,7 +256,13 @@ UNKNOWN_REASON = "未纳入 specs/e-metrics-spec.md v1.0 的 9 项目集（规�
 TAG_RE = re.compile(r"<script[^>]*>.*?</script>|<style[^>]*>.*?</style>", re.S | re.I)
 TAG_ANY = re.compile(r"<[^>]+>")
 STAT_RE = re.compile(
-    r'<div class="stat">\s*<b>(.*?)</b>\s*<span>(.*?)</span>(?:\s*<small>(.*?)</small>)?\s*</div>',
+    # ★ 2026-10-13 适配（上游 `12-factor-methodology-kg` 当日改版）：`<b>` 与 `<span>` **之间**
+    #   新增了一个**展示性**徽章 `<i class="stat-ok" role="img" aria-label="数据已校验">✓</i>`
+    #   ⇒ 原模式要求二者**相邻** ⇒ 0 命中 ⇒ 该页被误判 `unavailable`（E5）—— ★ 而数据其实都在。
+    #   ★ 本处**只放宽解析器**（容许可选徽章），× **不**放宽任何**值**的比对：
+    #     值是否变化仍由 `gate_metrics.py` 对 `metrics-confirmed.json` 比对后**如实报 FAIL**。
+    r'<div class="stat">\s*<b>(.*?)</b>\s*(?:<i\b[^>]*>.*?</i>\s*)?<span>(.*?)</span>'
+    r'(?:\s*<small>(.*?)</small>)?\s*</div>',
     re.S,
 )
 QUANT = "个|条|张|篇|门|种|组|层"
