@@ -37,6 +37,12 @@ const DIRECTORY: DirectoryItem[] = [
     question: '这个人是谁、怎么工作、怎么联系',
     note: '技术画像、工作方式、匿名约定与联系方式',
   },
+  {
+    href: '/uses',
+    label: '/uses · 在用',
+    question: '本站自己在用什么',
+    note: '依赖名、版本字面量与各自在本站承担什么，逐条可在仓库 package.json 回源',
+  },
 ];
 
 /**

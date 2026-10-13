@@ -3737,3 +3737,105 @@ html.js-motion .hero__map {
 :root[data-motion='off'] .hero__map {
   animation: none !important;
 }
+
+/* ═══════════════════════════════════════════════ 在用（/uses）═══════════════
+   本段为**追加段**：⛔ 不改上面任何一行既有规则，⛔ 不新增 `:root` 变量。
+   ★ 不新增色值：全部走既有令牌（表面/描边/文字/等宽字体/间距/字号尺度），
+     ⇒ 明暗三态与 `gate_contrast.py` 的十六进制口径都不受影响（本段无任何色值字面量）。
+   ★ ⛔ 本段不含 `:hover` / `:focus-within` 规则：本页只有静态文本，
+     没有可交互件 ⇒ 不需要新反馈面，也不进 `scripts/interaction-surfaces.json` 的登记集合。
+   ★ 布局：窄屏单列；≥1180px 两列（这一档正是左栏常驻、内容列反而变窄的区间
+     —— 分组用两列吸收宽度，⛔ 不靠放大字号撑满）。
+   ★ 长包名（如 `@tsparticles/preset-stars`）不得撑破容器：网格/弹性子项一律给
+     显式收缩（`min-inline-size: 0`）＋ `overflow-wrap: anywhere`（本站既有铁律）。 */
+
+.uses__intro {
+  max-inline-size: var(--measure);
+  margin-bottom: var(--space-5);
+  color: var(--text-secondary);
+}
+
+.uses__groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+@media (min-width: 1180px) {
+  .uses__groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-5) var(--space-6);
+    align-items: start;
+  }
+}
+
+.uses__group {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+/* 分组标题：与 `.works-group__title` 同规（同一类「集合标题」的既有版式） */
+.uses__group-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.uses__list {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.uses__item {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 0 var(--edge-highlight);
+}
+
+/* 条目名：等宽（包名是逐字符有意义的技术标识，等宽可逐字核对）＋ 可断行 */
+.uses__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  font-size: var(--fs-nav);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.uses__pkg {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+/* 版本：元信息而非正文 ⇒ 次级文字，⛔ 不用三级灰（它是可核对的关键字段，须保持可读） */
+.uses__version {
+  font-family: var(--font-mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.uses__note {
+  font-size: var(--fs-label);
+  line-height: 1.7;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}

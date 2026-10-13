@@ -21,7 +21,7 @@ import { PROFILE_FOCUS, PROFILE_ROLE } from '@/lib/profile';
  *   ⛔ 不放 `contact__list` / `stats__grid` / `about__grid` / `filterbar`，
  *   ⛔ 不放任何聚合数字（那些的唯一落点是 `/stats`），
  *   ⛔ 不放 `/works/<name>` 详情链接（否则首页枚举数会被公共件抬高）。
- *   它只承载：站点标识（masthead）＋ 四路由导航 ＋ 关注方向 ＋ 两枚开关 ＋ 外链。
+ *   它只承载：站点标识（masthead）＋ 五路由导航 ＋ 关注方向 ＋ 两枚开关 ＋ 外链。
  */
 interface RailIconProps {
   path: string;
@@ -51,6 +51,8 @@ const NAV_ITEMS = [
   { href: '/works', label: '作品', icon: 'M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z' },
   { href: '/stats', label: '聚合', icon: 'M4 19V9M10 19V5M16 19v-7M22 19H2' },
   { href: '/about', label: '关于', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8.5v.01M11 12h1v5h1' },
+  // 「在用」：层叠三层 ⇒ 「技术栈」的指向性提示（与既有四项同规：viewBox 24、strokeWidth 1.7、无填充）
+  { href: '/uses', label: '在用', icon: 'M12 3.5 3 8l9 4.5L21 8zM3 12.5l9 4.5 9-4.5M3 17l9 4.5 9-4.5' },
 ];
 
 function isActive(pathname: string, href: string) {

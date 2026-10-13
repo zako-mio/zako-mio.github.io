@@ -11,6 +11,7 @@ const SITEMAP = [
   { href: '/works', label: '作品' },
   { href: '/stats', label: '聚合' },
   { href: '/about', label: '关于' },
+  { href: '/uses', label: '在用' },
 ];
 
 export function SiteFooter({ displayName, generatedAt = null, runId = null }: SiteFooterProps) {

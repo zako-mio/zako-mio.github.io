@@ -1,0 +1,96 @@
+{
+  "schema_version": "1.0",
+  "as_of": "2026-10-13",
+  "intro": "本站正在使用的技术栈。逐条取自仓库根目录 package.json 的 dependencies 与 devDependencies，版本为 package.json 里出现的字面值（含 ^ 前缀，未经解析）；每条后面写它在本站承担什么。页面只写这套仓库里能回源的事实，不写个人生活、硬件或其它无法回源的内容。",
+  "groups": [
+    {
+      "id": "runtime",
+      "title": "运行时与框架",
+      "items": [
+        {
+          "name": "next",
+          "version": "^15.2.3",
+          "note": "App Router 框架。next.config.mjs 设为 output: 'export' + trailingSlash，产物是纯静态目录，部署到 GitHub Pages。"
+        },
+        {
+          "name": "react",
+          "version": "^19.0.0",
+          "note": "组件层。默认服务端组件，只有确实需要状态的交互件（导航高亮、主题/动效开关、筛选器）才标 'use client'。"
+        },
+        {
+          "name": "react-dom",
+          "version": "^19.0.0",
+          "note": "与 react 同版本，承担客户端渲染与水合。"
+        },
+        {
+          "name": "zod",
+          "version": "^3.24.2",
+          "note": "数据契约校验。src/lib/schema.ts 用 zod 定义项目数据与展示层覆盖的 schema，校验不过就降级为空列表而不是渲染坏数据。"
+        }
+      ]
+    },
+    {
+      "id": "effects",
+      "title": "背景与粒子特效",
+      "items": [
+        {
+          "name": "@tsparticles/react",
+          "version": "4.4.0",
+          "note": "夜间星野粒子层的 React 绑定。它的发布包没有 'use client'，所以本站自包一层客户端边界（BackdropFx）。"
+        },
+        {
+          "name": "@tsparticles/slim",
+          "version": "4.4.0",
+          "note": "粒子引擎的精简包。经 next/dynamic({ ssr: false }) 懒加载，独立分块，不进首屏 JS。"
+        },
+        {
+          "name": "@tsparticles/preset-stars",
+          "version": "4.4.0",
+          "note": "官方星野预设参数：星星由它画，本站不自绘点阵，只做极少量有理由的覆盖项。"
+        }
+      ]
+    },
+    {
+      "id": "data-viz",
+      "title": "数据与可视化",
+      "items": [
+        {
+          "name": "echarts",
+          "version": "6.1.0",
+          "note": "构建期在服务端出图：同一份 charts.json 渲染明/暗两套内联 SVG，页面不依赖客户端图表运行时。能力登记见 scripts/gate-manifest.json。"
+        },
+        {
+          "name": "cytoscape",
+          "version": "3.34.3",
+          "note": "headless 计算项目之间的拓扑关系（只算不画），产出 src/data/topology.json。同见 scripts/gate-manifest.json 的能力登记。"
+        }
+      ]
+    },
+    {
+      "id": "toolchain",
+      "title": "语言与工具链",
+      "items": [
+        {
+          "name": "typescript",
+          "version": "^5.8.2",
+          "note": "全站 TS/TSX。类型检查走仓库脚本 pnpm typecheck（tsc --noEmit）。"
+        },
+        {
+          "name": "@types/node",
+          "version": "^22.13.0",
+          "note": "构建期读取 JSON/文件的 Node API 类型（数据页的数据加载就发生在构建期）。"
+        },
+        {
+          "name": "@types/react",
+          "version": "^19.0.0",
+          "note": "React 类型定义。"
+        },
+        {
+          "name": "@types/react-dom",
+          "version": "^19.0.0",
+          "note": "React DOM 类型定义。"
+        }
+      ]
+    }
+  ]
+}
